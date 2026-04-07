@@ -18,3 +18,4 @@ As a prototype this mini-project will never be perfect, it is a proof of concept
 - cannot use * without whitespace after unless dereferencing (* some_ptr not ok) or multiplying (a * b not ok)
 - cannot make function return types safe ("easy" to fix)
 - cannot typedef and define struct in same statement
+- unnecessary const in non-pointer return types
