@@ -499,7 +499,12 @@ def add_const_to_type(code: str, type_name: str) -> str:
     code = re.sub(r'\bconst\s+mut\b', '', code)
 
     # -------------------------
-    # Step 8: Restore protected structs
+    # Step 8: Remove const from return
+    # -------------------------
+    code = re.sub(r'\bconst\s+return\b', 'return', code)
+
+    # -------------------------
+    # Step 9: Restore protected structs
     # -------------------------
     def restore_struct(match):
         index = int(match.group(1))
@@ -508,13 +513,18 @@ def add_const_to_type(code: str, type_name: str) -> str:
     code = re.sub(r'__STRUCT_(\d+)__', restore_struct, code)
 
     # -------------------------
-    # Step 9: Restore typedefs
+    # Step 10: Restore typedefs
     # -------------------------
     def restore_typedef(match):
         index = int(match.group(1))
         return typedef_protected[index]
 
     code = re.sub(r'__TYPEDEF_(\d+)__', restore_typedef, code)
+
+    # -------------------------
+    # Step 11: Remove const from struct forward declarations
+    # -------------------------
+    code = re.sub(r'\bconst\s+struct\s+([A-Za-z0-9_]+)\s*;', r'struct \1;', code)
 
     return code
 
@@ -527,6 +537,12 @@ def process_mut_const(code):
         print(t)
         code = add_const_to_type(code, t)
 
+    return code
+
+# -----------------------------
+# Nullable Handling
+# -----------------------------
+def process_nullable(code):
     return code
 
 # -----------------------------
