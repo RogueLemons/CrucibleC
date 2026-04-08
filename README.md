@@ -5,7 +5,7 @@ Ease-of-life features added in a simple proof-of-concept superset-transpiler to 
 - keyword **prefix**: working similar to C++ namespace to avoid long struct and function names
 - keyword **mut**: working as an inverted const, where everything is const by default unless mut is used
 - keyword **safe**: if type is safe then EC__CHECK__NULL(x) automatically called on next line (macro with default behavior, can be overridden)
-- keyword **typenum**: a typesafe enum with a struct under hood with macro definitions for values, if type has option = 5 then access with type::option, type::count and type::get added for bonus help, uses typenum::equals instead of ==
+- keyword **typenum**: a typesafe enum with a struct under hood with macro definitions for values, if type has option = 5 then access with type::option, type::count and type::get added for bonus help, uses type::equals instead of ==
 
 # Proof of concept
 As a prototype this mini-project will never be perfect. It is a proof of concept meant to show what C could look and what can be done with a transpiler that only has to work on a file-by-file basis. A real implementation would require much more rigorous C code parsing and proper pretty-print. 
