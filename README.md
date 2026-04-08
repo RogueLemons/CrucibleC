@@ -1,13 +1,18 @@
 # EasyC (Prototype)
-Ease-of-life features added in a simple proof-of-concept superset-transpiler to C.
-
-Includes:
+Ease-of-life features added in a simple proof-of-concept superset-transpiler to C. It includes
 - keyword **typestruct**: automatically creates typedef of struct
 - keyword **indef**: to write define statements inside of functions to keep local values local
 - keyword **prefix**: working similar to C++ namespace to avoid long struct and function names
 - keyword **mut**: working as an inverted const, where everything is const by default unless mut is used
 - keyword **safe**: if type is safe then EC__CHECK__NULL(x) automatically called on next line (macro with default behavior, can be overridden)
 - keyword **typenum**: a typesafe enum with a struct under hood with macro definitions for values, if type has option = 5 then access with type::option, type::count and type::get added for bonus help, uses typenum::equals instead of ==
+
+# Proof of concept
+As a prototype this mini-project will never be perfect. It is a proof of concept meant to show what C could look and what can be done with a transpiler that only has to work on a file-by-file basis. A real implementation would require much more rigorous C code parsing and proper pretty-print. 
+
+It started with the idea "What if C variables were const by default?". Since the project is just a proof of concept it serves more as a way to talk about what code safety is and means in C, and what practices can be applied to write safe C code in a standardize style for the whole group. 
+
+"Why use this instead of C++?" I hear you ask. C++ already exists. Nim already exists. C3 already exists. There are better tools and solutions than EasyC out there already. However, C programmers are often really happy about C specifically so converting them to a new language, even if it was deemed better (by whatever metric), is going to be difficult. But letting C coders continue to write C code but with just a few added keywords is an easier sell. It is also not just a people question; it is about compatability. Not all processors come with compilers for C++ or whatever language you might prefer, and gcc might have amazing added features to the language which might not be supported by other compilers a group moves to. With this transpiler the goal becomes to help write safe and readable code, both in the EasyC files and their transpiled C files. 
 
 # TODO
 - keyword **cleanpop**: variable initialized with cleanpop automatically calls POPULATE__type(t) on next line and before scope exits (and before return statements) calls CLEANUP__type(t), must be defined as functions or macros manually
