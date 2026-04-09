@@ -8,6 +8,8 @@ Ease-of-life features added in a simple proof-of-concept superset-transpiler to 
 - keyword **typenum**: a typesafe enum with a struct under hood with macro definitions for values, if type has option = 5 then access with type::option, type::count and type::get added for bonus help, uses type::equals instead of ==
 - keyword **cleanpop**: variable initialized with cleanpop automatically calls type::populate(t) on next line, and before scope exits (and before return statements) calls type::cleanup(t), must be defined as functions or macros manually
 
+EasyC sources files end with ".ec" and EasyC header files end with ".eh".
+
 # Proof of concept
 As a prototype this mini-project will never be perfect. It is a proof of concept meant to show what C could look like and what can be done with a transpiler that only has to work on a file-by-file basis. A real implementation would require much more rigorous C code parsing and proper pretty-print. 
 
@@ -24,3 +26,4 @@ It started with the idea "What if C variables were const by default?". Since the
 As a prototype this mini-project will never be perfect, it is a proof of concept. But less acceptable bugs include
 - cannot use * without whitespace after unless dereferencing (* some_ptr not ok) or multiplying (a * b not ok)
 - cannot typedef and define struct in same statement
+- mut/const management cannot see function arg types and won't adjust const correctness if type does not exist in file in other format (e.g. as a normal variable)
