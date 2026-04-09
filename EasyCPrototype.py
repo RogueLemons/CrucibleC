@@ -759,16 +759,38 @@ def add_safe_nullchecks_params(code):
             i += 1
             continue
 
-        # Collect all lines of function signature until '{'
+        # Collect function signature lines
         func_lines = []
+        found_brace = False
+        found_semicolon = False
+
         while i < len(lines):
-            func_lines.append(lines[i])
-            if '{' in lines[i]:
+            current_line = lines[i]
+            func_lines.append(current_line)
+
+            if '{' in current_line:
+                found_brace = True
                 i += 1
                 break
+
+            if ';' in current_line:
+                found_semicolon = True
+                i += 1
+                break
+
             i += 1
 
-        # Extract the parameters string
+        # If it's a declaration, just output and continue
+        if found_semicolon and not found_brace:
+            output.extend(func_lines)
+            continue
+
+        # If no body found, just output
+        if not found_brace:
+            output.extend(func_lines)
+            continue
+
+        # Extract parameters
         func_text = ' '.join(func_lines)
         params_match = re.search(r'\((.*)\)\s*\{', func_text)
         if not params_match:
@@ -778,7 +800,7 @@ def add_safe_nullchecks_params(code):
         params_str = params_match.group(1)
         param_list = [p.strip() for p in params_str.split(',') if p.strip()]
 
-        # Detect all safe pointer variables
+        # Detect safe pointer parameters
         vars_to_check = []
         param_pattern = re.compile(
             r'(?P<prefix>safe\s+)?'
@@ -787,20 +809,23 @@ def add_safe_nullchecks_params(code):
             r'(?P<const_after>\bconst\b\s*)?'
             r'(?P<var>[A-Za-z_][A-Za-z0-9_]*)'
         )
+
         for p in param_list:
             for m in param_pattern.finditer(p):
                 prefix = m.group('prefix') or ""
                 var_name = m.group('var')
                 const_after = m.group('const_after')
+
                 if prefix and not const_after:
                     raise ValueError(f"Safe pointer parameter must have const: {var_name}")
+
                 if prefix:
                     vars_to_check.append(var_name)
 
         # Add original function lines
         output.extend(func_lines)
 
-        # Add null checks at start of function body
+        # Add null checks
         first_line_indent = re.match(r'^(\s*)', func_lines[-1]).group(1) + "    "
         for var in vars_to_check:
             output.append(f"{first_line_indent}EC__NULL__CHECK({var});")
@@ -818,11 +843,34 @@ def remove_safe_keyword(code):
     """
     Removes all instances of the keyword 'safe' from the code,
     preserving all spacing, indentation, and formatting.
-    Only removes 'safe' as a full word.
+    Does NOT remove 'safe' inside comments.
     """
-    # Use word boundaries to match 'safe' as a separate word
-    cleaned_code = re.sub(r'\bsafe\b\s?', '', code)
-    return cleaned_code
+
+    # Pattern to match comments (//... or /* ... */)
+    comment_pattern = re.compile(r'//.*?$|/\*.*?\*/', re.DOTALL | re.MULTILINE)
+
+    def process_non_comment(text):
+        # Remove 'safe' as a whole word (with optional trailing space)
+        return re.sub(r'\bsafe\b\s?', '', text)
+
+    result = []
+    last_end = 0
+
+    for match in comment_pattern.finditer(code):
+        start, end = match.span()
+
+        # Process code before the comment
+        result.append(process_non_comment(code[last_end:start]))
+
+        # Append comment unchanged
+        result.append(code[start:end])
+
+        last_end = end
+
+    # Process remaining code after last comment
+    result.append(process_non_comment(code[last_end:]))
+
+    return ''.join(result)
 
 def find_last_include_line(code):
     """
