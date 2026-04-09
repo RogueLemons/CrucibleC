@@ -382,8 +382,8 @@ def extract_c_types(code: str):
     for q in qualifiers:
         code = re.sub(rf'\b{q}\b', '', code)
 
-    # Remove mut/ref keywords
-    code = re.sub(r'\b(mut|safe)\b', '', code)
+    # Remove mut/safe/cleanpop keywords
+    code = re.sub(r'\b(mut|safe)\b|\bcleanpop\s*(\([^)]*\))?', '', code)
 
     # Remove preprocessor lines
     code = re.sub(r'^.*#.*$', '', code, flags=re.MULTILINE)
@@ -951,6 +951,236 @@ def process_typenum(code):
     return code
 
 # -----------------------------
+# Add cleanpop management
+# -----------------------------
+def handle_cleanpop(code: str) -> str:
+    lines = code.splitlines()
+    result = []
+
+    active_vars = []
+    scope_level = 0
+    scope_statements = {}
+
+    for line in lines:
+        # -------------------------
+        # Extract comments
+        # -------------------------
+        comment_match = re.search(r'//.*|/\*.*?\*/', line)
+        comment = ""
+        if comment_match:
+            # Ensure a space before the comment
+            comment = " " + comment_match.group(0)
+            # Remove comment temporarily
+            code_line = line[:comment_match.start()]
+        else:
+            code_line = line
+
+        stripped = code_line.strip()
+
+        open_braces = code_line.count('{')
+        close_braces = code_line.count('}')
+        has_return = bool(re.search(r'\breturn\b', code_line))
+        scope_statements.setdefault(scope_level, [])
+
+        # -------------------------
+        # CLEANPOP
+        # -------------------------
+        match = re.match(r'^(\s*)cleanpop(?:\(\))?\s+([^;]+);', code_line)
+        if match:
+            indent = match.group(1)
+            body = match.group(2).strip()
+
+            if '*' in body:
+                raise ValueError(f"Invalid cleanpop (pointer not allowed): {line}")
+            if '=' in body:
+                raise ValueError(f"Invalid cleanpop (assignment not allowed): {line}")
+
+            is_const = bool(re.search(r'\bconst\b', body))
+            parts = body.split()
+            if len(parts) < 2:
+                raise ValueError(f"Invalid cleanpop: {line}")
+
+            var_name = parts[-1]
+            type_tokens = parts[:-1]
+            type_no_const_tokens = [t for t in type_tokens if t != "const"]
+            type_name_no_const = " ".join(type_no_const_tokens)
+            type_name_full = " ".join(type_tokens)
+
+            active_vars.append({
+                "name": var_name,
+                "type": type_name_no_const,
+                "is_const": is_const,
+                "scope": scope_level,
+                "indent": indent
+            })
+
+            # Add variable declaration with comment
+            result.append(f"{indent}{type_name_full} {var_name};{comment}")
+
+            # Add populate call
+            if is_const:
+                result.append(f"{indent}{type_name_no_const}__populate(({type_name_no_const}*)&{var_name});")
+            else:
+                result.append(f"{indent}{type_name_no_const}__populate(&{var_name});")
+
+            continue
+
+        # -------------------------
+        # RETURN handling
+        # -------------------------
+        if has_return:
+            indent = re.match(r'^\s*', code_line).group(0)
+            match_ret = re.search(r'\breturn\s+([A-Za-z_][A-Za-z0-9_]*)\s*;', code_line)
+            if match_ret:
+                ret_var = match_ret.group(1)
+                for var in active_vars:
+                    if var["name"] == ret_var:
+                        raise ValueError(
+                            f"Cannot return cleanpop variable '{ret_var}' (it will be cleaned up automatically)"
+                        )
+
+            # Insert cleanup statements before return
+            for var in reversed(active_vars):
+                if var["scope"] <= scope_level:
+                    if var["is_const"]:
+                        cleanup = f"{indent}{var['type']}__cleanup(({var['type']}*)&{var['name']});"
+                    else:
+                        cleanup = f"{indent}{var['type']}__cleanup(&{var['name']});"
+                    result.append(cleanup)
+
+            scope_statements[scope_level].append("return")
+
+        # -------------------------
+        # Normal line (add back comment with space)
+        # -------------------------
+        if stripped:
+            result.append(code_line.rstrip() + comment)
+        else:
+            result.append(line)
+
+        # -------------------------
+        # Update scope
+        # -------------------------
+        scope_level += open_braces
+        scope_statements.setdefault(scope_level, [])
+
+        if close_braces > 0:
+            for _ in range(close_braces):
+                statements = scope_statements.get(scope_level, [])
+                skip_cleanup = len(statements) > 0 and statements[-1] == "return"
+
+                new_active = []
+                for var in reversed(active_vars):
+                    if var["scope"] == scope_level:
+                        if skip_cleanup:
+                            continue
+                        indent = var["indent"]
+                        if var["is_const"]:
+                            cleanup = f"{indent}{var['type']}__cleanup(({var['type']}*)&{var['name']});"
+                        else:
+                            cleanup = f"{indent}{var['type']}__cleanup(&{var['name']});"
+                        result.insert(len(result) - 1, cleanup)
+                    else:
+                        new_active.insert(0, var)
+                active_vars = new_active
+                scope_statements.pop(scope_level, None)
+                scope_level -= 1
+
+    return "\n".join(result)
+
+def add_braces_to_if_else(code: str) -> str:
+    lines = code.splitlines()
+    result = []
+    n = len(lines)
+    i = 0
+    in_macro = False  # Track multi-line macros
+
+    while i < n:
+        line = lines[i]
+        stripped = line.strip()
+
+        # Detect macro start
+        if stripped.startswith('#define'):
+            in_macro = True
+            result.append(line)
+            i += 1
+            continue
+
+        # Track continuation of macro
+        if in_macro:
+            result.append(line)
+            if not stripped.endswith('\\'):
+                in_macro = False
+            i += 1
+            continue
+
+        # Match 'if (...)' or 'else'
+        match = re.match(r'^(\s*)(if\s*\(.*?\)|else\b)(.*)', line)
+        if match:
+            indent = match.group(1)
+            keyword = match.group(2)
+            remainder = match.group(3).strip()
+
+            # Already has braces on the same line? leave it
+            if remainder.startswith('{'):
+                result.append(line)
+                i += 1
+                continue
+
+            # Lookahead: skip empty lines to check if next line starts with '{'
+            j = i + 1
+            next_line_is_block = False
+            while j < n:
+                next_line_stripped = lines[j].strip()
+                if next_line_stripped == '':
+                    j += 1
+                    continue
+                if next_line_stripped.startswith('{'):
+                    next_line_is_block = True
+                break
+
+            # If there is already a block, do nothing
+            if next_line_is_block:
+                result.append(line)
+                i += 1
+                continue
+
+            # Collect the statement (everything until the first semicolon)
+            statement = remainder
+            while ';' not in statement and i + 1 < n:
+                i += 1
+                statement += ' ' + lines[i].strip()
+            statement = statement.rstrip(';').strip()
+
+            # Wrap in braces
+            result.append(f"{indent}{keyword} {{")
+            result.append(f"{indent}    {statement};")
+            result.append(f"{indent}}}")
+
+            i += 1
+            continue
+
+        # Normal line
+        result.append(line)
+        i += 1
+
+    return "\n".join(result)
+
+def contains_cleanpop(code: str) -> bool:
+    """
+    Returns True if the code contains the word 'cleanpop' as a standalone keyword.
+    """
+    # \b ensures cleanpop is a full word, not part of another identifier
+    pattern = re.compile(r'\bcleanpop\b')
+    return bool(pattern.search(code))
+
+def process_cleanpop(code):
+    if contains_cleanpop(code):
+        code = add_braces_to_if_else(code)
+        code = handle_cleanpop(code)
+    return code
+
+# -----------------------------
 # Generated code warning
 # -----------------------------
 def add_generated_warning(code: str) -> str:
@@ -1093,6 +1323,20 @@ def standardize_indentation(code: str, spaces_per_level: int = 4) -> str:
     return '\n'.join(result)
 
 # -----------------------------
+# Fix if(...) without space
+# -----------------------------
+def fix_if_spacing(code: str) -> str:
+    """
+    Ensure there is a space between 'if' and '(' in C code.
+    Converts 'if(...)' → 'if (...)'.
+    """
+    # Pattern: match 'if' followed immediately by '(' (not preceded by other letters)
+    pattern = re.compile(r'\bif\(')
+    # Replace with 'if ('
+    fixed_code = pattern.sub('if (', code)
+    return fixed_code
+
+# -----------------------------
 # Transpile
 # -----------------------------
 def transpile_ec(code):
@@ -1104,11 +1348,14 @@ def transpile_ec(code):
     code = process_indef(code)
     code = process_mut_const(code)
     code = process_safe_pointers(code)
+    code = process_cleanpop(code)
+
     # Cleanup and formatting
     code = add_generated_warning(code)
     code = normalize_includes(code)
     code = remove_const_from_non_pointer_returns(code)
     code = standardize_indentation(code)
+    code = fix_if_spacing(code)
 
     return code
 

@@ -24,4 +24,3 @@ It started with the idea "What if C variables were const by default?". Since the
 As a prototype this mini-project will never be perfect, it is a proof of concept. But less acceptable bugs include
 - cannot use * without whitespace after unless dereferencing (* some_ptr not ok) or multiplying (a * b not ok)
 - cannot typedef and define struct in same statement
-- throw error if cleanpop variable is returned
