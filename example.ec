@@ -206,6 +206,6 @@ void bar()
 
 void baz()
 {
-    cleanpop int i;
+    cleanpop mut int i;
     // Do stuff
 }

@@ -239,8 +239,8 @@ void bar()
 
 void baz()
 {
-    const int i;
-    int__populate((int*)&i);
+    int i;
+    int__populate(&i);
     // Do stuff
-    int__cleanup((int*)&i);
+    int__cleanup(&i);
 }
