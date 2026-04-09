@@ -244,22 +244,3 @@ void baz()
     // Do stuff
     int__cleanup((int*)&i);
 }
-
-typedef c_string char*;
-void c_string__populate(mut c_string* const str)
-{
-    (*str) = NULL;
-}
-void c_string__cleanup(mut c_string* const str)
-{
-    free((*str));
-    (*str) = NULL;
-}
-
-void qux()
-{
-    mut c_string;
-    mut__populate(&c_string);
-    // Do stuff
-    mut__cleanup(&c_string);
-}
