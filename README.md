@@ -8,7 +8,7 @@ Ease-of-life features added in a simple proof-of-concept superset-transpiler to 
 - keyword **typenum**: a typesafe enum with a struct under hood with macro definitions for values, if type has option = 5 then access with type::option, type::count and type::get added for bonus help, uses type::equals instead of ==
 - keyword **cleanpop**: variable initialized with cleanpop automatically calls type::populate(t) on next line, and before scope exits (and before return statements) calls type::cleanup(t), must be defined as functions or macros manually
 
-EasyC sources files end with ".ec" and EasyC header files end with ".eh".
+EasyC source files end with ".ec" and EasyC header files end with ".eh".
 
 # Proof of concept
 As a prototype this mini-project will never be perfect. It is a proof of concept meant to show what C could look like and what can be done with a transpiler that only has to work on a file-by-file basis. A real implementation would require much more rigorous C code parsing and proper pretty-print. 
