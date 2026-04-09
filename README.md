@@ -412,8 +412,8 @@ void foo()
 ```
 ### EasyC
 ```c
-void String__add(String* const target, const char* const addition);
-void String__equals(const String* const str1, const String* const str2);
+void String::add(safe mut String* target, safe char* addition);
+void String::equals(safe String* str1, safe String* str2);
 
 void bar()
 {
