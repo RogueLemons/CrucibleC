@@ -18,7 +18,7 @@ It started with the idea "What if C variables were const by default?". Since the
 "Why use this instead of C++?" I hear you ask. C++ already exists. Nim already exists. C3 already exists. There are better tools and solutions than EasyC out there already. However, C programmers are often really happy about C specifically so converting them to a new language, even if it was deemed better (by whatever metric), is going to be difficult. But letting C coders continue to write C code but with just a few added keywords is an easier sell. It is also not just a people question; it is about compatability. Not all processors come with compilers for C++ or whatever language you might prefer, and gcc might have amazing added features to the language which might not be supported by other compilers a group moves to, so it becomes a matter of portability. Furthermore, with this transpiler the goal becomes to help write safe and readable code, both in the EasyC files and their transpiled C files, so it becomes a way to standardize how the code should look like and avoid easy-to-make mistakes. 
 
 # Examples
-The following examples are taken directly from the files example.ec and example.c in in this repo, and showcase how to use these keywords. 
+The following examples are taken directly from the files [example.ec](example.ec) and [example.c](example.c) in in this repo, and showcase how to use these keywords. 
 
 ## File inclusion and generated code warning
 ### EasyC
