@@ -232,12 +232,46 @@ void bar()
     String__cleanup(&greeting_1);
 }
 
+// ========= cleanpop with arguments =========
+
+void String__populate_with_1(String* const str, const char* const c_string)
+{
+    EC__NULL__CHECK(str);
+    EC__NULL__CHECK(c_string);
+    String__populate(str);
+    String__set(str, c_string);
+}
+
+void baz()
+{
+    String str;
+    String__populate_with_1(&str, "Initial string!");
+    printf("Data: %s\n", str->data);
+    String__cleanup(&str);
+}
+
+void String__populate_with_2(String* const str, const char c, const int repeat_char_count);
+int some_number();
+
+void foofoo()
+{
+    const String str;
+    String__populate_with_2((String*)&str, 'A', some_number());
+    if (str->size > 5) {
+        String__cleanup((String*)&str);
+        return;
+    }
+
+    // do stuff
+    String__cleanup((String*)&str);
+}
+
 // ========= cleanpop macros and standard types =========
 
 #define int__populate(i) (*i) = 0
 #define int__cleanup(i)
 
-void baz()
+void foobar()
 {
     int i;
     int__populate(&i);

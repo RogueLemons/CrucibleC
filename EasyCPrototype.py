@@ -1069,18 +1069,46 @@ def handle_cleanpop(code: str) -> str:
         scope_statements.setdefault(scope_level, [])
 
         # -------------------------
-        # CLEANPOP
+        # CLEANPOP (with arguments)
         # -------------------------
-        match = re.match(r'^(\s*)cleanpop(?:\(\))?\s+([^;]+);', code_line)
+        match = re.match(r'^(\s*)cleanpop(?:\((.*?)\))?\s+([^;]+);', code_line)
         if match:
             indent = match.group(1)
-            body = match.group(2).strip()
+            args_str = match.group(2)  # may be None
+            body = match.group(3).strip()
 
             if '*' in body:
                 raise ValueError(f"Invalid cleanpop (pointer not allowed): {line}")
             if '=' in body:
                 raise ValueError(f"Invalid cleanpop (assignment not allowed): {line}")
 
+            # -------------------------
+            # Parse arguments safely
+            # -------------------------
+            args = []
+            if args_str is not None:
+                args_str = args_str.strip()
+                if args_str:
+                    current = ""
+                    depth = 0
+                    for ch in args_str:
+                        if ch == ',' and depth == 0:
+                            args.append(current.strip())
+                            current = ""
+                        else:
+                            if ch == '(':
+                                depth += 1
+                            elif ch == ')':
+                                depth -= 1
+                            current += ch
+                    if current.strip():
+                        args.append(current.strip())
+
+            arg_count = len(args)
+
+            # -------------------------
+            # Parse declaration
+            # -------------------------
             is_const = bool(re.search(r'\bconst\b', body))
             parts = body.split()
             if len(parts) < 2:
@@ -1100,14 +1128,32 @@ def handle_cleanpop(code: str) -> str:
                 "indent": indent
             })
 
-            # Add variable declaration with comment
+            # Declaration
             result.append(f"{indent}{type_name_full} {var_name};{comment}")
 
-            # Add populate call
-            if is_const:
-                result.append(f"{indent}{type_name_no_const}__populate(({type_name_no_const}*)&{var_name});")
+            # -------------------------
+            # Populate call
+            # -------------------------
+            if args_str is None:
+                # Original behavior (no parentheses at all)
+                if is_const:
+                    result.append(f"{indent}{type_name_no_const}__populate(({type_name_no_const}*)&{var_name});")
+                else:
+                    result.append(f"{indent}{type_name_no_const}__populate(&{var_name});")
             else:
-                result.append(f"{indent}{type_name_no_const}__populate(&{var_name});")
+                # With parentheses → use _with_n
+                args_joined = ", ".join(args)
+                if is_const:
+                    cast = f"({type_name_no_const}*)&{var_name}"
+                else:
+                    cast = f"&{var_name}"
+
+                if arg_count == 0:
+                    result.append(f"{indent}{type_name_no_const}__populate_with_0({cast});")
+                else:
+                    result.append(
+                        f"{indent}{type_name_no_const}__populate_with_{arg_count}({cast}, {args_joined});"
+                    )
 
             continue
 

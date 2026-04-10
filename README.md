@@ -486,12 +486,71 @@ void bar()
     String__cleanup(&greeting_1);
 }
 ```
+### EasyC
+```C
+void String::populate_with_1(safe mut String* str, safe char* c_string)
+{
+    String::populate(str);
+    String::set(str, c_string);
+}
+
+void baz()
+{
+    cleanpop("Initial string!") mut String str;
+    printf("Data: %s\n", str->data);
+}
+
+void String::populate_with_2(safe mut String* str, char c, int repeat_char_count);
+int some_number();
+
+void foofoo()
+{
+    cleanpop('A', some_number()) String str;
+    if (str->size > 5)
+        return;
+    
+    // do stuff
+}
+```
+### Transpiled C
+```C
+void String__populate_with_1(String* const str, const char* const c_string)
+{
+    EC__NULL__CHECK(str);
+    EC__NULL__CHECK(c_string);
+    String__populate(str);
+    String__set(str, c_string);
+}
+
+void baz()
+{
+    String str;
+    String__populate_with_1(&str, "Initial string!");
+    printf("Data: %s\n", str->data);
+    String__cleanup(&str);
+}
+
+void String__populate_with_2(String* const str, const char c, const int repeat_char_count);
+int some_number();
+
+void foofoo()
+{
+    const String str;
+    String__populate_with_2((String*)&str, 'A', some_number());
+    if (str->size > 5) {
+        String__cleanup((String*)&str);
+        return;
+    }
+
+    // do stuff
+    String__cleanup((String*)&str);
+}
+```
 
 
 # TODO
 - invert keyword **safe** so everything is safe by default and make user use keyword **nullable** for pointers that may be null
 - keyword **typenum**: add ability to assign internal type e.g. typenum(char) Status { OK = 0, Error = 1 };
-- keyword **cleanpop**: give it ability to take arguments
 
 # Bugs
 As a prototype this mini-project will never be perfect, it is a proof of concept. But less acceptable bugs include

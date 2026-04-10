@@ -199,12 +199,38 @@ void bar()
 
 }
 
+// ========= cleanpop with arguments =========
+
+void String::populate_with_1(safe mut String* str, safe char* c_string)
+{
+    String::populate(str);
+    String::set(str, c_string);
+}
+
+void baz()
+{
+    cleanpop("Initial string!") mut String str;
+    printf("Data: %s\n", str->data);
+}
+
+void String::populate_with_2(safe mut String* str, char c, int repeat_char_count);
+int some_number();
+
+void foofoo()
+{
+    cleanpop('A', some_number()) String str;
+    if (str->size > 5)
+        return;
+    
+    // do stuff
+}
+
 // ========= cleanpop macros and standard types =========
 
 #define int::populate(i) (*i) = 0
 #define int::cleanup(i) 
 
-void baz()
+void foobar()
 {
     cleanpop mut int i;
     // Do stuff
