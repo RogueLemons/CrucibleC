@@ -42,7 +42,7 @@ The following examples are taken directly from the files example.ec and example.
 #include "normal/c/file.h"
 ```
 
-## Prefix
+## Organize functions with keyword prefix
 ### EasyC
 ```c
 static int add(int a, int b)
@@ -148,7 +148,7 @@ int int_math__multiply(const int factor_a, const int factor_b)
 }
 ```
 
-## Const by default and mut
+## Const by default and keyword mut
 ### EasyC
 ```c
 int normalize_to_range(int value, int low_boundary, int high_boundary)
@@ -202,7 +202,7 @@ void set_to_zero_if_negative(int* const i_ptr)
 }
 ```
 
-## Safe pointers that may not be null
+## Pointers that are not null with keyword safe
 ### EasyC
 ```c
 float dereference_float(safe float* f_ptr)
@@ -248,7 +248,7 @@ const float* const get_ratio()
 }
 ```
 
-## Automatically typed structs with typestruct
+## Automatically typed structs with keyword typestruct
 ### EasyC
 ```c
 typestruct Color
@@ -269,7 +269,7 @@ struct Color
 typedef struct Color Color;
 ```
 
-## Inline definitions with indef
+## Inline definitions with keyword indef
 ### EasyC
 ```c
 void Color::set::white(safe mut Color* col)
@@ -290,7 +290,7 @@ void Color__set__white(Color* const col)
 }
 ```
 
-## Type-safe enums with typenum
+## Type-safe enums with keyword typenum
 ### EasyC
 ```c
 typenum LogOption
@@ -344,7 +344,7 @@ void Log(const char* const log, const LogOption logopt)
 }
 ```
 
-## Automatic struct initialization and cleanup with cleanpop
+## Automatic memory management with keyword cleanpop
 ### EasyC
 ```c
 typestruct String
