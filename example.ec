@@ -24,23 +24,22 @@ prefix int_math
 
     prefix detail 
     {
-        static int divide_and_round(int numerator, int denominator) 
+        static int divide_and_round(int numerator, int denominator)
         {
-            if ((numerator > 0 && denominator > 0) || (numerator < 0 && denominator < 0)) 
-            {
-                return (numerator + denominator / 2) / denominator;
-            } 
-            else 
-            {
-                return (numerator - denominator / 2) / denominator;
-            }
+            unsigned int sign_diff = ((unsigned int)(numerator ^ denominator)) >> 31;
+            int sign = 1 - 2*sign_diff;   // +1 or -1
+
+            int abs_den = denominator < 0 ? -denominator : denominator;
+            int bias = abs_den / 2;
+
+            return (numerator + sign*bias) / denominator;
         }
 
         static void abort_for_illegal_denominator(int denominator)
         {
             if (denominator == 0) 
             {
-                ::printf("Error: division by zero.");
+                ::printf("Error: division by zero.\n");
                 ::exit(1);
             }
         }
@@ -95,7 +94,7 @@ static mut float ratio = 0.4;
 
 safe float* get_ratio()
 {
-    safe float* result = ratio;
+    safe float* result = &ratio;
     return result;
 }
 
@@ -152,17 +151,17 @@ typenum(char) GraphicMode
 
 // ========= typenum based on c-strings =========
 
-typenum(char*) ErrorType
+typenum(const char*) ErrorType
 {
     mechanical = "Mechanical failure",
     electrical = "Electrical failure",
-    programatic = "Software failure"
+    software = "Software failure"
 };
 
 void PrintErrorMessage(ErrorType err)
 {
     char* err_msg = ErrorType::get(err);
-    printf(err_msg);
+    printf("%s\n", err_msg);
 }
 
 // ========= cleanpop =========
@@ -188,7 +187,7 @@ void String::cleanup(safe mut String* str)
 }
 void String::set(safe mut String* target, safe char* c_string);
 void String::add(safe mut String* target, safe char* addition);
-void String::equals(safe String* str1, safe String* str2);
+int String::equals(safe String* str1, safe String* str2);
 
 void foo()
 {
@@ -211,7 +210,7 @@ void bar()
         return;
     }
 
-    if (greeting_1.data == NULL || greeting_1.data == NULL)
+    if (greeting_1.data == NULL || greeting_2.data == NULL)
     {
         printf("Something went wrong");
         return;

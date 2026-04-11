@@ -79,23 +79,22 @@ prefix int_math
 
     prefix detail 
     {
-        static int divide_and_round(int numerator, int denominator) 
+        static int divide_and_round(int numerator, int denominator)
         {
-            if ((numerator > 0 && denominator > 0) || (numerator < 0 && denominator < 0)) 
-            {
-                return (numerator + denominator / 2) / denominator;
-            } 
-            else 
-            {
-                return (numerator - denominator / 2) / denominator;
-            }
+            unsigned int sign_diff = ((unsigned int)(numerator ^ denominator)) >> 31;
+            int sign = 1 - 2*sign_diff;   // +1 or -1
+
+            int abs_den = denominator < 0 ? -denominator : denominator;
+            int bias = abs_den / 2;
+
+            return (numerator + sign*bias) / denominator;
         }
 
         static void abort_for_illegal_denominator(int denominator)
         {
             if (denominator == 0) 
             {
-                ::printf("Error: division by zero.");
+                ::printf("Error: division by zero.\n");
                 ::exit(1);
             }
         }
@@ -132,21 +131,20 @@ int int_math__subtract(const int minuend, const int subtrahend)
 
 static int int_math__detail__divide_and_round(const int numerator, const int denominator)
 {
-    if ((numerator > 0 && denominator > 0) || (numerator < 0 && denominator < 0))
-    {
-        return (numerator + denominator / 2) / denominator;
-    }
-    else
-    {
-        return (numerator - denominator / 2) / denominator;
-    }
+    unsigned const int sign_diff = ((unsigned const int)(numerator ^ denominator)) >> 31;
+    const int sign = 1 - 2*sign_diff; // +1 or -1
+
+    const int abs_den = denominator < 0 ? -denominator : denominator;
+    const int bias = abs_den / 2;
+
+    return (numerator + sign*bias) / denominator;
 }
 
 static void int_math__detail__abort_for_illegal_denominator(const int denominator)
 {
     if (denominator == 0)
     {
-        printf("Error: division by zero.");
+        printf("Error: division by zero.\n");
         exit(1);
     }
 }
@@ -229,7 +227,7 @@ static mut float ratio = 0.4;
 
 safe float* get_ratio()
 {
-    safe float* result = ratio;
+    safe float* result = &ratio;
     return result;
 }
 ```
@@ -257,7 +255,7 @@ static float ratio = 0.4;
 
 const float* const get_ratio()
 {
-    const float* const result = ratio;
+    const float* const result = &ratio;
     EC__NULL__CHECK(result);
     return result;
 }
@@ -378,26 +376,26 @@ typedef struct GraphicMode GraphicMode;
 ```
 #### EasyC
 ```c
-typenum(char*) ErrorType
+typenum(const char*) ErrorType
 {
     mechanical = "Mechanical failure",
     electrical = "Electrical failure",
-    programatic = "Software failure"
+    software = "Software failure"
 };
 
 void PrintErrorMessage(ErrorType err)
 {
     char* err_msg = ErrorType::get(err);
-    printf(err_msg);
+    printf("%s\n", err_msg);
 }
 ```
 #### Transpiled C
 ```c
-struct ErrorType { char* ErrorType_value; };
+struct ErrorType { const char* ErrorType_value; };
 typedef struct ErrorType ErrorType;
 #define ErrorType__mechanical ((const ErrorType){ .ErrorType_value = "Mechanical failure" })
 #define ErrorType__electrical ((const ErrorType){ .ErrorType_value = "Electrical failure" })
-#define ErrorType__programatic ((const ErrorType){ .ErrorType_value = "Software failure" })
+#define ErrorType__software ((const ErrorType){ .ErrorType_value = "Software failure" })
 #define ErrorType__count 3
 #define ErrorType__equals(a, b) ((a).ErrorType_value == (b).ErrorType_value)
 #define ErrorType__get(a) ((a).ErrorType_value)
@@ -405,7 +403,7 @@ typedef struct ErrorType ErrorType;
 void PrintErrorMessage(const ErrorType err)
 {
     const char* const err_msg = ErrorType__get(err);
-    printf(err_msg);
+    printf("%s\n", err_msg);
 }
 ```
 
@@ -500,7 +498,7 @@ void bar()
         return;
     }
 
-    if (greeting_1.data == NULL || greeting_1.data == NULL)
+    if (greeting_1.data == NULL || greeting_2.data == NULL)
     {
         printf("Something went wrong");
         return;
@@ -514,7 +512,7 @@ void bar()
 #### Transpiled C
 ```c
 void String__add(String* const target, const char* const addition);
-void String__equals(const String* const str1, const String* const str2);
+int String__equals(const String* const str1, const String* const str2);
 
 void bar()
 {
@@ -536,7 +534,7 @@ void bar()
         return;
     }
 
-    if (greeting_1.data == NULL || greeting_1.data == NULL)
+    if (greeting_1.data == NULL || greeting_2.data == NULL)
     {
         printf("Something went wrong");
         String__cleanup((String*)&greeting_2);
@@ -617,6 +615,7 @@ void foofoo()
 - rename keyword **safe** (perhaps **check**?)
 - invert keyword **safe** so everything is safe by default and make user use keyword **nullable** for pointers that may be null
 - consider disallowing variables (and arguments) to be assigned with **cleanpop** variables, only allowing assignment with a new move operator (not to arguments) which moves the cleanup logic to the new variable (which might require it clean itself up), otherwise only pointers allowed
+- IMPORTANT: fix **cleanpop** const variables, may not cast away the const
 
 # Bugs
 As a prototype this mini-project will never be perfect, it is a proof of concept. But less acceptable bugs include

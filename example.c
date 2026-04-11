@@ -40,21 +40,20 @@ int int_math__subtract(const int minuend, const int subtrahend)
 
 static int int_math__detail__divide_and_round(const int numerator, const int denominator)
 {
-    if ((numerator > 0 && denominator > 0) || (numerator < 0 && denominator < 0))
-    {
-        return (numerator + denominator / 2) / denominator;
-    }
-    else
-    {
-        return (numerator - denominator / 2) / denominator;
-    }
+    unsigned const int sign_diff = ((unsigned const int)(numerator ^ denominator)) >> 31;
+    const int sign = 1 - 2*sign_diff; // +1 or -1
+
+    const int abs_den = denominator < 0 ? -denominator : denominator;
+    const int bias = abs_den / 2;
+
+    return (numerator + sign*bias) / denominator;
 }
 
 static void int_math__detail__abort_for_illegal_denominator(const int denominator)
 {
     if (denominator == 0)
     {
-        printf("Error: division by zero.");
+        printf("Error: division by zero.\n");
         exit(1);
     }
 }
@@ -108,7 +107,7 @@ static float ratio = 0.4;
 
 const float* const get_ratio()
 {
-    const float* const result = ratio;
+    const float* const result = &ratio;
     EC__NULL__CHECK(result);
     return result;
 }
@@ -172,11 +171,11 @@ typedef struct GraphicMode GraphicMode;
 
 // ========= typenum based on c-strings =========
 
-struct ErrorType { char* ErrorType_value; };
+struct ErrorType { const char* ErrorType_value; };
 typedef struct ErrorType ErrorType;
 #define ErrorType__mechanical ((const ErrorType){ .ErrorType_value = "Mechanical failure" })
 #define ErrorType__electrical ((const ErrorType){ .ErrorType_value = "Electrical failure" })
-#define ErrorType__programatic ((const ErrorType){ .ErrorType_value = "Software failure" })
+#define ErrorType__software ((const ErrorType){ .ErrorType_value = "Software failure" })
 #define ErrorType__count 3
 #define ErrorType__equals(a, b) ((a).ErrorType_value == (b).ErrorType_value)
 #define ErrorType__get(a) ((a).ErrorType_value)
@@ -184,7 +183,7 @@ typedef struct ErrorType ErrorType;
 void PrintErrorMessage(const ErrorType err)
 {
     const char* const err_msg = ErrorType__get(err);
-    printf(err_msg);
+    printf("%s\n", err_msg);
 }
 
 // ========= cleanpop =========
@@ -213,7 +212,7 @@ void String__cleanup(String* const str)
 }
 void String__set(String* const target, const char* const c_string);
 void String__add(String* const target, const char* const addition);
-void String__equals(const String* const str1, const String* const str2);
+int String__equals(const String* const str1, const String* const str2);
 
 void foo()
 {
@@ -244,7 +243,7 @@ void bar()
         return;
     }
 
-    if (greeting_1.data == NULL || greeting_1.data == NULL)
+    if (greeting_1.data == NULL || greeting_2.data == NULL)
     {
         printf("Something went wrong");
         String__cleanup((String*)&greeting_2);
