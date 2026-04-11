@@ -200,13 +200,13 @@ void foo()
 void bar()
 {
     cleanpop mut String greeting_1;
-    String* greeting_1_view = &greeting_1;
     String::set(&greeting_1, "Hello there!");
+    String* greeting_1_view = &greeting_1;
     
     cleanpop mut String greeting_2;
     String* greeting_2_view = &greeting_2;
 
-    if (String::equals(&greeting_1, &greeting_2))
+    if (String::equals(greeting_1_view, greeting_2_view))
     {
         cleanpop mut String doppelganger;
         String::set(&doppelganger, "Wow, they are doppelgangers!");

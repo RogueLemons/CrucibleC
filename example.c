@@ -228,14 +228,14 @@ void bar()
 {
     String greeting_1;
     String__populate(&greeting_1);
-    const String* const greeting_1_view = &greeting_1;
     String__set(&greeting_1, "Hello there!");
+    const String* const greeting_1_view = &greeting_1;
 
     String greeting_2;
     String__populate(&greeting_2);
     const String* const greeting_2_view = &greeting_2;
 
-    if (String__equals(&greeting_1, &greeting_2))
+    if (String__equals(greeting_1_view, greeting_2_view))
     {
         String doppelganger;
         String__populate(&doppelganger);

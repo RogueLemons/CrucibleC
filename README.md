@@ -374,38 +374,6 @@ typedef struct GraphicMode GraphicMode;
 #define GraphicMode__equals(a, b) ((a).GraphicMode_value == (b).GraphicMode_value)
 #define GraphicMode__get(a) ((a).GraphicMode_value)
 ```
-#### EasyC
-```c
-typenum(const char*) ErrorType
-{
-    mechanical = "Mechanical failure",
-    electrical = "Electrical failure",
-    software = "Software failure"
-};
-
-void PrintErrorMessage(ErrorType err)
-{
-    char* err_msg = ErrorType::get(err);
-    printf("%s\n", err_msg);
-}
-```
-#### Transpiled C
-```c
-struct ErrorType { const char* ErrorType_value; };
-typedef struct ErrorType ErrorType;
-#define ErrorType__mechanical ((const ErrorType){ .ErrorType_value = "Mechanical failure" })
-#define ErrorType__electrical ((const ErrorType){ .ErrorType_value = "Electrical failure" })
-#define ErrorType__software ((const ErrorType){ .ErrorType_value = "Software failure" })
-#define ErrorType__count 3
-#define ErrorType__equals(a, b) ((a).ErrorType_value == (b).ErrorType_value)
-#define ErrorType__get(a) ((a).ErrorType_value)
-
-void PrintErrorMessage(const ErrorType err)
-{
-    const char* const err_msg = ErrorType__get(err);
-    printf("%s\n", err_msg);
-}
-```
 
 ## Automatic memory management with keyword cleanpop
 #### EasyC
@@ -489,13 +457,13 @@ void String::equals(check String* str1, check String* str2);
 void bar()
 {
     cleanpop mut String greeting_1;
-    String* greeting_1_view = &greeting_1;
     String::set(&greeting_1, "Hello there!");
+    String* greeting_1_view = &greeting_1;
     
     cleanpop mut String greeting_2;
     String* greeting_2_view = &greeting_2;
 
-    if (String::equals(&greeting_1, &greeting_2))
+    if (String::equals(greeting_1_view, greeting_2_view))
     {
         cleanpop mut String doppelganger;
         String::set(&doppelganger, "Wow, they are doppelgangers!");
@@ -523,14 +491,14 @@ void bar()
 {
     String greeting_1;
     String__populate(&greeting_1);
-    const String* const greeting_1_view = &greeting_1;
     String__set(&greeting_1, "Hello there!");
+    const String* const greeting_1_view = &greeting_1;
 
     String greeting_2;
     String__populate(&greeting_2);
     const String* const greeting_2_view = &greeting_2;
 
-    if (String__equals(&greeting_1, &greeting_2))
+    if (String__equals(greeting_1_view, greeting_2_view))
     {
         String doppelganger;
         String__populate(&doppelganger);
@@ -675,11 +643,14 @@ void foobar()
 
 
 # TODO
+- transform project into a code analysis tool for pure C code
 - consider inverting keyword **check** so everything is check by default and make user use keyword **nullable** for pointers that may be null
 - consider adding **cleanpop** const variables (could create mutable variable with weird name and a const pointer to it with users original name, or just tell users to create const pointer view variables)
+- the transpiler is only used on a file-by-file basis on purpose, the project would need a companion tool or be expanded in order to verify that functions returning **check** pointers have the same signature in declarations and definitions 
 
 # Bugs
 As a prototype this mini-project will never be perfect, it is a proof of concept. But less acceptable bugs include
 - cannot use * without whitespace after unless dereferencing (* some_ptr not ok) or multiplying (a * b not ok)
 - cannot typedef and define struct in same statement
 - mut/const management cannot see function arg types and won't adjust const correctness if type does not exist in file in other format (e.g. as a normal variable), also cannot detect typedefs as types to apply mut/const rules to
+- fix **typenum** of pointer type not getting different pointers from different source files due to define statements
