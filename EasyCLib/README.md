@@ -1,10 +1,28 @@
 # EasyC Lib
-Write safe C code more easily. 
+A small C library for writing safer, more consistent C code.
 
-Contains a header library and a code parser (TODO) to provide warnings.
+Includes a header-only utility library and a planned static analysis parser for additional warnings and safety checks.
+
+## Table of Contents
+* [Overview](#easyc-lib)
+* [Header Library](#header-library)
+* [Core Headers](#core-headers)
+  * [ec.h](#ech)
+  * [ec_static_assert.h](#ec_static_asserth)
+  * [ec_inline.h](#ec_inlineh)
+  * [ec_typenum.h](#ec_typenumh)
+  * [ec_opaque_storage.h](#ec_opaque_storageh)
+  * [ec_result.h](#ec_resulth)
+* [TODO](#todo)
+  * [Library](#todo)
+  * [Parser](#todo)
 
 ## Header Library
-A plug-and-play header library that must only be added to your include folder in your build system. 
+A drop-in, header-only library designed for easy integration into any C project. Simply add it to your include path and start using it immediately—no build steps or external dependencies required.
+
+It provides a set of portable utilities that abstract away common inconsistencies across compilers and C standards. The goal is to improve safety, portability, and clarity in low-level C code while keeping the API minimal and predictable.
+
+This library does not aim to build a macro language inside C. Instead, it focuses on small, necessary, and practical abstractions that make writing safe, consistent C code easier without hiding the language itself.
 
 ### ec.h
 A simple header that includes all other headers.
@@ -18,7 +36,7 @@ It provides:
 - MSVC `static_assert` compatibility
 - Fallback for older C standards
 
-### Why use this?
+#### Why use this?
 It exists because C does not provide a consistent, cross-compiler mechanism for enforcing compile-time assertions. This abstraction makes it possible to validate assumptions about types, sizes, and configuration during compilation across different compilers and language standards. This results in earlier detection of platform-specific issues and more reliable portable code.
 
 #### Example
@@ -194,7 +212,7 @@ typedef struct {
 `EC_OPAQUE_DEFINE` is required in the `.c` file because it performs compile-time validation of the real `struct Color` definition. It ensures that the actual struct’s size and alignment match the declared `COLOR_SIZE` and `COLOR_ALIGN`. Without this check, there is no guarantee that the internal implementation fits the opaque storage, which can lead to ABI mismatches or undefined behavior.
 
 ### ec_result.h
-A tiny, portable `Result<T, E>` type for C with explicit error handling and controlled propagation.
+A tiny, portable `Result<T, E>` style type for C with explicit error handling and controlled propagation.
 
 It provides:
 - `Result<T, E>` style struct
