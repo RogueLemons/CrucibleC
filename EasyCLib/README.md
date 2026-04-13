@@ -10,3 +10,4 @@ A plug-and-play header library that must only be added to your include folder in
 ### ec_inline.h
 ### ec_typenum.h
 ### ec_opaque_storage.h
+### ec_result.h
