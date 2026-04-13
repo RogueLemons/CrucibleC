@@ -24,7 +24,7 @@ Parser must be implemented to transfer goals of EasyCTranspiler into a warning/s
 It shall
 - Tokenize code properly and use no naive regex tricks.
 - Verify const correctness of variables (possibly ignoring variables used in functions as first iteration).
-- Make all mutable pointer function arguments start their names with out_ for maximum clarity.
+- Make all mutable pointer function arguments start their names with out_ for maximum clarity (or move_ to show a transfer of ownership).
 - Warn against using enum.
 - Look at file path and if file path is included in names (e.g. function or struct) then suggest splitting by __ (optionally user defined) to mimic namespaces and improve readability, also warn if name contains e.g. 7 underscores.
 - Verify all structs immediately contain a typedef statement on next line.
