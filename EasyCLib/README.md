@@ -6,7 +6,6 @@ Includes a header-only utility library and a planned static analysis parser for 
 ## Table of Contents
 * [Overview](#easyc-lib)
 * [Header Library](#header-library)
-* [Core Headers](#core-headers)
   * [ec.h](#ech)
   * [ec_static_assert.h](#ec_static_asserth)
   * [ec_inline.h](#ec_inlineh)
