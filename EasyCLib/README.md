@@ -57,7 +57,7 @@ EC_STATIC_ASSERT(sizeof(int) == 4, int_must_be_4_bytes);
 ##### Expansion
 ```c
 // e.g. this for modern compilers
-static_assert(sizeof(int) == 4, int_must_be_4_bytes);
+static_assert(sizeof(int) == 4, "int_must_be_4_bytes");
 // or this for older (or barebone) compilers
 typedef char static_assert_failed_int_must_be_4_bytes[(sizeof(int) == 4) ? 1 : -1];
 ```
