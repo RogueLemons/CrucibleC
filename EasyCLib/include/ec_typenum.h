@@ -11,9 +11,6 @@ C Compatibility:
 - Fully header-safe (no linker multiple-definition issues)
 - No use of enum types (ABI-stable, deterministic)
 
-Requires:
-    #include "ec_inline.h"
-
 ===============================================================================
 
 ========================
