@@ -31,8 +31,14 @@ For compilers without native static assert support, this will cause a compile-ti
 
 #else
 
+    #if defined(__COUNTER__)
+        #define IC_INTERNAL_SA_UNIQUE_ID __COUNTER__
+    #else
+        #define IC_INTERNAL_SA_UNIQUE_ID __LINE__
+    #endif
+
     #define IC_STATIC_ASSERT(cond, msg) \
-        typedef char IC_INTERNAL_SA_XGLUE(static_assert_failed_at_line_, __LINE__) \
+        typedef char IC_INTERNAL_SA_XGLUE(static_assert_failed_, IC_INTERNAL_SA_UNIQUE_ID) \
         [(cond) ? 1 : -1]
 
 #endif
