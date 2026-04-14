@@ -238,7 +238,6 @@ It exists because C lacks built-in error handling, forcing either error codes or
 
 ##### Header
 ```c
-#include <stdio.h>
 #include "ic_result.h"
 
 IC_RESULT_TYPE(CharResult, char, int)
@@ -247,6 +246,7 @@ IC_RESULT_TYPE(CharResult, char, int)
 ##### Usage
 ```c
 #include "char_result.h"
+#include <stdio.h>
 
 CharResult get_letter(int ok) {
     CharResult r = ok ? CharResult_ok('A') : CharResult_err(-1);
@@ -288,6 +288,114 @@ IC_HEADER_FUNC CharResult CharResult_err(int e) {
 }
 ```
 
+### Create a standardized, type-safe error system
+The following will provide an example, showing how to use this library to create a standardize error system, working like an exception-as-return-value system, with one standardized error type for the whole application. 
+
+#### my_app_result.h
+Create your header where all errors shall be defined. Whenever you want to add more errors (or your Java mind wants more exceptions) then this is the file you edit. With uint16_t you can define 65536 different errors or with uint8_t 256. 
+
+```c
+#include "ic_typenum.h"
+#include <stdint.h>
+
+#define MY_APP_ERROR_LIST(X, Type) \
+    X(Type, NoError, 0, "Everything is fine") \
+    X(Type, Runtime, 1, "Something went wrong") \
+    X(Type, Argument, 2, "Illegal argument was provided") \
+    X(Type, NullRef, 3, "Illegal null pointer was provided") \
+    X(Type, Permission, 4, "Failure due to lacking permissions") \
+    X(Type, BadAlloc, 5, "Failed to allocate memory")
+
+IC_TYPENUM_FULL(Error, uint16_t, MY_APP_ERROR_LIST)
+```
+
+Then add your own macro that builds upon the IronC result system. `MY_APP_RESULT_TYPE(Type)` is the "real" macro which when used does the same thing as writing `IC_RESULT_TYPE(TypeResult, Type, Error)`. 
+
+```c
+#include "ic_result.h"
+
+#define RESULT_NAME_IMPL(Type) Type##Result
+#define RESULT_NAME(Type) RESULT_NAME_IMPL(Type)
+#define MY_APP_RESULT_TYPE_IMPL(Name, Type) IC_RESULT_TYPE(Name, Type, Error)
+#define MY_APP_RESULT_TYPE(Type) MY_APP_RESULT_TYPE_IMPL(RESULT_NAME(Type), Type)
+```
+
+You can then in this header add the common types as well if you want. It is good to keep these ultra common types in a single place.
+
+```c
+IC_RESULT_TYPE(CharResult, char, Error)
+IC_RESULT_TYPE(IntResult, int, Error)
+IC_RESULT_TYPE(FloatResult, float, Error)
+typedef const char* StringLiteral;
+MY_APP_RESULT_TYPE(StringLiteral)
+IC_RESULT_TYPE(UI16Result, uint16_t, Error)
+```
+
+Put all the parts from this section in the same file, but with the file inclusions at the top of course.
+
+#### example.h
+To make new result types based on structs defined in this project, then the best place to put the result type is next to the struct.
+
+```c
+#include "my_app_result.h"
+
+struct Block
+{
+    int height;
+    int length;
+    int width;
+};
+typedef struct Block Block;
+
+MY_APP_RESULT_TYPE(Block)
+
+BlockResult create_block(int h, int l, int w); 
+```
+
+#### example.c
+At this point it is easy to define the declared function.
+
+```c
+BlockResult create_block(int h, int l, int w)
+{
+    if ((h <= 0) || (l <= 0) || (w <= 0))
+    {
+        return BlockResult_err(Error_Argument);
+    }
+
+    Block block = { .height = h, .length = l, .width = w };
+    return BlockResult_ok(block);
+}
+```
+
+#### other_file_example.c
+If a global error type is defined and set up in a result system the code can later look like this example. The end user should use these tools to build up their own tools and not just rush in. Setting up tools and macros that suits a certain group's and project's needs before rushing in to start coding is a good approach. IronC is a library to make tools with clear names, but the users should pick what they need and modify.
+
+```c
+// These definitions would exist in a top level header
+#define valueof(x) IC_RESULT_VALUE(x)
+#define return_on_err(type, result) IC_TRY_RETURN_ERR_AS(type, result)
+
+SwordResult make_sword(Resources* resources)
+{
+    MoltenIronResult molten_iron = smelt_iron(resources);
+    return_on_err(SwordResult, molten_iron);
+
+    SteelBlockResult steel_block = forge_steel(resources, valueof(molten_iron));
+    return_on_err(SwordResult, steel_block);
+
+    BladeResult blade = make_blade(resources, valueof(steel_block));
+    return_on_err(SwordResult, blade);
+
+    HiltResult hilt = make_hilt(resources);
+    return_on_err(SwordResult, hilt);
+
+    SwordResult sword = combine_into_sword(valueof(blade), valueof(hilt)); 
+    return sword;
+}
+```
+
+
 # TODO
 
 ## Lib
@@ -297,6 +405,9 @@ IC_HEADER_FUNC CharResult CharResult_err(int e) {
 - Add debug mode that uses runtime assert that can be turned off with macro tag (e.g. for accessing Result types)
 - Consider removing result accessors (e.g. IC_RESULT_VALUE) and replace with functions for const safety (maybe overkill? Could include asserts, probably do this for SteelCLib instead)
 - Expand typenum for SteelCLib to take a manually assigned comparitor for compatability with all inner types
+- For SteelCLib add macro tag that performs static assert on size of all result types for users to guarantee size of return values?
+- Add memory alloc and span helpers? Add easy and safe zero init?
+- Make typenum generated functions use pointers?
 - Add tests that can be verified on multiple compilers
 - Rename project to IronC (because it is rigid and not using it can cause code to break) with SteelC as name of expanded version (more flexible), and then call the parser WorkshopC because it helps create strong-like-metal C
 - Add example and guidance for creating a strong system linking together IronC result types, typenums, and structs. 

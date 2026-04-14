@@ -62,7 +62,7 @@ Core type + helpers
 #define IC_INNER_ENUM_TYPE_MAX_SIZE (2 * sizeof(void *))
 
 #define IC_TYPENUM(name, type, LIST) \
-    IC_STATIC_ASSERT(sizeof(type) <= IC_INNER_ENUM_TYPE_MAX_SIZE, "Inner enum type is too large, define typenum and related functions manually") \
+    IC_STATIC_ASSERT(sizeof(type) <= IC_INNER_ENUM_TYPE_MAX_SIZE, "Inner enum type is too large, define typenum and related functions manually"); \
     \
     typedef struct { \
         type name##_value; \
