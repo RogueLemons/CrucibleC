@@ -153,7 +153,7 @@ It provides:
 - Compile-time size and alignment validation
 - Separation of interface and implementation
 
-Expects you to define a fixed `size` and `alignment` for the type. You create it with `IC_OPAQUE_STORAGE(Type, ALIGNMENT, SIZE)` in the header and `IC_OPAQUE_DEFINE(Type, ALIGNMENT, SIZE)` in the source.
+Expects you to define a fixed `size` and `alignment` for the type. You create it with `IC_OPAQUE_STORAGE(Type, ALIGNMENT, SIZE)` in the header and `IC_OPAQUE_IMPL_ASSERT(Type, ALIGNMENT, SIZE)` in the source.
 
 #### Why use this?
 It exists because C struct layouts are normally exposed in headers, tightly coupling users to internal representation and preventing safe evolution of implementation. This abstraction makes it possible to hide internal structure while still allowing stack allocation and enforcing size and alignment constraints. This results in true encapsulation, ABI-safe design, and fully controlled internal state.
@@ -177,21 +177,22 @@ int  color_get_red(const Color* c);
 ```c
 #include "color.h"
 
-struct Color {
+struct ColorImpl {
     int r, g, b;
 };
+typedef struct ColorImpl ColorImpl;
 
-IC_OPAQUE_DEFINE(Color, COLOR_ALIGN, COLOR_SIZE)
+IC_OPAQUE_IMPL_ASSERT(Color, COLOR_ALIGN, COLOR_SIZE)
 
 void color_init(Color* c, int r, int g, int b) {
-    struct Color* real = (struct Color*)c;
+    ColorImpl* real = (ColorImpl*)c;
     real->r = r;
     real->g = g;
     real->b = b;
 }
 
 int color_get_red(const Color* c) {
-    const struct Color* real = (const struct Color*)c;
+    const ColorImpl* real = (const ColorImpl*)c;
     return real->r;
 }
 ```
@@ -217,7 +218,7 @@ typedef struct {
 } Color;
 ```
 
-`IC_OPAQUE_DEFINE` is required in the `.c` file because it performs compile-time validation of the real `struct Color` definition. It ensures that the actual struct’s size and alignment match the declared `COLOR_SIZE` and `COLOR_ALIGN`. Without this check, there is no guarantee that the internal implementation fits the opaque storage, which can lead to ABI mismatches or undefined behavior.
+`IC_OPAQUE_IMPL_ASSERT` is required in the `.c` file because it performs compile-time validation of the real `struct ColorImpl` definition. It ensures that the actual struct’s size and alignment match the declared `COLOR_SIZE` and `COLOR_ALIGN`. Without this check, there is no guarantee that the internal implementation fits the opaque storage, which can lead to ABI mismatches or undefined behavior.
 
 ### ic_result.h
 A tiny, portable `Result<T, E>` style type for C with explicit error handling and controlled propagation.

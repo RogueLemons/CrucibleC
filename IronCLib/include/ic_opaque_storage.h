@@ -37,21 +37,22 @@ HOW TO USE
 
     #include "color.h"
 
-    struct Color {
+    struct ColorImpl {
         int r, g, b;
     };
-
-    IC_OPAQUE_DEFINE(Color, COLOR_ALIGN, COLOR_SIZE)
-
+    typedef struct ColorImpl ColorImpl;
+    
+    IC_OPAQUE_IMPL_ASSERT(Color, COLOR_ALIGN, COLOR_SIZE)
+    
     void color_init(Color* c, int r, int g, int b) {
-        struct Color* real = (struct Color*)c;
+        ColorImpl* real = (ColorImpl*)c;
         real->r = r;
         real->g = g;
         real->b = b;
     }
-
+    
     int color_get_red(const Color* c) {
-        const struct Color* real = (const struct Color*)c;
+        const ColorImpl* real = (const ColorImpl*)c;
         return real->r;
     }
 
@@ -64,7 +65,7 @@ HOW TO USE
 -------------------------------------------------------------------------------
 IMPORTANT RULES
 
-1) ALWAYS call IC_OPAQUE_DEFINE in the .c file
+1) ALWAYS call IC_OPAQUE_IMPL_ASSERT in the .c file
 2) NEVER expose struct fields in headers
 3) alignment must be <= alignof(max_align_t) for portability
 4) access data only via implementation (casting internally)
@@ -138,14 +139,14 @@ Definition check (for .c files)
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 
-    #define IC_OPAQUE_DEFINE(name, alignment, size) \
-        IC_STATIC_ASSERT(sizeof(struct name) == (size), size_mismatch); \
-        IC_STATIC_ASSERT(IC_ALIGNOF(struct name) == (alignment), alignment_mismatch);
+    #define IC_OPAQUE_IMPL_ASSERT(name, alignment, size) \
+        IC_STATIC_ASSERT(sizeof(name) == (size), "size mismatch"); \
+        IC_STATIC_ASSERT(IC_ALIGNOF(name) == (alignment), "alignment mismatch");
 
 #else
 
-    #define IC_OPAQUE_DEFINE(name, alignment, size) \
-        IC_STATIC_ASSERT(sizeof(struct name) == (size), size_mismatch);
+    #define IC_OPAQUE_IMPL_ASSERT(name, alignment, size) \
+        IC_STATIC_ASSERT(sizeof(name) == (size), "size mismatch"); \
 
 #endif
 
