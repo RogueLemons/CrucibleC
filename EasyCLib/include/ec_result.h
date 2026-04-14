@@ -1,9 +1,9 @@
-#ifndef EC_RESULT_H
-#define EC_RESULT_H
+#ifndef IC_RESULT_H
+#define IC_RESULT_H
 
 /*
 ===============================================================================
-EC_RESULT.H
+IC_RESULT.H
 
 C Compatibility:
 - C99: fully supported
@@ -11,8 +11,8 @@ C Compatibility:
 - GCC / Clang / MSVC supported
 
 Dependencies:
-- ec_inline.h        -> EC_HEADER_SAFE
-- ec_static_assert.h -> optional compile-time checks
+- ic_inline.h        -> IC_HEADER_SAFE
+- ic_static_assert.h -> optional compile-time checks
 
 Design:
 - Result<T,E> type
@@ -24,10 +24,10 @@ Design:
 Example Usage:
 
     #include <stdio.h>
-    #include "ec_result.h"
+    #include "ic_result.h"
 
     // Define a Result type: char value, int error
-    EC_RESULT_TYPE(CharResult, char, int)
+    IC_RESULT_TYPE(CharResult, char, int)
 
     CharResult get_letter(int ok) {
         if (ok) {
@@ -38,10 +38,10 @@ Example Usage:
     }
     int main() {
         CharResult r = get_letter(1);
-        if (EC_RESULT_IS_OK(r)) {
-            printf("%c\n", EC_RESULT_VALUE(r));
+        if (IC_RESULT_IS_OK(r)) {
+            printf("%c\n", IC_RESULT_VALUE(r));
         } else {
-            printf("Error: %d\n", EC_RESULT_ERROR(r));
+            printf("Error: %d\n", IC_RESULT_ERROR(r));
         }
         return 0;
     }
@@ -49,7 +49,7 @@ Example Usage:
 ===============================================================================
 */
 
-#include "ec_inline.h"
+#include "ic_inline.h"
 
 /*==============================================================================
   RESULT TYPE + AUTOMATIC CONSTRUCTORS
@@ -62,7 +62,7 @@ This macro generates:
 
 ==============================================================================*/
 
-#define EC_RESULT_TYPE(name, value_type, error_type) \
+#define IC_RESULT_TYPE(name, value_type, error_type) \
     typedef struct { \
         int ok; \
         union { \
@@ -71,11 +71,11 @@ This macro generates:
         } data; \
     } name; \
     \
-    EC_HEADER_SAFE name name##_ok(const value_type v) { \
+    IC_HEADER_SAFE name name##_ok(const value_type v) { \
         return (name){ .ok = 1, .data.value = v }; \
     } \
     \
-    EC_HEADER_SAFE name name##_err(const error_type e) { \
+    IC_HEADER_SAFE name name##_err(const error_type e) { \
         return (name){ .ok = 0, .data.error = e }; \
     }
 
@@ -84,9 +84,9 @@ This macro generates:
   ACCESS HELPERS
 ==============================================================================*/
 
-#define EC_RESULT_IS_OK(r) ((r).ok)
-#define EC_RESULT_VALUE(r) ((r).data.value)
-#define EC_RESULT_ERROR(r) ((r).data.error)
+#define IC_RESULT_IS_OK(r) ((r).ok)
+#define IC_RESULT_VALUE(r) ((r).data.value)
+#define IC_RESULT_ERROR(r) ((r).data.error)
 
 
 /*==============================================================================
@@ -98,7 +98,7 @@ This macro generates:
 
 ==============================================================================*/
 
-#define EC_TRY_RETURN_ERR_AS(type, result) \
+#define IC_TRY_RETURN_ERR_AS(type, result) \
     do { \
         if (!(result).ok) { \
             (void)((type){ .data.error = (result).data.error }); \

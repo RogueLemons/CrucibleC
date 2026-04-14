@@ -1,5 +1,5 @@
-#ifndef EC_INLINE_H
-#define EC_INLINE_H
+#ifndef IC_INLINE_H
+#define IC_INLINE_H
 
 /*
 ===============================================================================
@@ -11,15 +11,15 @@ C Compatibility:
 - MSVC / GCC / Clang supported
 
 Provides:
-    EC_INLINE        -> best-effort inline hint
-    EC_HEADER_SAFE   -> always safe in headers (never causes linker issues)
+    IC_INLINE        -> best-effort inline hint
+    IC_HEADER_SAFE   -> always safe in headers (never causes linker issues)
 
 ===============================================================================
 */
 
 /*
 -------------------------------------------------------------------------------
-EC_INLINE
+IC_INLINE
 
 Purpose:
 - Express intent: "this function should be inlined if possible"
@@ -33,19 +33,19 @@ Use for:
 */
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-    #define EC_INLINE inline
+    #define IC_INLINE inline
 #elif defined(_MSC_VER)
-    #define EC_INLINE __inline
+    #define IC_INLINE __inline
 #elif defined(__GNUC__) || defined(__clang__)
-    #define EC_INLINE __inline__
+    #define IC_INLINE __inline__
 #else
-    #define EC_INLINE
+    #define IC_INLINE
 #endif
 
 
 /*
 -------------------------------------------------------------------------------
-EC_HEADER_SAFE
+IC_HEADER_SAFE
 
 Purpose:
 - SAFE for header-defined functions
@@ -64,13 +64,13 @@ Preferred for:
 */
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-    #define EC_HEADER_SAFE static inline
+    #define IC_HEADER_SAFE static inline
 #elif defined(_MSC_VER)
-    #define EC_HEADER_SAFE static __inline
+    #define IC_HEADER_SAFE static __inline
 #elif defined(__GNUC__) || defined(__clang__)
-    #define EC_HEADER_SAFE static __inline__
+    #define IC_HEADER_SAFE static __inline__
 #else
-    #define EC_HEADER_SAFE static
+    #define IC_HEADER_SAFE static
 #endif
 
 #endif

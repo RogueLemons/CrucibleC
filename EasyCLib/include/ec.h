@@ -1,10 +1,10 @@
-#ifndef EC_H
-#define EC_H
+#ifndef IRON_C_FULL_H
+#define IRON_C_FULL_H
 
-#include "ec_static_assert.h"
-#include "ec_inline.h"
-#include "ec_typenum.h"
-#include "ec_opaque_storage.h"
-#include "ec_result.h"
+#include "ic_static_assert.h"
+#include "ic_inline.h"
+#include "ic_typenum.h"
+#include "ic_opaque_storage.h"
+#include "ic_result.h"
 
-#endif // EC_H
+#endif // IRON_C_FULL_H

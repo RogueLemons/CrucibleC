@@ -1,24 +1,24 @@
-# EasyC Lib
+# IronC Lib
 A small C library for writing safer, more consistent C code.
 
 It is a header-only utility library and a code analysis parser is planned for additional warnings and safety checks.
 
 Includes:
-- Compile-time assertions (`ec_static_assert.h`)
-- Inline and header safety abstractions (`ec_inline.h`)
-- Type-safe enum replacement (`ec_typenum.h`)
-- Opaque struct storage for encapsulation (`ec_opaque_storage.h`)
-- Result-based error handling (`ec_result.h`)
+- Compile-time assertions (`ic_static_assert.h`)
+- Inline and header safety abstractions (`ic_inline.h`)
+- Type-safe enum replacement (`ic_typenum.h`)
+- Opaque struct storage for encapsulation (`ic_opaque_storage.h`)
+- Result-based error handling (`ic_result.h`)
 
 ## Table of Contents
-* [Overview](#easyc-lib)
+* [Overview](#ironc-lib)
 * [Header Library](#header-library)
   * [ec.h](#ech)
-  * [ec_static_assert.h](#ec_static_asserth)
-  * [ec_inline.h](#ec_inlineh)
-  * [ec_typenum.h](#ec_typenumh)
-  * [ec_opaque_storage.h](#ec_opaque_storageh)
-  * [ec_result.h](#ec_resulth)
+  * [ic_static_assert.h](#ic_static_asserth)
+  * [ic_inline.h](#ic_inlineh)
+  * [ic_typenum.h](#ic_typenumh)
+  * [ic_opaque_storage.h](#ic_opaque_storageh)
+  * [ic_result.h](#ic_resulth)
 * [TODO](#todo)
   * [Library](#todo)
   * [Parser](#todo)
@@ -33,11 +33,11 @@ This library does not aim to build a macro language inside C. Instead, it focuse
 ### ec.h
 A simple header that includes all other headers.
 
-### ec_static_assert.h
+### ic_static_assert.h
 A tiny, portable compile-time assertion macro for C.
 
 It provides:
-- `EC_STATIC_ASSERT(condition, message)`
+- `IC_STATIC_ASSERT(condition, message)`
 - Support for C11 `_Static_assert`
 - MSVC `static_assert` compatibility
 - Fallback for older C standards
@@ -49,9 +49,9 @@ It exists because C does not provide a consistent, cross-compiler mechanism for 
 
 ##### Usage
 ```c
-#include "ec_static_assert.h"
+#include "ic_static_assert.h"
 
-EC_STATIC_ASSERT(sizeof(int) == 4, "int must be 4 bytes");
+IC_STATIC_ASSERT(sizeof(int) == 4, "int must be 4 bytes");
 ```
 
 ##### Expansion
@@ -62,12 +62,12 @@ static_assert(sizeof(int) == 4, "int must be 4 bytes");
 typedef char static_assert_failed_at_line_3[(sizeof(int) == 4) ? 1 : -1];
 ```
 
-### ec_inline.h
+### ic_inline.h
 A tiny, portable inline abstraction layer for C.
 
 It provides:
-- `EC_INLINE` for inline intent hints
-- `EC_HEADER_SAFE` for safe header-defined functions
+- `IC_INLINE` for inline intent hints
+- `IC_HEADER_SAFE` for safe header-defined functions
 - Supports C89+, C99 inline, and compiler-specific inline extensions (GCC, Clang, MSVC), with safe fallbacks where inline is unavailable
 
 #### Why use this?
@@ -75,14 +75,14 @@ It exists because inline behavior and header function definitions are not consis
 
 #### Example
 ```c
-#include "ec_inline.h"
+#include "ic_inline.h"
 
-EC_HEADER_SAFE int square(int x) {
+IC_HEADER_SAFE int square(int x) {
     return x * x;
 }
 ```
 
-### ec_typenum.h
+### ic_typenum.h
 A tiny, header-safe, type-safe enum-like system for C using X-macros.
 
 It provides:
@@ -91,7 +91,7 @@ It provides:
 - Helper functions (`*_get`, `*_eq`, `*_to_string`)
 - Controlled, explicit underlying type representation
 
-It expects a basic underlying type (e.g. `int`, `char`) that works with `switch` statements and `==` and the value list must be defined as an X-macro (`LIST(X, Type)` pattern). Use `EC_TYPENUM_FULL(Type, underlying_type, LIST)` as the main entry point. Lower-level macros (`EC_TYPENUM`, `EC_TYPENUM_TO_STRING`, `EC_TYPENUM_GENERATE_CONSTS`) can be used individually to include only the parts you need.
+It expects a basic underlying type (e.g. `int`, `char`) that works with `switch` statements and `==` and the value list must be defined as an X-macro (`LIST(X, Type)` pattern). Use `IC_TYPENUM_FULL(Type, underlying_type, LIST)` as the main entry point. Lower-level macros (`IC_TYPENUM`, `IC_TYPENUM_TO_STRING`, `IC_TYPENUM_GENERATE_CONSTS`) can be used individually to include only the parts you need.
 
 *Note: User is in charge of making sure no duplicate values.*
 
@@ -100,13 +100,13 @@ It exists because C enums do not guarantee a fixed underlying type and are compi
 
 #### Example
 ```c
-#include "ec_typenum.h"
+#include "ic_typenum.h"
 
 #define STATUS_LIST(X, Type) \
     X(Type, Ok, 0, "Everything is fine") \
     X(Type, Error, 1, "Something went wrong")
 
-EC_TYPENUM_FULL(Status, int, STATUS_LIST)
+IC_TYPENUM_FULL(Status, int, STATUS_LIST)
 
 // Usage
 Status s = Status_Ok;
@@ -124,15 +124,15 @@ typedef struct {
     int Status_value;
 } Status;
 
-EC_HEADER_SAFE int Status_get(const Status v) {
+IC_HEADER_SAFE int Status_get(const Status v) {
     return v.Status_value;
 }
 
-EC_HEADER_SAFE int Status_eq(const Status a, const Status b) {
+IC_HEADER_SAFE int Status_eq(const Status a, const Status b) {
     return a.Status_value == b.Status_value;
 }
 
-EC_HEADER_SAFE const char* Status_to_string(const Status v) {
+IC_HEADER_SAFE const char* Status_to_string(const Status v) {
     switch (Status_get(v)) {
         case 0: return "Everything is fine";
         case 1: return "Something went wrong";
@@ -144,7 +144,7 @@ static const Status Status_Ok = {0};
 static const Status Status_Error = {1};
 ```
 
-### ec_opaque_storage.h
+### ic_opaque_storage.h
 A tiny, portable opaque-struct system for C that enables encapsulation while still allowing stack allocation.
 
 It provides:
@@ -153,7 +153,7 @@ It provides:
 - Compile-time size and alignment validation
 - Separation of interface and implementation
 
-Expects you to define a fixed `size` and `alignment` for the type. You create it with `EC_OPAQUE_STORAGE(Type, ALIGNMENT, SIZE)` in the header and `EC_OPAQUE_DEFINE(Type, ALIGNMENT, SIZE)` in the source.
+Expects you to define a fixed `size` and `alignment` for the type. You create it with `IC_OPAQUE_STORAGE(Type, ALIGNMENT, SIZE)` in the header and `IC_OPAQUE_DEFINE(Type, ALIGNMENT, SIZE)` in the source.
 
 #### Why use this?
 It exists because C struct layouts are normally exposed in headers, tightly coupling users to internal representation and preventing safe evolution of implementation. This abstraction makes it possible to hide internal structure while still allowing stack allocation and enforcing size and alignment constraints. This results in true encapsulation, ABI-safe design, and fully controlled internal state.
@@ -162,12 +162,12 @@ It exists because C struct layouts are normally exposed in headers, tightly coup
 
 ##### Header
 ```c
-#include "ec_opaque_storage.h"
+#include "ic_opaque_storage.h"
 
 #define COLOR_SIZE   (sizeof(int) * 3)
-#define COLOR_ALIGN  (EC_ALIGNOF(int))
+#define COLOR_ALIGN  (IC_ALIGNOF(int))
 
-EC_OPAQUE_STORAGE(Color, COLOR_ALIGN, COLOR_SIZE)
+IC_OPAQUE_STORAGE(Color, COLOR_ALIGN, COLOR_SIZE)
 
 void color_init(Color* c, int r, int g, int b);
 int  color_get_red(const Color* c);
@@ -181,7 +181,7 @@ struct Color {
     int r, g, b;
 };
 
-EC_OPAQUE_DEFINE(Color, COLOR_ALIGN, COLOR_SIZE)
+IC_OPAQUE_DEFINE(Color, COLOR_ALIGN, COLOR_SIZE)
 
 void color_init(Color* c, int r, int g, int b) {
     struct Color* real = (struct Color*)c;
@@ -208,18 +208,18 @@ if (color_get_red(&c) > 50)
 ```
 
 ##### Expansion
-`EC_OPAQUE_STORAGE(Color, COLOR_ALIGN, COLOR_SIZE)` expands to:
+`IC_OPAQUE_STORAGE(Color, COLOR_ALIGN, COLOR_SIZE)` expands to:
 
 ```c
-typedef unsigned char ec_byte;
+typedef unsigned char ic_byte;
 typedef struct {
-    /*align as COLOR_ALIGN*/ ec_byte data[COLOR_SIZE];
+    /*align as COLOR_ALIGN*/ ic_byte data[COLOR_SIZE];
 } Color;
 ```
 
-`EC_OPAQUE_DEFINE` is required in the `.c` file because it performs compile-time validation of the real `struct Color` definition. It ensures that the actual struct’s size and alignment match the declared `COLOR_SIZE` and `COLOR_ALIGN`. Without this check, there is no guarantee that the internal implementation fits the opaque storage, which can lead to ABI mismatches or undefined behavior.
+`IC_OPAQUE_DEFINE` is required in the `.c` file because it performs compile-time validation of the real `struct Color` definition. It ensures that the actual struct’s size and alignment match the declared `COLOR_SIZE` and `COLOR_ALIGN`. Without this check, there is no guarantee that the internal implementation fits the opaque storage, which can lead to ABI mismatches or undefined behavior.
 
-### ec_result.h
+### ic_result.h
 A tiny, portable `Result<T, E>` style type for C with explicit error handling and controlled propagation.
 
 It provides:
@@ -228,7 +228,7 @@ It provides:
 - Safe access macros
 - Early-return error propagation (`TRY`-style flow)
 
-Result types as created with `EC_RESULT_TYPE`. `EC_RESULT_IS_OK`, `EC_RESULT_VALUE`, and `EC_RESULT_ERROR` provide safe access to the result state and its data. The design avoids exceptions by making error handling explicit, while keeping the API ergonomic and easy to use. `EC_TRY_RETURN_ERR_AS` enables early-return error propagation when chaining operations.
+Result types as created with `IC_RESULT_TYPE`. `IC_RESULT_IS_OK`, `IC_RESULT_VALUE`, and `IC_RESULT_ERROR` provide safe access to the result state and its data. The design avoids exceptions by making error handling explicit, while keeping the API ergonomic and easy to use. `IC_TRY_RETURN_ERR_AS` enables early-return error propagation when chaining operations.
 
 #### Why use this?
 It exists because C lacks built-in error handling, forcing either error codes or implicit control flow patterns that are easy to misuse. This abstraction makes it possible to represent success and failure explicitly as data while enabling controlled propagation of errors through function chains. This results in more predictable control flow and fewer ignored or hidden failure states.
@@ -238,9 +238,9 @@ It exists because C lacks built-in error handling, forcing either error codes or
 ##### Header
 ```c
 #include <stdio.h>
-#include "ec_result.h"
+#include "ic_result.h"
 
-EC_RESULT_TYPE(CharResult, char, int)
+IC_RESULT_TYPE(CharResult, char, int)
 ```
 
 ##### Usage
@@ -250,24 +250,24 @@ EC_RESULT_TYPE(CharResult, char, int)
 CharResult get_letter(int ok) {
     CharResult r = ok ? CharResult_ok('A') : CharResult_err(-1);
     // Return early for error
-    EC_TRY_RETURN_ERR_AS(CharResult, r);
+    IC_TRY_RETURN_ERR_AS(CharResult, r);
     // Do stuff for r being valid
     return r;
 }
 
 int main() {
     CharResult r = get_letter(1);
-    if (EC_RESULT_IS_OK(r)) {
-        printf("%c\n", EC_RESULT_VALUE(r));
+    if (IC_RESULT_IS_OK(r)) {
+        printf("%c\n", IC_RESULT_VALUE(r));
     } else {
-        printf("Error: %d\n", EC_RESULT_ERROR(r));
+        printf("Error: %d\n", IC_RESULT_ERROR(r));
     }
     return 0;
 }
 ```
 
 ##### Expansion
-`EC_RESULT_TYPE(CharResult, char, int)` expands to:
+`IC_RESULT_TYPE(CharResult, char, int)` expands to:
 
 ```c
 typedef struct {
@@ -278,11 +278,11 @@ typedef struct {
     } data;
 } CharResult;
 
-EC_HEADER_SAFE CharResult CharResult_ok(char v) {
+IC_HEADER_SAFE CharResult CharResult_ok(char v) {
     return (CharResult){ .ok = 1, .data.value = v };
 }
 
-EC_HEADER_SAFE CharResult CharResult_err(int e) {
+IC_HEADER_SAFE CharResult CharResult_err(int e) {
     return (CharResult){ .ok = 0, .data.error = e };
 }
 ```
@@ -290,19 +290,19 @@ EC_HEADER_SAFE CharResult CharResult_err(int e) {
 # TODO
 
 ## Lib
-- Add EC_TYPENUM_FULL_HEADER and EC_TYPENUM_FULL_SOURCE macros that allow users to static const and static inline in their header or function defintions and extern varibles
-- Consider adding a macro tag for EC_TYPENUM that converts everything to a simple typedef of the inner type
+- Add IC_TYPENUM_FULL_HEADER and IC_TYPENUM_FULL_SOURCE macros that allow users to static const and static inline in their header or function defintions and extern varibles
+- Consider adding a macro tag for IC_TYPENUM that converts everything to a simple typedef of the inner type
 - Add validation to typenum that inner type is basic type
-- Add optional system to opaque storage that can be turned on and off with a macro tag, that includes EC_OPAQUE_LOAD and EC_OPAQUE_STORE that handles aliasing safety through hard-copying internal bytes, but will without the tag just to fast pointer casting
-- Make EC_RESULT C99 documented or implement fallback constructor for C89 compliance without designated initializer ((Pos){.x=0, .y=1})
+- Add optional system to opaque storage that can be turned on and off with a macro tag, that includes IC_OPAQUE_LOAD and IC_OPAQUE_STORE that handles aliasing safety through hard-copying internal bytes, but will without the tag just to fast pointer casting
+- Make IC_RESULT C99 documented or implement fallback constructor for C89 compliance without designated initializer ((Pos){.x=0, .y=1})
 - Add debug mode that uses runtime assert that can be turned off with macro tag (e.g. for accessing Result types)
-- Consider removing result accessors (e.g. EC_RESULT_VALUE) and replace with functions for const safety (maybe overkill? Could include asserts)
+- Consider removing result accessors (e.g. IC_RESULT_VALUE) and replace with functions for const safety (maybe overkill? Could include asserts)
 - Add tests that can be verified on multiple compilers
 - Rename project to IronC (because it is rigid and not using it can cause code to break) with SteelC as name of expanded version (more flexible), and then call the parser ForgeC because it helps create strong-like-metal C
-- Add example and guidance for creating a strong system linking together EasyC result types, typenums, and structs. 
+- Add example and guidance for creating a strong system linking together IronC result types, typenums, and structs. 
 
 ## Parser
-Parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code.
+Parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code. The name shall be ForgeC.
 
 It shall
 - Tokenize code properly and use no naive regex tricks.
@@ -316,6 +316,6 @@ It shall
 - Verify all structs are initialized with either a _populate or _init function
 - Verify if _init is used all exit paths must include _cleanup
 - Verify variables are not called with _populate or _init multiple times in same scope
-- Be able to turn off warnings in-file by writing "// EasyC off" and turn back on with "// EasyC on"
-- Look for EasyCSettings.csv file and use its settings (default if not exist)
+- Be able to turn off warnings in-file by writing "// ForgeC off" and turn back on with "// ForgeC on"
+- Look for ForgeCSettings.csv file and use its settings (default if not exist)
 - Number of warnings be return value of script/app main function.
