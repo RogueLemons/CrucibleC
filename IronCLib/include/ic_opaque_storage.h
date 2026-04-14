@@ -41,16 +41,16 @@ HOW TO USE
         int r, g, b;
     };
     typedef struct ColorImpl ColorImpl;
-    
+
     IC_OPAQUE_IMPL_ASSERT(Color, COLOR_ALIGN, COLOR_SIZE)
-    
+
     void color_init(Color* c, int r, int g, int b) {
         ColorImpl* real = (ColorImpl*)c;
         real->r = r;
         real->g = g;
         real->b = b;
     }
-    
+
     int color_get_red(const Color* c) {
         const ColorImpl* real = (const ColorImpl*)c;
         return real->r;
@@ -114,7 +114,7 @@ Opaque storage definition (for headers)
     defined(_MSC_VER) || defined(__GNUC__)
 
     #define IC_OPAQUE_STORAGE(name, alignment, size) \
-        IC_STATIC_ASSERT((alignment) <= IC_ALIGNOF(max_align_t), alignment_too_large); \
+        IC_STATIC_ASSERT((alignment) <= IC_ALIGNOF(max_align_t), "alignment too large"); \
         typedef struct { \
             IC_ALIGNAS(alignment) ic_byte data[(size)]; \
         } name;
@@ -122,7 +122,7 @@ Opaque storage definition (for headers)
 #else
 
     #define IC_OPAQUE_STORAGE(name, alignment, size) \
-        IC_STATIC_ASSERT((alignment) <= sizeof(max_align_t), alignment_too_large); \
+        IC_STATIC_ASSERT((alignment) <= sizeof(max_align_t), "alignment too large"); \
         typedef union { \
             ic_byte data[(size)]; \
             max_align_t _align; \
