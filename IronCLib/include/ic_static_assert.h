@@ -3,7 +3,7 @@
 
 /*
 ===============================================================================
-EC Static Assert
+IC Static Assert
 
 C Version Compatibility:
 - C11+: uses _Static_assert

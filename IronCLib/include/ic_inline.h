@@ -3,7 +3,7 @@
 
 /*
 ===============================================================================
-EC Inline Abstraction Layer
+IC Inline Abstraction Layer
 
 C Compatibility:
 - C89+ fallback supported

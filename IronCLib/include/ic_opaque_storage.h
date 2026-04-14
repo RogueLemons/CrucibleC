@@ -3,7 +3,7 @@
 
 /*
 ===============================================================================
-EC Opaque Storage
+IC Opaque Storage
 
 C Version Compatibility:
 - Works on C89+ (reduced guarantees)

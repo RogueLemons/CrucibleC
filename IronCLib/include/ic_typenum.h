@@ -3,7 +3,7 @@
 
 /*
 ===============================================================================
-EC Typenum (Full System - X-Macro Based, Header Safe, Enum-Free)
+IC Strong Integer Enum Wrapper (X-Macro Based, Header Safe, Enum-Free)
 
 C Compatibility:
 - C89+ core support
@@ -59,8 +59,11 @@ static const Status Status_SoftwareFailure = {3};
 Core type + helpers
 ===============================================================================
 */
+#define IC_INNER_ENUM_TYPE_MAX_SIZE (2 * sizeof(void *))
 
 #define IC_TYPENUM(name, type, LIST) \
+    IC_STATIC_ASSERT(sizeof(type) <= IC_INNER_ENUM_TYPE_MAX_SIZE, "Inner enum type is too large, define typenum and related functions manually") \
+    \
     typedef struct { \
         type name##_value; \
     } name; \
