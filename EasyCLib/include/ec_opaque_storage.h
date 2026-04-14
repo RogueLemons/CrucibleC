@@ -25,7 +25,7 @@ HOW TO USE
     #include "ec_opaque_storage.h"
 
     #define COLOR_SIZE   (sizeof(int) * 3)
-    #define COLOR_ALIGN  (_Alignof(int))
+    #define COLOR_ALIGN  (EC_ALIGNOF(int))
 
     EC_OPAQUE_STORAGE(Color, COLOR_ALIGN, COLOR_SIZE)
 
