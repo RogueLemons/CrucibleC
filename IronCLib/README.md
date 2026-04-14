@@ -298,11 +298,11 @@ IC_HEADER_SAFE CharResult CharResult_err(int e) {
 - Add debug mode that uses runtime assert that can be turned off with macro tag (e.g. for accessing Result types)
 - Consider removing result accessors (e.g. IC_RESULT_VALUE) and replace with functions for const safety (maybe overkill? Could include asserts)
 - Add tests that can be verified on multiple compilers
-- Rename project to IronC (because it is rigid and not using it can cause code to break) with SteelC as name of expanded version (more flexible), and then call the parser ForgeC because it helps create strong-like-metal C
+- Rename project to IronC (because it is rigid and not using it can cause code to break) with SteelC as name of expanded version (more flexible), and then call the parser WorkshopC because it helps create strong-like-metal C
 - Add example and guidance for creating a strong system linking together IronC result types, typenums, and structs. 
 
 ## Parser
-Parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code. The name shall be ForgeC.
+Parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code. The name shall be WorkshopC.
 
 It shall
 - Tokenize code properly and use no naive regex tricks.
@@ -316,6 +316,6 @@ It shall
 - Verify all structs are initialized with either a _populate or _init function
 - Verify if _init is used all exit paths must include _cleanup
 - Verify variables are not called with _populate or _init multiple times in same scope
-- Be able to turn off warnings in-file by writing "// ForgeC off" and turn back on with "// ForgeC on"
-- Look for ForgeCSettings.csv file and use its settings (default if not exist)
+- Be able to turn off warnings in-file by writing "// WorkshopC off" and turn back on with "// WorkshopC on"
+- Look for WorkshopCSettings.csv file and use its settings (default if not exist)
 - Number of warnings be return value of script/app main function.
