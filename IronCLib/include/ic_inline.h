@@ -12,7 +12,7 @@ C Compatibility:
 
 Provides:
     IC_INLINE        -> best-effort inline hint
-    IC_HEADER_SAFE   -> always safe in headers (never causes linker issues)
+    IC_HEADER_FUNC   -> always safe in headers (never causes linker issues)
 
 ===============================================================================
 */
@@ -45,7 +45,7 @@ Use for:
 
 /*
 -------------------------------------------------------------------------------
-IC_HEADER_SAFE
+IC_HEADER_FUNC
 
 Purpose:
 - SAFE for header-defined functions
@@ -64,13 +64,13 @@ Preferred for:
 */
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-    #define IC_HEADER_SAFE static inline
+    #define IC_HEADER_FUNC static inline
 #elif defined(_MSC_VER)
-    #define IC_HEADER_SAFE static __inline
+    #define IC_HEADER_FUNC static __inline
 #elif defined(__GNUC__) || defined(__clang__)
-    #define IC_HEADER_SAFE static __inline__
+    #define IC_HEADER_FUNC static __inline__
 #else
-    #define IC_HEADER_SAFE static
+    #define IC_HEADER_FUNC static
 #endif
 
 #endif

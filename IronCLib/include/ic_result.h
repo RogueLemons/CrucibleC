@@ -11,7 +11,7 @@ C Compatibility:
 - GCC / Clang / MSVC supported
 
 Dependencies:
-- ic_inline.h        -> IC_HEADER_SAFE
+- ic_inline.h        -> IC_HEADER_FUNC
 - ic_static_assert.h -> optional compile-time checks
 
 Design:
@@ -71,11 +71,11 @@ This macro generates:
         } data; \
     } name; \
     \
-    IC_HEADER_SAFE name name##_ok(const value_type v) { \
+    IC_HEADER_FUNC name name##_ok(const value_type v) { \
         return (name){ .ok = 1, .data.value = v }; \
     } \
     \
-    IC_HEADER_SAFE name name##_err(const error_type e) { \
+    IC_HEADER_FUNC name name##_err(const error_type e) { \
         return (name){ .ok = 0, .data.error = e }; \
     }
 

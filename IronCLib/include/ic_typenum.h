@@ -7,7 +7,7 @@ EC Typenum (Full System - X-Macro Based, Header Safe, Enum-Free)
 
 C Compatibility:
 - C89+ core support
-- C99+ inline where available via IC_HEADER_SAFE
+- C99+ inline where available via IC_HEADER_FUNC
 - Fully header-safe (no linker multiple-definition issues)
 - No use of enum types (ABI-stable, deterministic)
 
@@ -39,9 +39,9 @@ typedef struct {
     int Status_value;
 } Status;
 
-IC_HEADER_SAFE int Status_get(const Status v);
-IC_HEADER_SAFE int Status_eq(const Status a, const Status b);
-IC_HEADER_SAFE const char* Status_to_string(const Status v);
+IC_HEADER_FUNC int Status_get(const Status v);
+IC_HEADER_FUNC int Status_eq(const Status a, const Status b);
+IC_HEADER_FUNC const char* Status_to_string(const Status v);
 
 static const Status Status_Ok = {0};
 static const Status Status_MechanicalFailure = {1};
@@ -65,11 +65,11 @@ Core type + helpers
         type name##_value; \
     } name; \
     \
-    IC_HEADER_SAFE type name##_get(const name v) { \
+    IC_HEADER_FUNC type name##_get(const name v) { \
         return v.name##_value; \
     } \
     \
-    IC_HEADER_SAFE int name##_eq(const name a, const name b) { \
+    IC_HEADER_FUNC int name##_eq(const name a, const name b) { \
         return a.name##_value == b.name##_value; \
     }
 
@@ -85,7 +85,7 @@ To-string support (switch-based, user-defined strings)
 
 
 #define IC_TYPENUM_TO_STRING(Type, LIST) \
-    IC_HEADER_SAFE const char* Type##_to_string(const Type v) \
+    IC_HEADER_FUNC const char* Type##_to_string(const Type v) \
     { \
         switch (Type##_get(v)) { \
             LIST(IC_TYPENUM_TO_STRING_CASE, Type) \

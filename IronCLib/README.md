@@ -67,7 +67,7 @@ A tiny, portable inline abstraction layer for C.
 
 It provides:
 - `IC_INLINE` for inline intent hints
-- `IC_HEADER_SAFE` for safe header-defined functions
+- `IC_HEADER_FUNC` for safe header-defined functions
 - Supports C89+, C99 inline, and compiler-specific inline extensions (GCC, Clang, MSVC), with safe fallbacks where inline is unavailable
 
 #### Why use this?
@@ -77,7 +77,7 @@ It exists because inline behavior and header function definitions are not consis
 ```c
 #include "ic_inline.h"
 
-IC_HEADER_SAFE int square(int x) {
+IC_HEADER_FUNC int square(int x) {
     return x * x;
 }
 ```
@@ -124,15 +124,15 @@ typedef struct {
     int Status_value;
 } Status;
 
-IC_HEADER_SAFE int Status_get(const Status v) {
+IC_HEADER_FUNC int Status_get(const Status v) {
     return v.Status_value;
 }
 
-IC_HEADER_SAFE int Status_eq(const Status a, const Status b) {
+IC_HEADER_FUNC int Status_eq(const Status a, const Status b) {
     return a.Status_value == b.Status_value;
 }
 
-IC_HEADER_SAFE const char* Status_to_string(const Status v) {
+IC_HEADER_FUNC const char* Status_to_string(const Status v) {
     switch (Status_get(v)) {
         case 0: return "Everything is fine";
         case 1: return "Something went wrong";
@@ -278,11 +278,11 @@ typedef struct {
     } data;
 } CharResult;
 
-IC_HEADER_SAFE CharResult CharResult_ok(char v) {
+IC_HEADER_FUNC CharResult CharResult_ok(char v) {
     return (CharResult){ .ok = 1, .data.value = v };
 }
 
-IC_HEADER_SAFE CharResult CharResult_err(int e) {
+IC_HEADER_FUNC CharResult CharResult_err(int e) {
     return (CharResult){ .ok = 0, .data.error = e };
 }
 ```
