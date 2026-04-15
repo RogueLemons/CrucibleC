@@ -12,6 +12,9 @@ Includes:
 
 ## Table of Contents
 * [Overview](#ironclib)
+* [Quick Intro](#quick-intro)
+  * [Example 1](#example-1)
+  * [Example 2](#example-2)
 * [Header Library](#header-library)
   * [ic.h](#ich)
   * [ic_static_assert.h](#ic_static_asserth)
@@ -23,6 +26,74 @@ Includes:
 * [TODO](#todo)
   * [Library](#todo)
   * [Parser](#todo)
+
+## Quick Intro
+A fast showcase of how the library is used, before more in-depth descriptions and examples. 
+
+### Quick Example 1
+This example shows how you can combine a type-safe enum replacement with result types static assert in a header implemented function.
+
+```c
+#include "ic.h"
+#include <stdint.h>
+
+#define MATH_ERROR_LIST(X, Type) \
+    X(Type, Generic, 0, "An error occurred") \
+    X(Type, DivideByZero, 1, "Division by zero") 
+
+IC_TYPENUM_FULL(MathError, uint8_t, MATH_ERROR_LIST)
+IC_RESULT_TYPE(IntResult, int, MathError)
+
+IC_HEADER_FUNC IntResult safe_divide(int a, int b) {
+    IC_STATIC_ASSERT(sizeof(int) >= 4, "int too small");
+
+    if (b == 0) {
+        return IntResult_err(Error_DivideByZero);
+    }
+
+    return IntResult_ok(a / b);
+}
+```
+
+### Example 2
+This example shows how to create opaque structs allocated on the stack, where users can only access struct implementation members via functions. *Note: This example does not conform with strict aliasing.*
+
+```c
+// ------- Matrix4x4.h -------
+#include "ic.h"
+
+#define MAT4_SIZE  (sizeof(float) * 16)
+#define MAT4_ALIGN (IC_ALIGNOF(float))
+IC_OPAQUE_STORAGE(Matrix4x4, MAT4_ALIGN, MAT4_SIZE)
+
+// API
+void mat4_set_identity(Matrix4x4* const m);
+float mat4_get(const Matrix4x4* const m, const int row, const int col);
+
+// ------- Matrix4x4.c -------
+#include "Matrix4x4.h"
+
+struct Matrix4x4Impl {
+    float data[16];
+};
+typedef struct Matrix4x4Impl Matrix4x4Impl;
+
+IC_OPAQUE_IMPL_ASSERT(Matrix4x4, MAT4_ALIGN, MAT4_SIZE)
+
+void mat4_set_identity(Matrix4x4* const m) {
+    Matrix4x4Impl* const real = (Matrix4x4Impl*)m;
+
+    for (int i = 0; i < 16; ++i)
+    {
+        real->data[i] = (i % 5 == 0) ? 1.0f : 0.0f;
+    }
+}
+
+float mat4_get(const Matrix4x4* const m, const int row, const int col) {
+    const Matrix4x4Impl* const real = (const Matrix4x4Impl*)m;
+    return real->data[row * 4 + col];
+}
+```
 
 ## Header Library
 A drop-in, header-only library designed for easy integration into any C project. Simply add it to your include path and start using it immediately—no build steps or external dependencies required.
