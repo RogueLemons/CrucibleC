@@ -289,7 +289,7 @@ IC_HEADER_FUNC CharResult CharResult_err(int e) {
 ```
 
 ### Create a standardized, type-safe error system
-The following will provide an example, showing how to use this library to create a standardize error system, working like an exception-as-return-value system, with one standardized error type for the whole application. 
+The following will provide an example, showing how to use this library to create a standardized error system, working like an exception-as-return-value system, with one standardized error type for the whole application. 
 
 #### my_app_result.h
 Create your header where all errors shall be defined. Whenever you want to add more errors (or your Java mind wants more exceptions) then this is the file you edit. With uint16_t you can define 65536 different errors or with uint8_t 256. 
@@ -406,6 +406,7 @@ SwordResult make_sword(Resources* resources)
 - Consider removing result accessors (e.g. IC_RESULT_VALUE) and replace with functions for const safety (maybe overkill? Could include asserts, probably do this for SteelCLib instead)
 - Expand typenum for SteelCLib to take a manually assigned comparitor for compatability with all inner types
 - For SteelCLib add macro tag that performs static assert on size of all result types for users to guarantee size of return values?
+- For SteelCLib add VoidResult macros
 - Add memory alloc and span helpers? Add easy and safe zero init?
 - Make typenum generated functions use pointers?
 - Add tests that can be verified on multiple compilers
