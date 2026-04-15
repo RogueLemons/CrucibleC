@@ -15,6 +15,7 @@ Includes:
 * [Quick Intro](#quick-intro)
   * [Example 1](#example-1)
   * [Example 2](#example-2)
+  * [Example 3](#example-3)
 * [Header Library](#header-library)
   * [ic.h](#ich)
   * [ic_static_assert.h](#ic_static_asserth)
@@ -30,7 +31,7 @@ Includes:
 ## Quick Intro
 A fast showcase of how the library is used, before more in-depth descriptions and examples. 
 
-### Quick Example 1
+### Example 1
 This example shows how you can combine a type-safe enum replacement with result types static assert in a header implemented function.
 
 ```c
@@ -77,7 +78,6 @@ struct Matrix4x4Impl {
     float data[16];
 };
 typedef struct Matrix4x4Impl Matrix4x4Impl;
-
 IC_OPAQUE_IMPL_ASSERT(Matrix4x4, MAT4_ALIGN, MAT4_SIZE)
 
 void mat4_set_identity(Matrix4x4* const m) {
@@ -92,6 +92,29 @@ void mat4_set_identity(Matrix4x4* const m) {
 float mat4_get(const Matrix4x4* const m, const int row, const int col) {
     const Matrix4x4Impl* const real = (const Matrix4x4Impl*)m;
     return real->data[row * 4 + col];
+}
+```
+
+### Example 3
+This examples shows using a slightly safer memory allocator and bounded while loop. 
+
+```c
+#include "ic.h"
+
+int main(void)
+{
+    int count = 10;
+    int* values = IC_MALLOC_ARRAY(int, count);
+    if (!values) return 1;
+
+    int i = 0;
+    IC_BOUNDED_WHILE(i < count, 1000) {
+        values[i] = 3;
+        i++;
+    }
+
+    free(values);
+    return 0;
 }
 ```
 
@@ -401,6 +424,14 @@ IC_RESULT_TYPE(FloatResult, float, Error)
 typedef const char* StringLiteral;
 MY_APP_RESULT_TYPE(StringLiteral)
 IC_RESULT_TYPE(UI16Result, uint16_t, Error)
+```
+
+You can also add a void result type to make error handling even more uniform for void functions.
+
+```c
+typedef struct { char _; } VoidType;
+IC_RESULT_TYPE(VoidResult, VoidType, Error)
+#define void_ok VoidResult_ok((VoidType){0})
 ```
 
 Put all the parts from this section in the same file, but with the file inclusions at the top of course.
