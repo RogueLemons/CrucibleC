@@ -431,7 +431,8 @@ You can also add a void result type to make error handling even more uniform for
 ```c
 typedef struct { char _; } VoidType;
 IC_RESULT_TYPE(VoidResult, VoidType, Error)
-#define void_ok VoidResult_ok((VoidType){0})
+#define Result_ok VoidResult_ok((VoidType){0})
+#define Result_err(x) VoidResult_err(x)
 ```
 
 Put all the parts from this section in the same file, but with the file inclusions at the top of course.
