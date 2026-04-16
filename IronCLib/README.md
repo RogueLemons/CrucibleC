@@ -23,6 +23,8 @@ Includes:
   * [ic_typenum.h](#ic_typenumh)
   * [ic_opaque_storage.h](#ic_opaque_storageh)
   * [ic_result.h](#ic_resulth)
+  * [ic_memory.h](#ic_memoryh)
+  * [ic_bounded_loop.h](#ic_bounded_looph)
   * [Create a standardized, type-safe error system](#create-a-standardized-type-safe-error-system)
 * [TODO](#todo)
   * [Library](#todo)
