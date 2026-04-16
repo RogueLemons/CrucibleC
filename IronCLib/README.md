@@ -392,7 +392,7 @@ It provides:
 - `IC_ALIGNOF` for querying alignment
 - `IC_MALLOC_ARRAY` for array allocation with early bad-argument catching
 
-It supports C89+ with fallbacks, while taking advantage of C11 features when available, and works across MSVC, GCC, and Clang. *Note: Alignment is not the easiest problem to manage and different compilers might handle exact usage differently (a portability limitation that must be accepted if using this).*
+It supports C89+ with fallbacks, while taking advantage of C11 features when available, and works across MSVC, GCC, and Clang. *Note: Alignment is not the easiest problem to manage and different compilers might handle exact usage differently (a portability limitation that must be accepted if using this). You can write your own macro to adjust for this.*
 
 `IC_MALLOC_ARRAY` catches negative arguments and integer overflow early and returns null. In worst fallback `IC_ALIGNAS` expands to nothing and `IC_ALIGNOF` uses `offsetof`. `ic_byte` is just an `unsigned char` but it helps with code clarity.
 
@@ -465,7 +465,38 @@ typedef struct {
 } Vec4;
 typedef struct Vec4 Vec4;
 static const size_t Vec4Align = _Alignof(Vec4);
+```
 
+### ic_bounded_loop.h
+A tiny, portable bounded loop abstraction layer for C.
+
+It provides:
+- `IC_BOUNDED_WHILE` for limited while-loops
+- `IC_BOUNDED_DO_WHILE` for limited do-while loops
+- `IC89_BOUNDED_FOR` for limit while-loops on old compilers
+
+These macros enforce a maximum iteration limit, preventing accidental infinite loops while preserving natural C loop semantics. *Note: The macros build on for loops with internal variables starting with _ic_ to avoid name collitions. Since they are macros, the "arguments" given to them cannot contain commas (e.g. foo(a,b)).*
+
+#### Why use this?
+It exists because C provides no built-in protection against infinite loops. A single missing condition or incorrect update can lead to non-terminating behavior. This abstraction makes it possible to enforce deterministic upper bounds on loop execution while keeping the syntax familiar. This results in safer control flow, easier debugging, and more predictable runtime behavior.
+
+#### Example
+
+##### Usage
+```c
+#include "ic_bounded_loop.h"
+
+IC_BOUNDED_WHILE(x != NULL, 1000) {
+    x = x->next;
+}
+```
+
+##### Conceptual Expansion
+```c
+for (size_t loop = 0, max = 1000; (loop < max) && (x != NULL); ++loop)
+{
+   x = x->next;
+}
 ```
 
 ### Create a standardized, type-safe error system
@@ -588,6 +619,7 @@ SwordResult make_sword(Resources* resources)
 # TODO
 
 ## Lib
+- Make header with one bind/concat/glue macro to use for all other headers
 - Add IC_TYPENUM_FULL_HEADER and IC_TYPENUM_FULL_SOURCE macros that allow users to static const and static inline in their header or function defintions and extern varibles
 - Consider adding a macro tag for IC_TYPENUM that converts everything to a simple typedef of the inner type
 - Add optional system to opaque storage that can be turned on and off with a macro tag, that includes IC_OPAQUE_LOAD and IC_OPAQUE_STORE that handles aliasing safety through hard-copying internal bytes, but will without the tag just to fast pointer casting
@@ -596,6 +628,7 @@ SwordResult make_sword(Resources* resources)
 - Expand typenum for SteelCLib to take a manually assigned comparitor for compatability with all inner types
 - For SteelCLib add macro tag that performs static assert on size of all result types for users to guarantee size of return values?
 - For SteelCLib add VoidResult macros
+- For SteelCLib, only care about C99 and forward, and add bounded for loop
 - Add memory alloc and span helpers? Add easy and safe zero init?
 - Make typenum generated functions use pointers?
 - Add tests that can be verified on multiple compilers
