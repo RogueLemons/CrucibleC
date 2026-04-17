@@ -9,6 +9,8 @@ Includes:
 - Type-safe enum replacement (`ic_typenum.h`)
 - Opaque struct storage for encapsulation (`ic_opaque_storage.h`)
 - Result-based error handling (`ic_result.h`)
+- Memory allocation abstraction layer (`ic_memory.h`)
+- Bounded loop safety utilities (`ic_bounded_loop.h`)
 
 ## Table of Contents
 * [Overview](#ironclib)
@@ -25,7 +27,10 @@ Includes:
   * [ic_result.h](#ic_resulth)
   * [ic_memory.h](#ic_memoryh)
   * [ic_bounded_loop.h](#ic_bounded_looph)
+* [Using in your system](#using-in-your-system)
   * [Create a standardized, type-safe error system](#create-a-standardized-type-safe-error-system)
+  * [Create one entrypoint for memory allocation](#create-one-entrypoint-for-memory-allocation)
+  * [Write with rules for structs and opaque storage](#write-with-rules-for-structs-and-opaque-storage)
 * [TODO](#todo)
   * [Library](#todo)
   * [Parser](#todo)
@@ -501,6 +506,9 @@ for (size_t loop = 0, max = 1000; (loop < max) && (x != NULL); ++loop)
 }
 ```
 
+## Using in your system
+The following sections include topics for using IronCLib in a code base.
+
 ### Create a standardized, type-safe error system
 The following will provide an example, showing how to use this library to create a standardized error system, working like an exception-as-return-value system, with one standardized error type for the whole application. 
 
@@ -798,6 +806,7 @@ VoidResult free_memory(void* const ptr); // If using own allocator, implementati
 ```
 
 ### Write with rules for structs and opaque storage
+(in progress)
 
 # TODO
 
