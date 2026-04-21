@@ -11,6 +11,7 @@ Includes:
 - Result-based error handling (`ic_result.h`)
 - Memory allocation safety checks (`ic_memory.h`)
 - Bounded loop safety utilities (`ic_bounded_loop.h`)
+- Safer numeric casting function generators (`ic_num_cast.h`)
 
 ## Table of Contents
 * [Overview](#ironclib)
