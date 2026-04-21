@@ -28,6 +28,7 @@ Includes:
   * [ic_result.h](#ic_resulth)
   * [ic_memory.h](#ic_memoryh)
   * [ic_bounded_loop.h](#ic_bounded_looph)
+  * [ic_num_cast.h](#ic_num_casth)
 * [Using in your system](#using-in-your-system)
   * [Create a standardized, type-safe error system](#create-a-standardized-type-safe-error-system)
   * [Create one entrypoint for memory allocation](#create-one-entrypoint-for-memory-allocation)
@@ -510,6 +511,99 @@ IC_BOUNDED_WHILE(x != NULL, 1000) {
 for (size_t loop = 0, max = 1000; (loop < max) && (x != NULL); ++loop)
 {
    x = x->next;
+}
+```
+
+### ic_num_cast.h
+A tiny, portable, overflow-safe numeric casting system for for signed, unsigned, and floating-point conversions.
+
+It provides:
+- Macro-generated cast functions that avoid undefined behavior
+- Compile-time detection of safe casts (no runtime cost when possible)
+- Runtime clamping or assertion-based safety (user configurable)
+
+Cast functions are generated using `IC_CASTING_FUNCTIONS` and a user-defined type matrix, where each row must include the type, mold tag (`IC_MOLD_SIGNED_INT`, `IC_MOLD_UNSIGNED_INT`, `IC_MOLD_FLOAT`), min value, and max value, for both the type converted from and to. The system enforces safe conversions by either clamping values to valid ranges or asserting correctness before casting. For floating point types, when clamping, NaN or negative infinity become lowest value in conversion range and positive infinity becomes highest.
+
+#### Why use this?
+It exists because numeric casting in C is unsafe by default: overflow, underflow, and undefined behavior can occur silently, especially across signed/unsigned or float/integer boundaries. This abstraction makes it possible to perform conversions in a deterministic and portable way, with explicit guarantees about behavior. This results in safer numeric code, fewer hidden bugs, and consistent handling of edge cases like NaN and infinity.
+
+#### Example
+Use this system to create a single header file in which all common number types exist.
+
+##### my_numbers.h
+```c
+// if adding e.g. #define IC_CAST_ASSERT_FUNC(expr) assert(expr)
+// before includes the casts will assert instead of clamp
+#include "ic_num_cast.h"
+#include <stdint.h>
+#include <limits.h>
+#include <float.h>
+
+// Create typedefs for shorter function names
+// and DATA macros for easier writing of matrix
+typedef int32_t i32;
+#define I32_DATA i32, IC_MOLD_SIGNED_INT, INT32_MIN, INT32_MAX
+typedef uint32_t u32;
+#define U32_DATA u32, IC_MOLD_UNSIGNED_INT, 0, UINT32_MAX
+typedef float f32;
+#define F32_DATA f32, IC_MOLD_FLOAT, -FLT_MAX, FLT_MAX
+
+// Expansion helper macros
+#define DATA_PAIR_IMPL(X, a1,a2,a3,a4,b1,b2,b3,b4) X(a1,a2,a3,a4,b1,b2,b3,b4)
+#define DATA_PAIR(X, A, B) DATA_PAIR_IMPL(X, A, B)
+
+// Define all cast conversion functions in x list format
+// For i8, i16, i32, i64, u8, u16, u32, u64, f32, f64 
+// this becomes 100 entries if including all conversions
+#define CAST_CONVERSION_MATRIX(X) \
+    DATA_PAIR(X, I32_DATA, I32_DATA) \
+    DATA_PAIR(X, I32_DATA, U32_DATA) \
+    DATA_PAIR(X, I32_DATA, F32_DATA) \
+    DATA_PAIR(X, U32_DATA, I32_DATA) \
+    DATA_PAIR(X, U32_DATA, U32_DATA) \
+    DATA_PAIR(X, U32_DATA, F32_DATA) \
+    DATA_PAIR(X, F32_DATA, I32_DATA) \
+    DATA_PAIR(X, F32_DATA, U32_DATA) \
+    DATA_PAIR(X, F32_DATA, F32_DATA)
+
+// Generate casting functions
+IC_CASTING_FUNCTIONS(CAST_CONVERSION_MATRIX)
+```
+
+Alternatively just write everything in the matrix immediately.
+
+```c
+// This is what the data pair matrix above expands to
+#define CAST_CONVERSION_MATRIX(X) \
+    X(int32_t,  IC_MOLD_SIGNED_INT,   INT32_MIN, INT32_MAX, int32_t,  IC_MOLD_SIGNED_INT,   INT32_MIN, INT32_MAX) \
+    X(int32_t,  IC_MOLD_SIGNED_INT,   INT32_MIN, INT32_MAX, uint32_t, IC_MOLD_UNSIGNED_INT, 0,         UINT32_MAX) \
+    X(int32_t,  IC_MOLD_SIGNED_INT,   INT32_MIN, INT32_MAX, float,    IC_MOLD_FLOAT,        -FLT_MAX,  FLT_MAX)
+    // etc
+```
+
+##### Usage
+```c
+#include "my_casts.h"
+#include <stdio.h>
+
+void foo() 
+{
+    const f32 f = 543.21;
+    const i32 i = cast_f32_to_i32(f);
+    printf("%d\n", i);
+}
+```
+
+##### Conceptual Expansion
+```c
+static inline int32_t cast_uint32_t_to_int32_t(const uint32_t v)
+{
+    // Compile time evaluated expression
+    if (INT32_MAX > UINT32_MAX) {
+        return (int32_t)v;
+    }
+    /* otherwise clamp or assert */
+    return (int32_t)(v > INT32_MAX ? INT32_MAX : v);
 }
 ```
 
