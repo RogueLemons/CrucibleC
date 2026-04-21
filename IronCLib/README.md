@@ -4,14 +4,17 @@ A small C library for writing safer, more consistent C code.
 It is a header-only utility library and a code analysis parser is planned for additional warnings and safety checks.
 
 Includes:
-- Compile-time assertions (`ic_static_assert.h`)
-- Inline and header safety abstractions (`ic_inline.h`)
-- Type-safe enum replacement (`ic_typenum.h`)
-- Opaque struct storage for encapsulation (`ic_opaque_storage.h`)
-- Result-based error handling (`ic_result.h`)
-- Memory allocation safety checks (`ic_memory.h`)
-- Bounded loop safety utilities (`ic_bounded_loop.h`)
-- Safer numeric casting function generators (`ic_num_cast.h`)
+* Instant features
+  * Compile-time assertions (`ic_static_assert.h`)
+  * Inline and header safety abstractions (`ic_inline.h`)
+  * Memory allocation safety checks (`ic_memory.h`)
+  * Bounded loop safety utilities (`ic_bounded_loop.h`)
+* Drop-in code generators
+  * Type-safe enum replacement (`ic_typenum.h`)
+  * Opaque struct storage for encapsulation (`ic_opaque_storage.h`)
+* Code generators set up once in one place
+  * Result-based error handling (`ic_result.h`)
+  * Safer numeric casting function generators (`ic_num_cast.h`)
 
 ## Table of Contents
 * [Overview](#ironclib)
@@ -134,11 +137,11 @@ int main(void)
 ```
 
 ## Header Library
-A drop-in, header-only library designed for easy integration into any C project. Simply add it to your include path and start using it immediately—no build steps or external dependencies required.
+A drop-in, header-only library designed for easy integration into any C project. Simply add it to your include path and start using it immediately - no build steps or external dependencies required.
 
-It provides a set of portable utilities that abstract away common inconsistencies across compilers and C standards. The goal is to improve safety, portability, and clarity in low-level C code while keeping the API minimal and predictable.
+It provides a set of portable utilities that abstract away common inconsistencies across compilers and C standards. The goal is to improve safety, portability, and clarity in low-level C code while keeping the API minimal and predictable. 
 
-This library does not aim to build a macro language inside C. Instead, it focuses on small, necessary, and practical abstractions that make writing safe, consistent C code easier without hiding the language itself.
+This library does not *aim* to build a macro language inside C. Instead, it views macros in three parts: 1) provide small, necessary, and practical abstractions that make writing safe, consistent C code easier without hiding the language itself; 2) provide certain almost necessary macros to simply standardize certain setups in headers; and 3) provide macros that are used to best effect by generating code once in one place and then writing normal C code thereafter. 
 
 ### ic.h
 A simple header that includes all other headers.
@@ -1057,38 +1060,6 @@ cleanup:
 ```
 
 # TODO
-
-## Lib
-- Add IC_TYPENUM_FULL_HEADER and IC_TYPENUM_FULL_SOURCE macros that allow users to static const and static inline in their header or function defintions and extern varibles
-- Consider adding a macro tag for IC_TYPENUM that converts everything to a simple typedef of the inner type
-- Add optional system to opaque storage that can be turned on and off with a macro tag, that includes IC_OPAQUE_LOAD and IC_OPAQUE_STORE that handles aliasing safety through hard-copying internal bytes, but will without the tag just to fast pointer casting
-- Add debug mode that uses runtime assert that can be turned off with macro tag (e.g. for accessing Result types)
-- Consider removing result accessors (e.g. IC_RESULT_VALUE) and replace with functions for const safety (maybe overkill? Could include asserts, probably do this for SteelCLib instead)
-- Expand typenum for SteelCLib to take a manually assigned comparitor for compatability with all inner types
-- For SteelCLib add macro tag that performs static assert on size of all result types for users to guarantee size of return values?
-- For SteelCLib add VoidResult macros
-- For SteelCLib, only care about C99 and forward, and add bounded for loop
-- Add memory alloc and span helpers? Add easy and safe zero init?
 - Make typenum generated functions use pointers (only if starting to allow non-integer internal types, maybe for SteelC)?
 - Add tests that can be verified on multiple compilers
-- Rename project to IronC (because it is rigid and not using it can cause code to break) with SteelC as name of expanded version (more flexible), and then call the parser WorkshopC because it helps create strong-like-metal C 
 - Add IronHammerC testing system
-
-## Parser
-Parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code. The name shall be WorkshopC.
-
-It shall
-- Tokenize code properly and use no naive regex tricks.
-- Verify const correctness of variables (possibly ignoring variables used in functions as first iteration).
-- Make all mutable pointer function arguments start their names with out_ for maximum clarity (or in_, own_, or move_, to show a transfer of ownership).
-- Warn against using enum.
-- Look at file path and if file path is included in names (e.g. function or struct) then suggest splitting by __ (optionally user defined) to mimic namespaces and improve readability, also warn if name contains e.g. 7 underscores.
-- Verify all structs immediately contain a typedef statement on next line.
-- Verify that #define statements appear right above the functions they are used in if only used once in file (if in header can be used 0 times).
-- Forbid null pointers and uninitialized pointers, optionally enforce all pointers to be null-checked
-- Verify all structs are initialized with either a _populate or _init function
-- Verify if _init is used all exit paths must include _cleanup
-- Verify variables are not called with _populate or _init multiple times in same scope
-- Be able to turn off warnings in-file by writing "// WorkshopC off" and turn back on with "// WorkshopC on"
-- Look for WorkshopCSettings.csv file and use its settings (default if not exist)
-- Number of warnings be return value of script/app main function.
