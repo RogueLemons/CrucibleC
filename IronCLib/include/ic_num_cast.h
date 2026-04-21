@@ -41,6 +41,7 @@ BASIC USAGE
 
 1. Define your type conversion matrix with the required parameters (type, mold, min, max) - > (type, mold, min, max).
    Mold types: IC_MOLD_SIGNED_INT, IC_MOLD_UNSIGNED_INT, IC_MOLD_FLOAT. 
+   Types must be full symbolic values.
    Example:
 
     #define MY_MATRIX(X) \
@@ -67,7 +68,8 @@ NOTES
 - IC_CAST_ASSERT_FUNC(expr) can be defined as (void)0 which removes runtime checks completely,
   which can be desirable to for removing all checks and internal casts in performance-critical code after testing. 
 - NaN floats get clamped to the minimum value of the target type, and infinities get clamped to the respective min/max.
-
+- Since one of the constraints is clamp Nan and -infinity to the min value, and +infinity to the max value, using 
+  cast_float_to_float will actually filter the value, but also means all casts from float lack a compiletime quick path.
 ===============================================================================
 */
 
@@ -138,7 +140,8 @@ CONVERSION SAFETY CHECKS
 // ---------------------- SIGNED INT -> FLOAT ---------------------- 
 
 // Clamp at compile-time condition
-#define IC_COMP_CLAMPABLE_SIGNED_INT_TO_FLOAT(from_min, from_max, to_min, to_max) (0)
+#define IC_COMP_CLAMPABLE_SIGNED_INT_TO_FLOAT(from_min, from_max, to_min, to_max) \
+    ((from_min) >= (to_min) && (from_max) <= (to_max))
 
 // Assert at runtime condition
 #define IC_INNER_SAFE_SIGNED_INT_TO_FLOAT(v, lo, hi) \
@@ -180,7 +183,8 @@ CONVERSION SAFETY CHECKS
 // ---------------------- UNSIGNED INT -> FLOAT ---------------------- 
 
 // Clamp at compile-time condition
-#define IC_COMP_CLAMPABLE_UNSIGNED_INT_TO_FLOAT(from_min, from_max, to_min, to_max) (0)
+#define IC_COMP_CLAMPABLE_UNSIGNED_INT_TO_FLOAT(from_min, from_max, to_min, to_max) \
+    ((from_max) <= (to_max))
 
 // Assert at runtime condition
 #define IC_INNER_SAFE_UNSIGNED_INT_TO_FLOAT(v, lo, hi) \
