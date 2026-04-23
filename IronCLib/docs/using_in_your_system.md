@@ -7,6 +7,7 @@ The following sections include topics for using IronCLib in a code base. This is
 * [Create one entrypoint for memory allocation](#create-one-entrypoint-for-memory-allocation)
 * [Write with rules for structs and opaque storage](#write-with-rules-for-structs-and-opaque-storage)
 * [Make it your own](#make-it-your-own)
+* [What NOT to do](#what-not-to-do)
 
 ## Create a standardized, type-safe error system
 The following will provide an example, showing how to use this library to create a standardized error system, working like an exception-as-return-value system, with one standardized error type for the whole application. 
@@ -461,3 +462,9 @@ cleanup:
 
 ## Make it your own
 (TODO)
+
+## What NOT to do
+- Do not mix raw C implementation patterns (malloc, enums, structs) with IronCLib abstractions within the same architectural layer; each layer should follow a single, consistent paradigm. Once IronCLib is used within a module, it should be applied consistently. Ownership, data flow, and error handling should follow a unified convention throughout that module.
+- Do not bypass result types for convenience, as this can weaken the explicit error model.
+- Do not introduce multiple competing memory management or error handling systems within the same codebase.
+- Do not use IronCLib macros to build control-flow systems; structured patterns like TRY are allowed, but macros should not replace normal C control flow or introduce hidden execution logic (macros are appropriate when used for structure and repetition reduction, but should not be avoided purely out of caution or preference for verbosity).

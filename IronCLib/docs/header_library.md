@@ -132,6 +132,11 @@ static const Status Status_Ok = {0};
 static const Status Status_Error = {1};
 ```
 
+### What NOT to do
+- Do not define duplicate numeric values in the X-macro list (this is undefined behavior by user responsibility).
+- Do not mix different underlying types for the same typenum across translation units.
+- Do not assume values are inherently safe; typenum enforces correct usage through its functions, but the underlying struct can still be modified incorrectly by user code.
+
 ## ic_opaque_storage.h
 A tiny, portable opaque-struct system for C that enables encapsulation while still allowing stack allocation.
 
@@ -210,6 +215,11 @@ typedef struct {
 
 `IC_OPAQUE_IMPL_ASSERT` is required in the `.c` file because it performs compile-time validation of the real `struct ColorImpl` definition. It ensures that the actual struct’s size and alignment match the declared `COLOR_SIZE` and `COLOR_ALIGN`. Without this check, there is no guarantee that the internal implementation fits the opaque storage, which can lead to ABI mismatches or undefined behavior.
 
+### What NOT to do
+- Do not cast directly between opaque type pointers and internal structs unless inside the implementation file.
+- Do not use IC_OPAQUE_STORAGE in header without IC_OPAQUE_IMPL_ASSERT in the source.
+- Do not access internal data fields directly from user code.
+
 ## ic_result.h
 A tiny, portable `Result<T, E>` style type for C with explicit error handling and controlled propagation.
 
@@ -277,6 +287,10 @@ IC_HEADER_FUNC CharResult CharResult_err(int e) {
     return (CharResult){ .ok = 0, .data.error = e };
 }
 ```
+
+### What NOT to do
+- Do not ignore `.ok` and directly access `.data` without checking success.
+- Do not use Result types as a replacement for validation logic (they are for propagation, not input checking).
 
 ## ic_memory.h
 A tiny, portable memory and alignment abstraction layer for C.
@@ -362,6 +376,11 @@ typedef struct Vec4 Vec4;
 static const size_t Vec4Align = _Alignof(Vec4);
 ```
 
+### What NOT to do
+- Do not mix IC_MALLOC_ARRAY with raw malloc in the same allocation system unless you fully control ownership boundaries.
+- Do not ignore NULL returns; all allocations must be checked.
+- Do not use IC_ALIGNAS/IC_ALIGNOF as a substitute for understanding platform alignment requirements.
+
 ## ic_bounded_loop.h
 A tiny, portable bounded loop abstraction layer for C.
 
@@ -393,6 +412,11 @@ for (size_t loop = 0, max = 1000; (loop < max) && (x != NULL); ++loop)
    x = x->next;
 }
 ```
+
+### What NOT to do
+- Do not rely on bounded loops for correctness logic; they are a safety guard, not a program condition.
+- Do not set extremely small iteration limits without understanding worst-case behavior.
+- Do not use side-effect-heavy conditions that depend on loop ordering unless carefully reviewed.
 
 ## ic_num_cast.h
 A tiny, portable, overflow-safe numeric casting system for for signed, unsigned, and floating-point conversions.
@@ -463,6 +487,10 @@ Alternatively just write everything in the matrix immediately.
     X(int32_t,  IC_MOLD_SIGNED_INT,   INT32_MIN, INT32_MAX, float,    IC_MOLD_FLOAT,        -FLT_MAX,  FLT_MAX)
     // etc
 ```
+
+### What NOT to do
+- Do not assume implicit C casts are removed; unsafe casts still exist if used directly.
+- Do not ignore clamping behavior when using floating-point conversions, documented in header (NaN/Inf handling is intentional).
 
 #### Usage
 ```c
