@@ -1,5 +1,5 @@
-#ifndef SETUP_FOR_YOU_NUMBERS_H
-#define SETUP_FOR_YOU_NUMBERS_H
+#ifndef PREMADE_NUMBERS_H
+#define PREMADE_NUMBERS_H
 
 /*
 USAGE:
@@ -212,4 +212,4 @@ typedef unsigned int unsigned_int;
 // Generate casting functions
 IC_CASTING_FUNCTIONS(STANDARD_CAST_CONVERSION_MATRIX)
 
-#endif // SETUP_FOR_YOU_NUMBERS_H
+#endif // PREMADE_NUMBERS_H

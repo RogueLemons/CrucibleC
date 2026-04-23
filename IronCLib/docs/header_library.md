@@ -407,8 +407,8 @@ Cast functions are generated using `IC_CASTING_FUNCTIONS` and a user-defined typ
 ### Why use this?
 It exists because numeric casting in C is unsafe by default: overflow, underflow, and undefined behavior can occur silently, especially across signed/unsigned or float/integer boundaries. This abstraction makes it possible to perform conversions in a deterministic and portable way, with explicit guarantees about behavior. This results in safer numeric code, fewer hidden bugs, and consistent handling of edge cases like NaN and infinity.
 
-### Setup for you
-A header file full of generated cast functions is [provided here](setup_for_you/numbers.h). 
+### Premade
+A header file full of generated cast functions is [provided here](premade/numbers.h). 
 
 ### Example
 Use this system to create a single header file in which all common number types exist.

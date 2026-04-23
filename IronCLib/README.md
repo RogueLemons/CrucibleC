@@ -83,7 +83,7 @@ void run_process(UseMode mode);
 Monolithic: Avoid undefined behavior when casting by generating cast functions from a once-defined list. Pre-made header provided.
 
 ```c
-#include "setup_for_you/numbers.h"
+#include "premade/numbers.h"
 
 i32 i = cast_f64_to_i32(9876.543);
 ```
@@ -114,7 +114,7 @@ Ad-hoc and monolithic: Quickly define result types (possibly based on global err
 
 ```c
 // Matrix4x4 header
-#include "setup_for_you/global_result.h"
+#include "premade/global_result.h"
 
 MY_APP_RESULT_TYPE(Matrix4x4)
 
@@ -146,7 +146,7 @@ This document is only a quick intro.
 
 - For for more in-depth explanations of the headers, [go here](docs/header_library.md).
 - For ideas on how to use the library in your project, [go here](docs/using_in_your_system.md).
-- For premade monolithic files, [go here](docs/setup_for_you). These are referenced in documentation.
+- For premade monolithic files, [go here](docs/premade). These are referenced in documentation.
 
 # TODO
 - Make typenum generated functions use pointers (only if starting to allow non-integer internal types, maybe for SteelC)?

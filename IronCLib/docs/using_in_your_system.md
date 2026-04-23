@@ -16,8 +16,8 @@ C has no consistent error handling model, which leads to mixed return codes, nul
 
 It turns error handling into explicit program structure, improving readability, reducing hidden bugs, and making control flow predictable and uniform.
 
-### Setup for you
-A header file full of global standard errors is [provided here](setup_for_you/global_error.h), and a header for creating the standard results with the global errors is [provided here](setup_for_you/global_result.h).
+### Premade
+A header file full of global standard errors is [provided here](premade/global_error.h), and a header for creating the standard results with the global errors is [provided here](premade/global_result.h).
 
 ### my_app_result.h
 Create your header where all errors shall be defined. Whenever you want to add more errors (or your Java mind wants more exceptions) then this is the file you edit. With uint16_t you can define 65536 different errors or with uint8_t 256. 

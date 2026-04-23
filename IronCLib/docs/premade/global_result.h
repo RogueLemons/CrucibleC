@@ -1,5 +1,5 @@
-#ifndef SETUP_FOR_YOU_GLOBAL_RESULT_H
-#define SETUP_FOR_YOU_GLOBAL_RESULT_H
+#ifndef PREMADE_GLOBAL_RESULT_H
+#define PREMADE_GLOBAL_RESULT_H
 
 #include "ironclib/ic_result.h"
 #include "global_error.h"
@@ -63,7 +63,7 @@ typedef VoidTypeResult VoidResult;
 #define VoidResult_err(x) VoidTypeResult_err(x)
 
 // If numbers.h is included, number result types are also generated
-#ifdef SETUP_FOR_YOU_NUMBERS_H
+#ifdef PREMADE_NUMBERS_H
 IC_RESULT_TYPE(I8Result, i8, Error)
 IC_RESULT_TYPE(I16Result, i16, Error)
 IC_RESULT_TYPE(I32Result, i32, Error)
@@ -76,4 +76,4 @@ IC_RESULT_TYPE(F32Result, f32, Error)
 IC_RESULT_TYPE(F64Result, f64, Error)
 #endif
 
-#endif // SETUP_FOR_YOU_GLOBAL_RESULT_H
+#endif // PREMADE_GLOBAL_RESULT_H

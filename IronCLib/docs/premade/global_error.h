@@ -1,5 +1,5 @@
-#ifndef SETUP_FOR_YOU_GLOBAL_ERROR_H
-#define SETUP_FOR_YOU_GLOBAL_ERROR_H
+#ifndef PREMADE_GLOBAL_ERROR_H
+#define PREMADE_GLOBAL_ERROR_H
 
 /*
 USAGE:
@@ -73,4 +73,4 @@ USAGE:
 // Generate a global error type with the provided list
 IC_TYPENUM_FULL(Error, int, GLOBAL_ERROR_LIST)
 
-#endif // SETUP_FOR_YOU_GLOBAL_ERROR_H
+#endif // PREMADE_GLOBAL_ERROR_H
