@@ -131,16 +131,16 @@ if (!res.ok) { /* handle error */ }
 IronCLib is split into small, independent headers. You can use any part on its own.
 
 **Use immediately**
-- `ic_static_assert.h` — compile-time validation of assumptions
-- `ic_inline.h` — portable inline + safe header functions
-- `ic_memory.h` — safer allocation and alignment helpers
-- `ic_bounded_loop.h` — enforce maximum loop iterations
+- `ic_static_assert.h`
+- `ic_inline.h`
+- `ic_memory.h`
+- `ic_bounded_loop.h`
 
 **Generate standardized code**
-- `ic_typenum.h` — type-safe enum patterns with helpers
-- `ic_num_cast.h` — safe, overflow-aware numeric casting
-- `ic_opaque_storage.h` — encapsulated, stack-allocated types
-- `ic_result.h` — explicit result-based error handling
+- `ic_typenum.h`
+- `ic_num_cast.h`
+- `ic_opaque_storage.h`
+- `ic_result.h`
 
 ## Read more?
 This document is only a quick intro.
