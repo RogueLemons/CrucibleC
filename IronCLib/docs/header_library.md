@@ -3,7 +3,7 @@ A drop-in, header-only library designed for easy integration into any C project.
 
 It provides a set of portable utilities that abstract away common inconsistencies across compilers and C standards. The goal is to improve safety, portability, and clarity in low-level C code while keeping the API minimal and predictable. 
 
-The libraryt uses macros in three ways: 1) provide small, necessary, and practical abstractions that make writing safe, consistent C code easier without hiding the language itself; 2) provide almost necessary macros to simply standardize certain setups in headers; and 3) provide macros that are used to best effect by generating code once in one place and then writing normal C code thereafter. 
+The library uses macros in three ways: 1) provide small, necessary, and practical abstractions that make writing safe, consistent C code easier without hiding the language itself; 2) provide almost necessary macros to simply standardize certain setups in headers; and 3) provide macros that are used to best effect by generating code once in one place and then writing normal C code thereafter. 
 
 ## Table of Contents
 * [Header Library](#header-library)
@@ -185,7 +185,7 @@ int color_get_red(const Color* c) {
 }
 ```
 
-*Note: Although IC_OPAQUE_STORAGE aligns data internally, strict aliasing rules to not promise to work for pointer casts (even if in practice they sometimes do). Furthermore, the internal bytes of the opaque struct is aligned yet C makes no promise that a one-field struct shares the alignment of its single field (even if in practice it often does). The safest option is to use memcpy internally (even if it might be slower for large structs).*
+*Note: Although IC_OPAQUE_STORAGE aligns data internally, strict aliasing rules do not promise to work for pointer casts (even if some compilers behave as if they do). Furthermore, the internal bytes of the opaque struct is aligned yet C makes no promise that a one-field struct shares the alignment of its single field (even if in practice it often does). The safest option is to use memcpy internally (even if it might be slower for large structs).*
 
 #### Usage
 ```c
@@ -370,7 +370,7 @@ It provides:
 - `IC_BOUNDED_DO_WHILE` for limited do-while loops
 - `IC89_BOUNDED_FOR` for limit while-loops on old compilers
 
-These macros enforce a maximum iteration limit, preventing accidental infinite loops while preserving natural C loop semantics. *Note: The macros build on for loops with internal variables starting with _ic_ to avoid name collitions. Since they are macros, the "arguments" given to them cannot contain commas (e.g. foo(a,b)).*
+These macros enforce a maximum iteration limit, preventing accidental infinite loops while preserving natural C loop semantics. *Note: The macros build on for loops with internal variables starting with _ic_ to avoid name collisions. Since they are macros, the "arguments" given to them cannot contain commas (e.g. foo(a,b)).*
 
 ### Why use this?
 It exists because C provides no built-in protection against infinite loops. A single missing condition or incorrect update can lead to non-terminating behavior. This abstraction makes it possible to enforce deterministic upper bounds on loop execution while keeping the syntax familiar. This results in safer control flow, easier debugging, and more predictable runtime behavior.

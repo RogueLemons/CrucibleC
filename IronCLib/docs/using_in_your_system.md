@@ -1,5 +1,5 @@
 # Using in your system
-The following sections include topics for using IronCLib in a code base. This is a continuation of [the header library documentation](header_library.md).
+The following sections include topics for using IronCLib in a code base. This is a continuation of [the header library documentation](header_library.md), where this document describes design patterns built on top of IronCLib (not the library itself).
 
 ## Table of Contents
 * [Using in your system](#using-in-your-system)
@@ -422,7 +422,9 @@ SizeResult string_get_capacity(const String* const s);
 //      1) The result and expression r must have same error type
 //      2) To use this the function must create a result variable at start
 //      3) To use this the function must end with a cleanup goto tag
-#define try(type, r) do {                               \
+// Additionally, when implementing this macro, it is recommended to allow no other use of goto
+// in the project. It is used exclusively for controlled cleanup paths in error handling.
+#define TRY(type, r) do {                               \
     type _ic_res_tmp = (r);                             \
     if (!(_ic_res_tmp).ok) {                            \
         result.ok = 0;                                  \
@@ -436,18 +438,18 @@ VoidResult foo()
     VoidResult result = Result_err(Error_Runtime);
 
     StringResult str = construct_string("Hello again");
-    try(StringResult, str);
+    TRY(StringResult, str);
 
     const StringViewResult c_str = string_get_data(&str);
-    try(StringViewResult, c_str);
+    TRY(StringViewResult, c_str);
     printf("String data: %s\n", valueof(c_str));
 
     const SizeResult size = string_get_size(&str);
-    try(SizeResult, size);
+    TRY(SizeResult, size);
     printf("String size: %zu\n", valueof(size));
 
     const SizeResult cap = string_get_capacity(&str);
-    try(SizeResult, cap);
+    TRY(SizeResult, cap);
     printf("String capacity: %zu\n", valueof(cap));
 
     result = Result_ok;

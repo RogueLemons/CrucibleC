@@ -1,7 +1,9 @@
 # IronCLib
 A small, header-only C library for writing safer, more consistent C code. 
 
-Each utility is stand-alone and can be adopted without using the rest. IronCLib provides small, composable building blocks for safer, more consistent C code. Best-effort C89 compatibility, where reasonably practical.
+IronCLib is both a utility library and a set of design patterns for structuring C codebases.
+
+Each utility is stand-alone. IronCLib provides small, composable building blocks for safer, more consistent C code. Best-effort C89 compatibility, where reasonably practical.
 
 Includes:
 * Ready-to-use utilities (use in your project right now)
