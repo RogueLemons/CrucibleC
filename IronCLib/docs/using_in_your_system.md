@@ -354,7 +354,7 @@ The following provides an example of what this might look like.
 IC_OPAQUE_STORAGE(String, STRING_ALIGN, STRING_SIZE)
 
 void string_init(String* const out_string);
-void string_init_with(String* const out_string);
+void string_init_with(String* const out_string, const char* const c_str);
 void string_cleanup(String* const out_string);
 
 void string_set(String* const out_string, const char* const c_str); 
