@@ -23,7 +23,7 @@ A header file full of global standard errors is [provided here](setup_for_you/gl
 Create your header where all errors shall be defined. Whenever you want to add more errors (or your Java mind wants more exceptions) then this is the file you edit. With uint16_t you can define 65536 different errors or with uint8_t 256. 
 
 ```c
-#include "ic_typenum.h"
+#include "ironclib/ic_typenum.h"
 #include <stdint.h>
 
 #define MY_APP_ERROR_LIST(X, Type) \
@@ -40,7 +40,7 @@ IC_TYPENUM_FULL(Error, uint16_t, MY_APP_ERROR_LIST)
 Then add your own macro that builds upon the IronC result system. `MY_APP_RESULT_TYPE(Type)` is the "real" macro which when used does the same thing as writing `IC_RESULT_TYPE(TypeResult, Type, Error)`. 
 
 ```c
-#include "ic_result.h"
+#include "ironclib/ic_result.h"
 
 #define RESULT_NAME_IMPL(Type) Type##Result
 #define RESULT_NAME(Type) RESULT_NAME_IMPL(Type)
@@ -144,7 +144,7 @@ This section shows how to set up a centralized dynamic memory allocator with arg
 
 #### my_app_memory.h
 ```c
-#include "ic_typenum.h"
+#include "ironclib/ic_typenum.h"
 
 #define ALLOC_MODE_LIST(X, Type) \
     X(Type, Standard, 0, "Standard allocation") \
@@ -159,8 +159,8 @@ void free_memory(void* const ptr);
 
 #### my_app_memory.c
 ```c
-#include "ic_static_assert.h"
-#include "ic_glue_macro.h"
+#include "ironclib/ic_static_assert.h"
+#include "ironclib/ic_glue_macro.h"
 #include <stdlib.h>
 
 #define ALLOC_MODE_INTERNAL_VALUES(Type, Name, Value, Str) IC_GLUE3(Type, _, Name) = Value,
@@ -347,7 +347,7 @@ The following provides an example of what this might look like.
 
 #### my_string.h
 ```c
-#include "ic_opaque_storage.h"
+#include "ironclib/ic_opaque_storage.h"
 
 #define STRING_SIZE   (24)
 #define STRING_ALIGN  (8)
@@ -395,7 +395,7 @@ If a combined system is desired then a common solution is to use goto statements
 
 #### my_result_string.h 
 ```c
-#include "ic_opaque_storage.h"
+#include "ironclib/ic_opaque_storage.h"
 #include "my_app_result.h"
 
 #define STRING_SIZE   (24)

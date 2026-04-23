@@ -9,8 +9,8 @@ USAGE:
     - Check equality with Error_eq(err1, err2)
 */
 
-#include "ic_typenum.h"
-#include "ic_inline.h"
+#include "ironclib/ic_typenum.h"
+#include "ironclib/ic_inline.h"
 
 // Define a global error type for the application
 #define GLOBAL_ERROR_LIST(X, Type) \

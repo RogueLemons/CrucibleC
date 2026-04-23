@@ -37,7 +37,7 @@ It exists because C does not provide a consistent, cross-compiler mechanism for 
 
 #### Usage
 ```c
-#include "ic_static_assert.h"
+#include "ironclib/ic_static_assert.h"
 
 IC_STATIC_ASSERT(sizeof(int) == 4, "int must be 4 bytes");
 ```
@@ -63,7 +63,7 @@ It exists because inline behavior and header function definitions are not consis
 
 ### Example
 ```c
-#include "ic_inline.h"
+#include "ironclib/ic_inline.h"
 
 IC_HEADER_FUNC int square(int x) {
     return x * x;
@@ -88,7 +88,7 @@ It exists because C enums do not guarantee a fixed underlying type and are compi
 
 ### Example
 ```c
-#include "ic_typenum.h"
+#include "ironclib/ic_typenum.h"
 
 #define STATUS_LIST(X, Type) \
     X(Type, Ok, 0, "Everything is fine") \
@@ -150,7 +150,7 @@ It exists because C struct layouts are normally exposed in headers, tightly coup
 
 #### Header
 ```c
-#include "ic_opaque_storage.h"
+#include "ironclib/ic_opaque_storage.h"
 
 #define COLOR_SIZE   (sizeof(int) * 3)
 #define COLOR_ALIGN  (IC_ALIGNOF(int))
@@ -228,7 +228,7 @@ It exists because C lacks built-in error handling, forcing either error codes or
 
 #### Header
 ```c
-#include "ic_result.h"
+#include "ironclib/ic_result.h"
 
 IC_RESULT_TYPE(CharResult, char, int)
 ```
@@ -298,7 +298,7 @@ It exists because memory allocation and alignment handling in C are error-prone 
 
 #### Usage
 ```c
-#include "ic_memory.h" 
+#include "ironclib/ic_memory.h" 
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -379,7 +379,7 @@ It exists because C provides no built-in protection against infinite loops. A si
 
 #### Usage
 ```c
-#include "ic_bounded_loop.h"
+#include "ironclib/ic_bounded_loop.h"
 
 IC_BOUNDED_WHILE(x != NULL, 1000) {
     x = x->next;
@@ -417,7 +417,7 @@ Use this system to create a single header file in which all common number types 
 ```c
 // if adding e.g. #define IC_CAST_ASSERT_FUNC(expr) assert(expr)
 // before includes the casts will assert instead of clamp
-#include "ic_num_cast.h"
+#include "ironclib/ic_num_cast.h"
 #include <stdint.h>
 #include <limits.h>
 #include <float.h>

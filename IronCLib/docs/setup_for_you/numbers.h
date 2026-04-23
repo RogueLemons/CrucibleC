@@ -19,7 +19,7 @@ MUTALLY EXCLUSIVE CAST SUPPORT FOR:
     - int, unsigned int, float, double
 */
 
-#include "ic_num_cast.h"
+#include "ironclib/ic_num_cast.h"
 
 #include <stdint.h>
 #include <stddef.h>

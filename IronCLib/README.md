@@ -22,7 +22,7 @@ The following provides quick examples of the IronCLib parts that require no setu
 Verify boolean expressions at compile-time.
 
 ```c
-#include "ic_static_assert.h"
+#include "ironclib/ic_static_assert.h"
 
 IC_STATIC_ASSERT(sizeof(int) >= 4, "int must be 4 bytes or more");
 ```
@@ -31,7 +31,7 @@ IC_STATIC_ASSERT(sizeof(int) >= 4, "int must be 4 bytes or more");
 Write functions safely in headers.
 
 ```c
-#include "ic_inline.h"
+#include "ironclib/ic_inline.h"
 
 IC_HEADER_FUNC int add(const int a, const int b) { return a+b; }
 ```
@@ -40,7 +40,7 @@ IC_HEADER_FUNC int add(const int a, const int b) { return a+b; }
 Allocate memory on heap or return NULL for unsafe arguments.
 
 ```c
-#include "ic_memory.h"
+#include "ironclib/ic_memory.h"
 
 int* ten_ints = IC_MALLOC_ARRAY(int, 10);
 ```
@@ -49,7 +49,7 @@ int* ten_ints = IC_MALLOC_ARRAY(int, 10);
 Write loops with a maximum number of iterations.
 
 ```c
-#include "ic_bounded_loop.h"
+#include "ironclib/ic_bounded_loop.h"
 
 int res = 0;
 IC_BOUNDED_WHILE(0 == res, 1000) // max 1000 iterations
@@ -68,7 +68,7 @@ The following provides quick examples of how to generate code or use it.
 Ad-hoc: Quickly create a type-safe alternative to enums.
 
 ```c
-#include "ic_typenum.h"
+#include "ironclib/ic_typenum.h"
 
 #define USE_MODE_LIST(X, Type) \
     X(Type, Quality, 0, "Usage optimized for quality") \
@@ -93,7 +93,7 @@ Ad-hoc: Create opaque storage types quickly and with standardized method.
 
 ```c
 // Header
-#include "ic_opaque_storage.h"
+#include "ironclib/ic_opaque_storage.h"
 
 #define MAT4_SIZE  (sizeof(float) * 16)
 #define MAT4_ALIGN (IC_ALIGNOF(float))
