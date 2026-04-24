@@ -161,7 +161,6 @@ This document is only a quick intro.
 - For premade monolithic files, [go here](docs/premade). These are referenced in documentation.
 
 ## License
-
 IronCLib is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 # TODO
