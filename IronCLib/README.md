@@ -168,3 +168,4 @@ IronCLib is licensed under the MIT License. See the [LICENSE](LICENSE) file for 
 - Add tests that can be verified on multiple compilers
 - Add IronHammerC testing system (and guarantee for tested compilers)
 - Implement Make it your own section in using_in_your_system
+- Add comment in documentation about warnings for casting numbers

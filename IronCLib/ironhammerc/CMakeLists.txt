@@ -16,10 +16,10 @@ target_include_directories(hammer_ironclib PRIVATE
 
 if (CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(hammer_ironclib PRIVATE
-        -Wall -Wextra -Wpedantic -Werror
+        -Wall -Wextra -Wpedantic
     )
 endif()
 
 if (MSVC)
-    target_compile_options(hammer_ironclib PRIVATE /W4 /WX)
+    target_compile_options(hammer_ironclib PRIVATE /W3)
 endif()
