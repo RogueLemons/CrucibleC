@@ -127,18 +127,27 @@ if (!res.ok) { /* handle error */ }
 ```
 
 ## Library Overview
+IronCLib is split into small, independent headers. You can use any part on its own—but they are designed to be adopted gradually based on your needs.
 
-IronCLib is split into small, independent headers. You can use any part on its own.
+The lower sections introduce more opinionated patterns. These are most effective when applied consistently, rather than mixed with raw C equivalents within the same layer of a codebase.
 
-**Use immediately**
+### Start here (instant, low-risk improvements)
+Drop-in utilities that improve safety and portability without changing how you write C.
+
 - `ic_static_assert.h`
 - `ic_inline.h`
 - `ic_memory.h`
-- `ic_bounded_loop.h`
 
-**Generate standardized code**
+### Optional utilities (use as needed)
+Helpful tools that solve specific problems but don’t require architectural changes.
+
+- `ic_bounded_loop.h`
 - `ic_typenum.h`
 - `ic_num_cast.h`
+
+### Architectural patterns (adopt deliberately)
+These introduce stronger design patterns and are most effective when used consistently across a module or project.
+
 - `ic_opaque_storage.h`
 - `ic_result.h`
 
