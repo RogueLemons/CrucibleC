@@ -8,8 +8,8 @@ It focuses on portability and predictable, easy-to-read output, making C safer b
 * [Quick Start](#quick-start)
 * [Keywords](#keywords)
 * [Demos](#demos)
-  * [Demo 1 — const by default, mut, and check](#demo-1--const-by-default-mut-and-check)
-  * [Demo 2 — typestruct and cleanpop](#demo-2--typestruct-and-cleanpop)
+  * [Demo 1 - const by default, mut, and check](#demo-1--const-by-default-mut-and-check)
+  * [Demo 2 - typestruct and cleanpop](#demo-2--typestruct-and-cleanpop)
 * [Proof of concept](#proof-of-concept)
 * [Features and Examples](#features-and-examples)
   * [File inclusion and generated code warning](#file-inclusion-and-generated-code-warning)
@@ -47,7 +47,7 @@ python AlloyCPrototype.py input.alc output.c
 
 ### Demos
 
-#### Demo 1 — const by default, mut, and check
+#### Demo 1 - const by default, mut, and check
 
 ##### AlloyC
 
@@ -111,7 +111,7 @@ float dereference(const float* const f_ptr)
 * Pointer is **const**, not the pointed value
 * `check` automatically inserts runtime null checks
 
-#### Demo 2 — typestruct and cleanpop
+#### Demo 2 - typestruct and cleanpop
 
 ##### AlloyC
 

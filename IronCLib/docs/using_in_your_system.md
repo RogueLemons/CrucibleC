@@ -311,7 +311,7 @@ VoidResult free_memory(void* const ptr); // If using own allocator, implementati
 ## Write with rules for structs and opaque storage
 > “With great power comes great responsibility.”
 >
-> — Uncle Ben, original quote written by Stan Lee in Spider-Man
+> - Uncle Ben, original quote written by Stan Lee in Spider-Man
 
 Computers do exactly what they are told, not what is wanted. Why do some coders say to always initialize variables? In this example, unitialized data gets sent into the function and the result is not deterministic.
 

@@ -127,7 +127,7 @@ if (!res.ok) { /* handle error */ }
 ```
 
 ## Library Overview
-IronCLib is split into small, independent headers. You can use any part on its own—but they are designed to be adopted gradually based on your needs.
+IronCLib is split into small, independent headers. You can use any part on its own - but they are designed to be adopted gradually based on your needs.
 
 The lower sections introduce more opinionated patterns. These are most effective when applied consistently, rather than mixed with raw C equivalents within the same layer of a codebase.
 
@@ -151,8 +151,7 @@ These introduce stronger design patterns and are most effective when used consis
 - `ic_opaque_storage.h`
 - `ic_result.h`
 
-> *Note: IronCLib works best when adopted consistently within a module.*  
-> *Avoid mixing its patterns with raw C equivalents, and don’t adopt everything at once—start small and expand only where it adds value.*
+> *Note: IronCLib works best when adopted consistently within a module. Avoid mixing its patterns with raw C equivalents, and don’t adopt everything at once - start small and expand only where it adds value.*
 
 ## Read more?
 This document is only a quick intro.

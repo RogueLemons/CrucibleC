@@ -16,7 +16,7 @@ The library uses macros in three ways: 1) provide small, necessary, and practica
   * [ic_memory.h](#ic_memoryh)
   * [ic_bounded_loop.h](#ic_bounded_looph)
   * [ic_num_cast.h](#ic_num_casth)
-* [Using in your system]
+* [Using in your system](#using-in-your-system)
 
 ## ic.h
 A simple header that includes all other headers.
