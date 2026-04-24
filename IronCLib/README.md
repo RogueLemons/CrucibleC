@@ -117,7 +117,7 @@ Ad-hoc and monolithic: Quickly define result types (possibly based on global err
 // Matrix4x4 header
 #include "premade/global_result.h"
 
-MY_APP_RESULT_TYPE(Matrix4x4)
+GLOBAL_RESULT_TYPE(Matrix4x4)
 
 Matrix4x4Result mat4_inverse(const Matrix4x4* const m);
 
