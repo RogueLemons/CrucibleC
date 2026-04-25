@@ -166,6 +166,6 @@ IronCLib is licensed under the MIT License. See the [LICENSE](LICENSE) file for 
 # TODO
 - Make typenum generated functions use pointers (only if starting to allow non-integer internal types, maybe for SteelC)?
 - Add tests that can be verified on multiple compilers
-- Add IronHammerC testing system (and guarantee for tested compilers)
+- Add guarantee for tested compilers
 - Implement Make it your own section in using_in_your_system
 - Add comment in documentation about warnings for casting numbers
