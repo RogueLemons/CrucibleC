@@ -461,7 +461,101 @@ cleanup:
 ```
 
 ## Make it your own
-(TODO)
+IronCLib can be wrapped, renamed, or extended to match the needs of a specific codebase. Projects might not use IronCLib directly, but instead build a thin abstraction layer over selected components to enforce consistent naming, behavior, and debugging rules.
+
+### Example
+In this example the user wraps the memory allocator in their own macro and adds extra features to their own memory system.
+
+```c
+// my_memory.h
+#include "ic_memory.h"
+#include <string.h>
+#include <stddef.h>
+
+#define allocate_memory(size, type) IC_MALLOC_ARRAY(type, size)
+
+#define bit_copy(dst_ptr, src_ptr) do {                              \
+    const size_t _dst_size = sizeof(*(dst_ptr));                     \
+    const size_t _src_size = sizeof(*(src_ptr));                     \
+                                                                     \
+    const size_t _min = (_dst_size < _src_size)                      \
+        ? _dst_size                                                  \
+        : _src_size;                                                 \
+                                                                     \
+    memcpy((dst_ptr), (src_ptr), _min);                              \
+                                                                     \
+    if (_dst_size > _min) {                                          \
+        memset((char*)(dst_ptr) + _min, 0, _dst_size - _min);        \
+    }                                                                \
+} while (0)
+```
+
+### Be careful about making a macro language
+IronCLib macros are designed around a simple principle: they should either be explicit in what they do, or generate code that remains easy to reason about; ideally both. The goal is not to hide behavior behind abstraction, but to reduce repetition without reducing clarity.
+
+In many cases, C macros work best when they stay close to the language itself, rather than introducing new control-flow semantics. They are often most useful as constrained utilities that improve readability or reduce boilerplate.
+
+For simple cases, macros can act as lightweight accessors that reduce verbosity without hiding intent:
+
+```c
+// my_result.h
+#include "ic_result.h"
+#include "global_error.h"
+
+#define val(res) (res.data.value)
+#define err(res) ((const Error)(res.data.err))
+
+// Usage
+IntResult res = foo();
+if (res.ok) {
+    bar(val(res));
+} else {
+    printf(Error_to_string(err(res)));
+}
+```
+
+However, it is easy to extend this pattern into full control-flow abstraction, which can reduce readability and make debugging more difficult, especially in larger codebases or long-lived projects.
+
+Standardizing result handling with macros is acceptable, but more complex constructs should be carefully evaluated before being introduced.
+
+```c
+#define reterr(expr) do {                                \
+    const __typeof__(expr) res_tmp = expr;               \
+    if (!(res_tmp).ok) {                                 \
+        RESULT.ok = 0;                                   \
+        RESULT.data.error = err(res_tmp);                \
+        goto CLEANUP;                                    \
+    }                                                    \
+} while(0)
+
+#define FUNCTION_START(res_type, func_name, __VA_ARGS__) \
+    res_type func_name(...)                              \
+    {                                                    \
+        res_type RESULT = res_type##_err(Error_Runtime); \
+        do                                               
+
+#define FUNCTION_END(cleanup_expr)                       \ 
+    while(0);                                            \
+    CLEANUP:                                             \
+        cleanup_expr;                                    \
+        return RESULT;                                   \
+    }
+
+// Usage
+FUNCTION_START(BoolResult, foo, int some_int)
+{
+    Object obj;
+    Object_init(&obj);
+    CharResult some_char = int_to_char(some_int);
+    reterr(some_char);
+    RESULT = Object_use_char(&obj, val(some_char));
+}
+FUNCTION_END(Object_cleanup(&obj))
+```
+
+> Note: Congratulations on noticing that the reterr macro is not MSVC-compatible in its current form. Consider the rewrite necessary for a port that does not have __typeof__.
+
+It may be tempting to build increasingly powerful macro abstractions, but doing so often shifts complexity from runtime behavior into compile-time structure, which can make debugging and onboarding significantly harder. As with all abstractions, the trade-off should be explicit and deliberate. Every rule, abstraction, or non-standard principle introduces a form of debt that must be accounted for later, so care should be taken to avoid introducing too many competing concepts.
 
 ## What NOT to do
 - Do not mix raw C implementation patterns (malloc, enums, structs) with IronCLib abstractions within the same architectural layer; each layer should follow a single, consistent paradigm. Once IronCLib is used within a module, it should be applied consistently. Ownership, data flow, and error handling should follow a unified convention throughout that module.

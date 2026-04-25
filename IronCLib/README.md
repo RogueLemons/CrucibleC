@@ -173,5 +173,5 @@ When using `ic_num_cast.h`, some compilers (especially non-GCC/Clang/MSVC or non
 - Make typenum generated functions use pointers (only if starting to allow non-integer internal types, maybe for SteelC)?
 - Add tests that can be verified on multiple compilers
 - Add guarantee for tested compilers
-- Implement Make it your own section in using_in_your_system
 - Verify once more implementation of ic_num_cast.h
+- Add Iron Hammer C readme
