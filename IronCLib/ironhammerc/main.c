@@ -14,16 +14,10 @@ IHC_TEST(test_math) {
     IHC_CHECK(2 * 2 == 4);
 }
 
-IHC_TEST(test_fail) {
-    IHC_CHECK(1 == 0);
-    IHC_ASSERT(2 == 3);
-}
-
 int main(void) {
 
     const ihc_test_case my_tests[] = {
         IHC_TEST_ENTRY(test_math),
-        IHC_TEST_ENTRY(test_fail)
     };
 
     IHC_RUN(my_tests);

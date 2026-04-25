@@ -187,6 +187,8 @@ typedef struct {
 //   Run tests
 // =========================
 #define IHC_RUN(list) do {                                  \
+    IHC_PRINT("\n================= IRON HAMMER TEST RUN =================", "", "", 0, 0); \
+                                                                   \
     unsigned int count = (sizeof(list) / sizeof((list)[0]));             \
                                                                    \
     for (unsigned int i = 0; i < count; ++i) {                   \
@@ -213,6 +215,8 @@ typedef struct {
 //   Report / summary
 // =========================
 #define IHC_REPORT() do {                                   \
+    IHC_PRINT("\n================= IRON HAMMER C REPORT =================", "", "", 0, 0); \
+                                                                   \
     unsigned int total_tests =                                    \
         ihc_passed_tests + ihc_failed_tests;          \
                                                                    \
