@@ -428,6 +428,8 @@ It provides:
 
 Cast functions are generated using `IC_CASTING_FUNCTIONS` and a user-defined type matrix, where each row must include the type, mold tag (`IC_MOLD_SIGNED_INT`, `IC_MOLD_UNSIGNED_INT`, `IC_MOLD_FLOAT`), min value, and max value, for both the type converted from and to. The system enforces safe conversions by either clamping values to valid ranges or asserting correctness before casting. For floating point types, when clamping, NaN or negative infinity become lowest value in conversion range and positive infinity becomes highest.
 
+> *Note: Code generated with IC_CASTING_FUNCTIONS temporarily disables compiler warnings on GCC, Clang, and MSVC using compiler-specific pragmas. This is done under the assumption that compilers will optimize away dead code paths in the generated code that would otherwise trigger warnings. Normal warning behavior is restored immediately after the generated section.*
+
 ### Why use this?
 It exists because numeric casting in C is unsafe by default: overflow, underflow, and undefined behavior can occur silently, especially across signed/unsigned or float/integer boundaries. This abstraction makes it possible to perform conversions in a deterministic and portable way, with explicit guarantees about behavior. This results in safer numeric code, fewer hidden bugs, and consistent handling of edge cases like NaN and infinity.
 

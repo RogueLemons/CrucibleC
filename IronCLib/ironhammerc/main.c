@@ -9,6 +9,8 @@ do { \
 #include <stdio.h>
 #include "ic_hammer.h"
 
+#include "docs/premade/numbers.h"
+
 IHC_TEST(test_math) {
     IHC_ASSERT(1 + 1 == 2);
     IHC_CHECK(2 * 2 == 4);

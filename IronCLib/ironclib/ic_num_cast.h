@@ -79,6 +79,7 @@ NOTES
 #include "ic_glue_macro.h"
 #include "ic_static_assert.h"
 #include "ic_inline.h"
+#include "ic_disable_warnings.h"
 
 /*
 ===============================================================================
@@ -324,6 +325,8 @@ PUBLIC API
 */
 
 #define IC_CASTING_FUNCTIONS(TYPE_MATRIX) \
-    TYPE_MATRIX(IC_INNER_GEN_CAST)
+    IC_DISABLE_WARNINGS \
+    TYPE_MATRIX(IC_INNER_GEN_CAST) \
+    IC_ENABLE_WARNINGS
 
 #endif // IC_NUM_CAST_H

@@ -11,6 +11,7 @@ IronCLib is not a new programming model, just focused tools that make C code mor
 * [Library Overview](#library-overview)
 * [Read more?](#read-more)
 * [License](#license)
+* [Build Requirements](#build-requirements)
 * [TODO](#todo)
 
 ## Quick Intro
@@ -163,9 +164,14 @@ This document is only a quick intro.
 ## License
 IronCLib is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
+## Build Requirements
+MSVC (/W4 + /WX) requires /wd4127 due to do `{ ... } while(0)` macros. GCC and Clang handle this pattern without issues.
+
+When using `ic_num_cast.h`, some compilers (especially non-GCC/Clang/MSVC or non-standard toolchains) may require manual warning suppression depending on their diagnostic system and C standard support.
+
 # TODO
 - Make typenum generated functions use pointers (only if starting to allow non-integer internal types, maybe for SteelC)?
 - Add tests that can be verified on multiple compilers
 - Add guarantee for tested compilers
 - Implement Make it your own section in using_in_your_system
-- Add comment in documentation about warnings for casting numbers
+- Verify once more implementation of ic_num_cast.h
