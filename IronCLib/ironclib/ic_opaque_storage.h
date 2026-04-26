@@ -6,7 +6,7 @@
 IC Opaque Storage
 
 C Version Compatibility:
-- Works on C89+ (reduced guarantees)
+- Works on C99+ (may come with reduced guarantees)
 - Full correctness on C11+ or compilers with alignment support
 
 -------------------------------------------------------------------------------

@@ -6,7 +6,6 @@
 IC Inline Abstraction Layer
 
 C Compatibility:
-- C89+ fallback supported
 - C99+ inline supported
 - MSVC / GCC / Clang supported
 

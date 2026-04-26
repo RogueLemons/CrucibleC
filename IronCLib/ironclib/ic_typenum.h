@@ -6,7 +6,6 @@
 IC Strong Integer Enum Wrapper (X-Macro Based, Header Safe, Enum-Free)
 
 C Compatibility:
-- C89+ core support
 - C99+ inline where available via IC_HEADER_FUNC
 - Fully header-safe (no linker multiple-definition issues)
 - No use of enum types (ABI-stable, deterministic)

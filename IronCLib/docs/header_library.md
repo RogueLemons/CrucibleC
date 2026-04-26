@@ -56,7 +56,7 @@ A tiny, portable inline abstraction layer for C.
 It provides:
 - `IC_INLINE` for inline intent hints
 - `IC_HEADER_FUNC` for safe header-defined functions
-- Supports C89+, C99 inline, and compiler-specific inline extensions (GCC, Clang, MSVC), with safe fallbacks where inline is unavailable
+- C99 inline, and compiler-specific inline extensions (GCC, Clang, MSVC), with safe fallbacks where inline is unavailable
 
 ### Why use this?
 It exists because inline behavior and header function definitions are not consistently defined across C standards and compilers. This abstraction makes it possible to express inline intent and safely define header-level functions across different toolchains. This results in predictable header behavior and portable performance-oriented code. 
@@ -305,7 +305,7 @@ It provides:
 - `IC_ALIGNOF` for querying alignment
 - `IC_MALLOC_ARRAY` for array allocation with early bad-argument catching
 
-It supports C89+ with fallbacks, while taking advantage of C11 features when available, and works across MSVC, GCC, and Clang. 
+It supports C99+ with fallbacks, while taking advantage of C11 features when available, and works across MSVC, GCC, and Clang. 
 
 >*Note: Alignment is not the easiest problem to manage and different compilers might handle exact usage differently (a portability limitation that must be accepted if using this). You can write your own macro to adjust for this.*
 
@@ -393,7 +393,6 @@ A tiny, portable bounded loop abstraction layer for C.
 It provides:
 - `IC_BOUNDED_WHILE` for limited while-loops
 - `IC_BOUNDED_DO_WHILE` for limited do-while loops
-- `IC89_BOUNDED_FOR` for limit while-loops on old compilers
 
 These macros enforce a maximum iteration limit, preventing accidental infinite loops while preserving natural C loop semantics. 
 

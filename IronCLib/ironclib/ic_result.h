@@ -6,7 +6,7 @@
 IC RESULT
 
 C Compatibility:
-- C89: supported
+- C99+: supported
 - C11+: recommended
 - GCC / Clang / MSVC supported
 

@@ -6,9 +6,6 @@ IC CAST SYSTEM
 This header provides a macro-based, overflow-safe numeric casting system
 for integer and floating-point conversions up to 64-bit types.
 
-It is designed to be C89-compatible at the core level (no required C99+ features
-in generated output).
-
 -------------------------------------------------------------------------------
 CONFIGURATION (USER OVERRIDABLE)
 

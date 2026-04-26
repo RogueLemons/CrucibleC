@@ -6,7 +6,6 @@
 IC Memory Abstraction Layer
 
 C Compatibility:
-- C89+ fallback supported
 - C99+ optional features supported
 - MSVC / GCC / Clang supported
 
@@ -73,7 +72,7 @@ Internal allocation helper
 Purpose:
 - Performs safe multiplication of (count * elem_size)
 - Prevents integer overflow before calling malloc
-- Operates only on size_t (C89-safe design)
+- Operates only on size_t
 
 Safety rules:
 - count == 0 or elem_size == 0 -> NULL
