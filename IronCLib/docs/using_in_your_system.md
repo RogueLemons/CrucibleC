@@ -208,7 +208,7 @@ void free_memory(void* const ptr)
 }
 ```
 
-*Note: The source file creates real enums in order to switch-case the input. Use only when performance is critical since it removes part of the type-safety of the typenum.*
+> *Note: The source file creates real enums in order to switch-case the input. Use only when performance is critical since it removes part of the type-safety of the typenum.*
 
 #### Usage
 ```c
@@ -219,7 +219,9 @@ int* int_list = allocate_memory(sizeof(int), 5, AllocMode_Standard, 0);
 With a centralized memory allocator in place, let's begin expanding it. 
 
 #### my_app_memory.h
-Ease-of-use macros can be added. *Note: Adding these macros can make it harder to scan the code for all memory allocations.*
+Ease-of-use macros can be added. 
+
+> *Note: Adding these macros can make it harder to scan the code for all memory allocations.*
 
 ```c
 #define alloc_mem(count, type) allocate_memory(sizeof(type), count, AllocMode_Standard, 0)
@@ -272,7 +274,9 @@ void free_memory(void* const ptr)
 }
 ```
 
-Self-implemented memory allocators can also be used instead, such as an allocator using a memory pool on the stack, and they can be added or removed at any time in the project for project-wide improvement. *Note: A stack based allocator can make it worthwhile to use "simple" struct forward declarations instead of using opaque storage.*
+Self-implemented memory allocators can also be used instead, such as an allocator using a memory pool on the stack, and they can be added or removed at any time in the project for project-wide improvement. 
+
+> *Note: A stack based allocator can make it worthwhile to use "simple" struct forward declarations instead of using opaque storage.*
 
 ```c
 void* allocate_memory(const long element_size, const long element_count, const AllocMode mode, void* old_ptr)
@@ -553,7 +557,7 @@ FUNCTION_START(BoolResult, foo, int some_int)
 FUNCTION_END(Object_cleanup(&obj))
 ```
 
-> Note: Congratulations on noticing that the reterr macro is not MSVC-compatible in its current form. Consider the rewrite necessary for a port that does not have __typeof__.
+> *Note: Congratulations on noticing that the reterr macro is not MSVC-compatible in its current form. Consider the rewrite necessary for a port that does not have __typeof__.*
 
 It may be tempting to build increasingly powerful macro abstractions, but doing so often shifts complexity from runtime behavior into compile-time structure, which can make debugging and onboarding significantly harder. As with all abstractions, the trade-off should be explicit and deliberate. Every rule, abstraction, or non-standard principle introduces a form of debt that must be accounted for later, so care should be taken to avoid introducing too many competing concepts.
 

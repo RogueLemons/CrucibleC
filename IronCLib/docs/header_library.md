@@ -59,7 +59,9 @@ It provides:
 - Supports C89+, C99 inline, and compiler-specific inline extensions (GCC, Clang, MSVC), with safe fallbacks where inline is unavailable
 
 ### Why use this?
-It exists because inline behavior and header function definitions are not consistently defined across C standards and compilers. This abstraction makes it possible to express inline intent and safely define header-level functions across different toolchains. This results in predictable header behavior and portable performance-oriented code. *Note: Do not confuse inline in C for inline in C++.*
+It exists because inline behavior and header function definitions are not consistently defined across C standards and compilers. This abstraction makes it possible to express inline intent and safely define header-level functions across different toolchains. This results in predictable header behavior and portable performance-oriented code. 
+
+> *Note: Do not confuse inline in C for inline in C++.*
 
 ### Example
 ```c
@@ -81,7 +83,7 @@ It provides:
 
 It expects a basic underlying type (e.g. `int`, `char`) that works with `switch` statements and `==` and the value list must be defined as an X-macro (`LIST(X, Type)` pattern). Use `IC_TYPENUM_FULL(Type, underlying_type, LIST)` as the main entry point. Lower-level macros (`IC_TYPENUM`, `IC_TYPENUM_TO_STRING`, `IC_TYPENUM_GENERATE_CONSTS`) can be used individually to include only the parts you need.
 
-*Note: User is in charge of making sure no duplicate values.*
+> *Note: User is in charge of making sure no duplicate values.*
 
 ### Why use this?
 It exists because C enums do not guarantee a fixed underlying type and are compiler-defined, which reduces portability and ABI stability. This abstraction makes it possible to define enum-like types with explicit underlying representation while keeping values, strings, and helpers synchronized from a single source. This results in safer, more predictable enum-like behavior with reduced duplication and fewer mismatch errors.
@@ -190,7 +192,7 @@ int color_get_red(const Color* c) {
 }
 ```
 
-*Note: Although IC_OPAQUE_STORAGE aligns data internally, strict aliasing rules do not promise to work for pointer casts (even if some compilers behave as if they do). Furthermore, the internal bytes of the opaque struct is aligned yet C makes no promise that a one-field struct shares the alignment of its single field (even if in practice it often does). The safest option is to use memcpy internally (even if it might be slower for large structs).*
+> *Note: Although IC_OPAQUE_STORAGE aligns data internally, strict aliasing rules do not promise to work for pointer casts (even if some compilers behave as if they do). Furthermore, the internal bytes of the opaque struct is aligned yet C makes no promise that a one-field struct shares the alignment of its single field (even if in practice it often does). The safest option is to use memcpy internally (even if it might be slower for large structs).*
 
 #### Usage
 ```c
@@ -301,7 +303,9 @@ It provides:
 - `IC_ALIGNOF` for querying alignment
 - `IC_MALLOC_ARRAY` for array allocation with early bad-argument catching
 
-It supports C89+ with fallbacks, while taking advantage of C11 features when available, and works across MSVC, GCC, and Clang. *Note: Alignment is not the easiest problem to manage and different compilers might handle exact usage differently (a portability limitation that must be accepted if using this). You can write your own macro to adjust for this.*
+It supports C89+ with fallbacks, while taking advantage of C11 features when available, and works across MSVC, GCC, and Clang. 
+
+>*Note: Alignment is not the easiest problem to manage and different compilers might handle exact usage differently (a portability limitation that must be accepted if using this). You can write your own macro to adjust for this.*
 
 `IC_MALLOC_ARRAY` catches negative arguments and integer overflow early and returns null. In worst fallback `IC_ALIGNAS` expands to nothing and `IC_ALIGNOF` uses `offsetof`. `ic_byte` is just an `unsigned char` but it helps with code clarity.
 
@@ -389,7 +393,9 @@ It provides:
 - `IC_BOUNDED_DO_WHILE` for limited do-while loops
 - `IC89_BOUNDED_FOR` for limit while-loops on old compilers
 
-These macros enforce a maximum iteration limit, preventing accidental infinite loops while preserving natural C loop semantics. *Note: The macros build on for loops with internal variables starting with _ic_ to avoid name collisions. Since they are macros, the "arguments" given to them cannot contain commas (e.g. foo(a,b)).*
+These macros enforce a maximum iteration limit, preventing accidental infinite loops while preserving natural C loop semantics. 
+
+> *Note: The macros build on for loops with internal variables starting with _ic_ to avoid name collisions. Since they are macros, the "arguments" given to them cannot contain commas (e.g. foo(a,b)).*
 
 ### Why use this?
 It exists because C provides no built-in protection against infinite loops. A single missing condition or incorrect update can lead to non-terminating behavior. This abstraction makes it possible to enforce deterministic upper bounds on loop execution while keeping the syntax familiar. This results in safer control flow, easier debugging, and more predictable runtime behavior.
