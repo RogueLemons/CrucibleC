@@ -1,6 +1,8 @@
 # Using in your system
 The following sections include topics for using IronCLib in a code base. This is a continuation of [the header library documentation](header_library.md), where this document describes design patterns built on top of IronCLib (not the library itself).
 
+> *Note: Remember that all the following sections are optional and exist for inspiration, not a hard manifesto, just like how all headers are optional.*
+
 ## Table of Contents
 * [Using in your system](#using-in-your-system)
 * [Create a standardized, type-safe error system](#create-a-standardized-type-safe-error-system)

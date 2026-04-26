@@ -290,6 +290,8 @@ IC_HEADER_FUNC CharResult CharResult_err(int e) {
 }
 ```
 
+> *Note: The `_ok` and `_err` functions (e.g. `CharResult_ok` and `CharResult_err`) are recommended to use, but the macros for getting values are purely optional (and the recomendation is to decide a style for the project as a whole). There is value in the explicitness of writing e.g. `if (r.ok) { printf("%c\n", r.data.value); }`.*
+
 ### What NOT to do
 - Do not ignore `.ok` and directly access `.data` without checking success.
 - Do not use Result types as a replacement for validation logic (they are for propagation, not input checking).

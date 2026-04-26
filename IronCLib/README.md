@@ -165,7 +165,7 @@ This document is only a quick intro.
 IronCLib is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Build Requirements
-MSVC (/W4 + /WX) requires /wd4127 due to do `{ ... } while(0)` macros. GCC and Clang handle this pattern without issues.
+MSVC (/W4 + /WX) requires /wd4127 due to `do { ... } while(0)` macros. GCC and Clang handle this pattern without issues.
 
 When using `ic_num_cast.h`, some compilers (especially non-GCC/Clang/MSVC or non-standard toolchains) may require manual warning suppression depending on their diagnostic system and C standard support.
 
