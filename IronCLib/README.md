@@ -174,7 +174,7 @@ When using `ic_num_cast.h`, some compilers (especially non-GCC, non-Clang, or no
 `ic_static_assert.h` uses native static assert when available, otherwise a typedef-based fallback is used, which may trigger unused-typedef warnings depending on the compiler (handle with e.g. `-Wno-unused-local-typedefs` on GCC/Clang).
 
 ## Build and Test Guarantees
-IronCLib is continuously tested on a 64-bit build matrix covering multiple compilers, C standards, and optimization levels.
+IronCLib is continuously tested on a **64-bit** build matrix covering multiple compilers, C standards, and optimization levels.
 
 All headers are verified against:
 
