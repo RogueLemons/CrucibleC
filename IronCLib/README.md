@@ -12,6 +12,7 @@ IronCLib is not a new programming model, just focused tools that make C code mor
 * [Read more?](#read-more)
 * [License](#license)
 * [Build Requirements](#build-requirements)
+* [Build and Test Guarantees](#build-and-test-guarantees)
 * [TODO](#todo)
 
 ## Quick Intro
@@ -172,8 +173,26 @@ When using `ic_num_cast.h`, some compilers (especially non-GCC, non-Clang, or no
 
 `ic_static_assert.h` uses native static assert when available, otherwise a typedef-based fallback is used, which may trigger unused-typedef warnings depending on the compiler (handle with e.g. `-Wno-unused-local-typedefs` on GCC/Clang).
 
+## Build and Test Guarantees
+IronCLib is continuously tested on a 64-bit build matrix covering multiple compilers, C standards, and optimization levels.
+
+All headers are verified against:
+
+| Compiler | C Standard | Optimization | Status |
+|----------|-----------|-------------|--------|
+| gcc      | C99       | O0          | Verified |
+| gcc      | C99       | O2          | Verified |
+| gcc      | C11       | O0          | Verified |
+| gcc      | C11       | O2          | Verified |
+| clang    | C99       | O0          | Verified |
+| clang    | C99       | O2          | Verified |
+| clang    | C11       | O0          | Verified |
+| clang    | C11       | O2          | Verified |
+| msvc     | C99       | O0          | Verified |
+| msvc     | C99       | O2          | Verified |
+| msvc     | C11       | O0          | Verified |
+| msvc     | C11       | O2          | Verified |
+
 # TODO
-- Make typenum generated functions use pointers (only if starting to allow non-integer internal types, maybe for SteelC)?
-- Add tests that can be verified on multiple compilers
-- Add guarantee for tested compilers
+- Add more tests (Bounded loops, Type-safe enums, Numeric casting functions, Opaque storage, Standardized result types)
 - Verify once more implementation of ic_num_cast.h
