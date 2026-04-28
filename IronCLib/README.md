@@ -3,7 +3,9 @@ IronCLib is a small, header-only C library for writing safer, more consistent C 
 
 It provides independent, composable utilities that address common pitfalls like unsafe casts, fragile headers, and inconsistent error handling. Each header works on its own, with no external setup required.
 
-IronCLib is not a new programming model, just focused tools that make C code more predictable, portable, and easier to reason about. Best-effort C99 compatibility, where reasonably practical.
+IronCLib is not a new programming model, just focused tools that make C code more predictable, portable, and easier to reason about. 
+
+C99 compatibility.
 
 ## Table of Contents
 * [IronCLib](#ironclib)
