@@ -16,12 +16,18 @@ do { \
 #include "tests/inline_test.h"
 #include "tests/memory_test.h"
 
-IC_STATIC_ASSERT(8 == 2*4, "A simple verification that the static assert macro works correctly");
+IC_STATIC_ASSERT(8 == 2 * 4, "A simple verification that the static assert macro works correctly");
+
+IHC_TEST(verify_static_assert_works_inside_functions) 
+{
+    IC_STATIC_ASSERT(2 == 1 + 1, "Simple nested static assert test");
+}
 
 int main(void) {
 
     const ihc_test_case my_tests[] = 
     {
+        IHC_TEST_ENTRY(verify_static_assert_works_inside_functions),
         IHC_TEST_ENTRY(verify_header_functions_can_be_used_in_multiple_source_files),
         IHC_TEST_ENTRY(verify_memory_protects_against_negative_size),
         IHC_TEST_ENTRY(verify_memory_protects_against_zero_size),
