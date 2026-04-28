@@ -54,6 +54,9 @@ int main(void) {
         IHC_TEST_ENTRY(verify_simple_same_bit_cast_gives_expected_value),
         IHC_TEST_ENTRY(verify_floating_to_unsigned_stays_within_bounds),
         IHC_TEST_ENTRY(verify_floating_infinity_and_nan_becomes_bounded),
+        IHC_TEST_ENTRY(verify_signed_integer_conversions_for_large_type_to_small_type),
+        IHC_TEST_ENTRY(verify_unsigned_integer_conversions_for_large_type_to_small_type),
+        IHC_TEST_ENTRY(verify_floating_point_conversions_for_large_type_to_small_type),
     };
 
     IHC_RUN(iron_c_lib_tests);

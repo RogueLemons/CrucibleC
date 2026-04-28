@@ -200,5 +200,5 @@ All headers are verified against:
 All configurations above are verified on Windows x86_64.
 
 # TODO
-- Add more tests (Numeric casting functions, Opaque storage, Standardized result types)
+- Add more tests (Opaque storage, Standardized result types)
 - Verify once more implementation of ic_num_cast.h
