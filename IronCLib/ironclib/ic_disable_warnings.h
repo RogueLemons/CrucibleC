@@ -1,6 +1,8 @@
 #ifndef IC_DISABLE_WARNINGS_H
 #define IC_DISABLE_WARNINGS_H
 
+// This header is used internally within the library.
+
 #if defined(_MSC_VER)
 // MSVC
 #define IC_DISABLE_WARNINGS \
