@@ -237,7 +237,7 @@ CONVERSION SAFETY CHECKS
 
 // Clamp at compile-time condition
 #define IC_COMP_CLAMPABLE_FLOAT_TO_FLOAT(from_min, from_max, to_min, to_max) \
-    ((to_min <= from_min) && (to_max >= from_max))
+    0 // ((to_min <= from_min) && (to_max >= from_max)) cannot be used if NaN and infinity shall be clamped
 
 // Assert at runtime condition
 #define IC_INNER_SAFE_FLOAT_TO_FLOAT(v, lo, hi) \
