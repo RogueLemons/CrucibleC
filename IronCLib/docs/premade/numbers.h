@@ -20,6 +20,7 @@ MUTALLY EXCLUSIVE CAST SUPPORT FOR:
 */
 
 #include "ironclib/ic_num_cast.h"
+#include "ironclib/ic_static_assert.h"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -46,8 +47,10 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 #define U64_DATA  u64, IC_MOLD_UNSIGNED_INT, 0,          UINT64_MAX
 // floating point
+IC_STATIC_ASSERT(sizeof(float) == sizeof(uint32_t), "float must be 32 bits");
 typedef float  f32;
 #define F32_DATA f32, IC_MOLD_FLOAT,        -FLT_MAX,   FLT_MAX
+IC_STATIC_ASSERT(sizeof(double) == sizeof(uint64_t), "double must be 64 bits");
 typedef double f64;
 #define F64_DATA f64, IC_MOLD_FLOAT,        -DBL_MAX,   DBL_MAX
 // size
