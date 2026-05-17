@@ -243,7 +243,7 @@ Tools for running tasks across threads or scheduling step-based jobs in a single
 ## Read more?
 This document is only a quick intro.
 
-- For for more in-depth explanations of the headers, [go here](docs/header_library.md).
+- For more in-depth explanations of the headers, [go here](docs/header_library.md).
 - For ideas on how to use the library in your project, [go here](docs/using_in_your_system.md).
 - For premade monolithic files, [go here](docs/premade). These are referenced in documentation.
 - For a minimal, header-based test-framework or information on how IronCLib is tested, [go here](ironhammerc).
@@ -286,4 +286,4 @@ All configurations above are verified on Windows x86_64.
 
 # TODO
 - Test on Linux platform as well
-- Add C++ compatability guards?
+- Add C++ compatibility guards?

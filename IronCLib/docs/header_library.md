@@ -375,7 +375,7 @@ It supports C99+ with fallbacks, while taking advantage of C11 features when ava
 
 >*Note: Alignment is not the easiest problem to manage and different compilers might handle exact usage differently (a portability limitation that must be accepted if using this). You can write your own macro to adjust for this.*
 
-`IC_MALLOC_ARRAY` catches negative arguments and integer overflow early and returns null. In worst fallback `IC_ALIGNAS` expands to nothing and `IC_ALIGNOF` uses `offsetof`. `ic_byte` is just an `unsigned char` but it helps with code clarity.
+`IC_MALLOC_ARRAY` catches negative arguments and integer overflow early and returns null. In the worst fallback `IC_ALIGNAS` expands to nothing and `IC_ALIGNOF` uses `offsetof`. `ic_byte` is just an `unsigned char` but it helps with code clarity.
 
 ### Why use this?
 It exists because memory allocation and alignment handling in C are error-prone and inconsistent across compilers and standards. This abstraction makes it possible to safely allocate arrays without risking integer overflow and to write portable alignment-aware code. This results in fewer memory-related bugs, safer allocations, and improved cross-platform reliability.
@@ -609,7 +609,8 @@ It provides:
 
 `ic_concurrency_signal.h` provides:
 - `ic_condition_variable` for thread coordination via wait/notify semantics, blocking without CPU usage while waiting
-- `ic_signal` for simpler wait/notify usage
+- `ic_gate` for signalling one waiter at a time
+- `ic_broadcast` for signalling all waiters
 
 The API is designed to be minimal and predictable while hiding platform-specific threading details (C11, pthreads, or Windows).
 

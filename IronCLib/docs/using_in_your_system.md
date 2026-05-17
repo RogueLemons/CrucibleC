@@ -368,7 +368,7 @@ void string_cleanup(String* const out_string);
 
 void string_set(String* const out_string, const char* const c_str); 
 void string_add(String* const out_string, const String* const other_string); 
-void string_add_chars(String* const out_string, const char* const c_str) 
+void string_add_chars(String* const out_string, const char* const c_str); 
 const char* string_get_data(const String* const s); 
 size_t string_get_size(const String* const s); 
 size_t string_get_capacity(const String* const s);
@@ -378,7 +378,7 @@ size_t string_get_capacity(const String* const s);
 ```c
 void foo()
 {
-    string str;
+    String str;
     string_init_with(&str, "Hello there!");
 
     printf("String data: %s\n", string_get_data(&str));
@@ -938,7 +938,7 @@ bool run_processing_sequence(int x, int y, int z)
         }
     }
 
-    return shared_data.failure_detected;
+    return !(shared_data.failure_detected || shared_data.abort);
 }
 ```
 
