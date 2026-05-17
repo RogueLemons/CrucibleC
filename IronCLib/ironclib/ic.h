@@ -12,5 +12,7 @@
 #include "ic_result.h"
 #include "ic_opaque_storage.h"
 #include "ic_concurrency.h"
+#include "ic_concurrency_signal.h"
+#include "ic_co_job.h"
 
 #endif // IRON_C_FULL_H

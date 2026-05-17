@@ -818,7 +818,6 @@ A job can also be stored as static storage and initialized in a dedicated setup 
 ```c
 // job.c
 #include "job.h"
-#include <stdio.h>
 
 static void processing_job_step_1(void* data);
 static void processing_job_step_2(void* data);
