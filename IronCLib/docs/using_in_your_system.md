@@ -943,7 +943,7 @@ bool run_processing_sequence(int x, int y, int z)
 
 The scheduler is not stopped on abort so that remaining steps can observe and react to the updated state. In this model, jobs remain structurally complete while still supporting coordinated shutdown behavior. Abort handling stays explicit, local to the shared state model, and fully under application control rather than being embedded into the scheduler itself.
 
-> *Note: Schedulers do not have a reset. If a scheduling function is run multiple times in quick succession and adding jobs to it causes a performance impact, then the expected method to handle it is to create a `make_X_scheduler` function that initializes a scheduler once and then returns copies from it.*
+> *Note: Schedulers do not have a reset. If a scheduling function is run multiple times in quick succession and adding jobs to it causes a performance impact, then the expected method to handle it is to create a `make_X_scheduler_context` function that initializes a scheduler once, AND the data for the jobs, and then returns copies from it. The returned context could e.g. be `struct XSchedulerContext { XSharedData data; ic_co_scheduler sched; }`.*
 
 ## What NOT to do
 - Do not mix raw C implementation patterns (malloc, enums, structs) with IronCLib abstractions within the same architectural layer; each layer should follow a single, consistent paradigm. Once IronCLib is used within a module, it should be applied consistently. Ownership, data flow, and error handling should follow a unified convention throughout that module.
