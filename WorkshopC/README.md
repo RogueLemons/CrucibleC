@@ -19,3 +19,5 @@ It shall
 - Be able to turn off warnings in-file by writing "// WorkshopC off" and turn back on with "// WorkshopC on"
 - Look for WorkshopCSettings.csv file and use its settings (default if not exist)
 - Number of warnings be return value of script/app main function.
+- Make argument reassignment illegal (member reassignment still legal)
+- Optional rules for enforcing Copied<Struct> and Moved<Struct>
