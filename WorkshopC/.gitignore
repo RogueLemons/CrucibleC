@@ -1,0 +1,55 @@
+# =========================
+# CMake build folders
+# =========================
+build/
+build-*/
+out/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+*.cmake
+
+# =========================
+# Visual Studio / MSVC
+# =========================
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.vcxproj.user
+
+# Build outputs
+Debug/
+Release/
+x64/
+x86/
+*.exe
+*.obj
+*.pdb
+*.ilk
+
+# =========================
+# GCC / Clang
+# =========================
+*.o
+*.out
+*.a
+*.so
+
+# =========================
+# VS Code
+# =========================
+.vscode/*
+
+# =========================
+# OS junk
+# =========================
+.DS_Store
+Thumbs.db

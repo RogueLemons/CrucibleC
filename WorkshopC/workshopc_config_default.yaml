@@ -1,0 +1,19 @@
+# WorkshopC Configuration File
+
+# Paths configuration
+# third_party_includes are not affected by rules
+
+third_party_includes:
+  - external/
+  - third_party/
+  - vendor/
+  - libs/
+  - dependencies/
+
+# Rules section
+# Rules can be: Off, Warning, Error
+
+rules:
+  # Enum rule - forbids enum declarations
+  enum:
+    level: Warning

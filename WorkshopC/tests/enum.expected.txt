@@ -1,0 +1,2 @@
+warning: enum 'Color' is not allowed
+warning: enum 'detected_enum' is not allowed
