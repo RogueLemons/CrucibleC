@@ -11,7 +11,7 @@ enum class RuleLevel {
 };
 
 struct RuleConfig {
-    RuleLevel level = RuleLevel::Warning;
+    RuleLevel level = RuleLevel::Off;
     std::map<std::string, std::string> options;
 };
 

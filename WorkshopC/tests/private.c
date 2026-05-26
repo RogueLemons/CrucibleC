@@ -29,6 +29,6 @@ void set_color(Color* c, int r, int g, int b)
 void bad_set(Color* c, int r, int g, int b)
 {
     c->_private.r = r;
-    // c->_private.g = g;
-    // c->_private.b = b;
+    c->_private.g = g;
+    c->_private.b = b;
 }

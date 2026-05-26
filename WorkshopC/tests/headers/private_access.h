@@ -23,8 +23,8 @@ static RGB pget_color_in_header(const Color* c)
 {
     RGB rgb = {0};
     rgb.r = c->_private.r;
-    // rgb.g = c->_private.g;
-    // rgb.b = c->_private.b;
+    rgb.g = c->_private.g;
+    rgb.b = c->_private.b;
     return rgb;
 }
 

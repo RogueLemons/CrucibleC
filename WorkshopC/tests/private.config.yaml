@@ -1,0 +1,11 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  private:
+    level: Warning
+    private_field: _private
+    setter_contains: pset
+    getter_contains: pget

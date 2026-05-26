@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import subprocess
+from collections import Counter
 
 ROOT = Path(__file__).resolve().parent
 
@@ -36,48 +37,50 @@ def load_expected(test_file):
     return lines
 
 
-def normalize(line: str) -> str:
+def load_config(test_file):
+    config_file = test_file.with_suffix(".config.yaml")
+
+    if not config_file.exists():
+        print(f"Missing config file: {config_file}")
+        return None
+
+    return config_file
+
+
+def normalize(line: str):
     """
-    Converts full compiler diagnostics into comparable message-only form.
-    Keeps prefix (error:/warning:) but removes file/line/column.
+    Extract diagnostic messages only.
     """
+
     line = line.strip()
 
-    if "error:" in line:
-        return "error: " + line.split("error:", 1)[1].strip()
+    warning_index = line.find("warning:")
+    if warning_index != -1:
+        return "warning: " + line[warning_index + len("warning:"):].strip()
 
-    if "warning:" in line:
-        return "warning: " + line.split("warning:", 1)[1].strip()
+    error_index = line.find("error:")
+    if error_index != -1:
+        return "error: " + line[error_index + len("error:"):].strip()
 
-    return line
+    return None
 
 
 def collect_messages(output: str):
-    """
-    Extract normalized diagnostic messages.
-    """
     messages = []
 
     for line in output.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-
-        messages.append(normalize(line))
+        n = normalize(line)
+        if n is not None:
+            messages.append(n)
 
     return messages
 
 
 def main():
     exe = get_exe()
-    config = RELEASE / "workshopc_config.yaml"
 
     if not exe.exists():
         print("Missing release executable")
-        sys.exit(1)
-
-    if not config.exists():
-        print("Missing config in release/")
         sys.exit(1)
 
     test_files = list(TESTS.rglob("*.c"))
@@ -95,8 +98,9 @@ def main():
         print("==============================")
 
         expected_lines = load_expected(test)
+        config_file = load_config(test)
 
-        if expected_lines is None:
+        if expected_lines is None or config_file is None:
             print("--FAILED--")
             failed += 1
             continue
@@ -104,7 +108,7 @@ def main():
         result = subprocess.run(
             [
                 str(exe),
-                str(config),
+                str(config_file),
                 str(test),
                 str(BUILD)
             ],
@@ -117,20 +121,32 @@ def main():
         if combined_output.strip():
             print(combined_output)
 
-        # normalize actual output
         actual_messages = collect_messages(combined_output)
-        actual_set = set(actual_messages)
+
+        expected_counter = Counter(
+            normalize(x)
+            for x in expected_lines
+            if normalize(x) is not None
+        )
+
+        actual_counter = Counter(actual_messages)
 
         missing = []
+        unexpected = []
 
-        # expected is also normalized before comparison
-        for expected in expected_lines:
-            expected_norm = normalize(expected)
+        for msg, expected_count in expected_counter.items():
+            actual_count = actual_counter.get(msg, 0)
+            if actual_count < expected_count:
+                missing.append((msg, expected_count - actual_count))
 
-            if expected_norm not in actual_set:
-                missing.append(expected)
+        for msg, actual_count in actual_counter.items():
+            expected_count = expected_counter.get(msg, 0)
+            if actual_count > expected_count:
+                unexpected.append((msg, actual_count - expected_count))
 
-        if result.returncode == 0 and not missing:
+        success = (not missing and not unexpected)
+
+        if success:
             print("--PASSED--")
             passed += 1
         else:
@@ -138,9 +154,16 @@ def main():
 
             if missing:
                 print("\nMissing expected diagnostics:")
+                for msg, count in missing:
+                    print(f"  {msg}" + (f" (missing {count})" if count > 1 else ""))
 
-                for m in missing:
-                    print("  ", m)
+            if unexpected:
+                print("\nUnexpected diagnostics:")
+                for msg, count in unexpected:
+                    print(f"  {msg}" + (f" (extra {count})" if count > 1 else ""))
+
+            if result.returncode != 0:
+                print(f"\nProcess returned non-zero exit code: {result.returncode}")
 
             failed += 1
 

@@ -1,0 +1,8 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  enum:
+    level: Warning
