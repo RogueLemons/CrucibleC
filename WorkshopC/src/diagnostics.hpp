@@ -45,7 +45,7 @@ public:
             << presumed.getLine()
             << ":"
             << presumed.getColumn()
-            << ": "
+            << ":\t"
             << levelStr
             << ": "
             << message
