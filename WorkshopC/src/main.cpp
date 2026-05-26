@@ -2,6 +2,7 @@
 #include "config.hpp"
 #include "suppression_manager.hpp"
 #include "rule_enum.hpp"
+#include "rule_private.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -30,6 +31,7 @@ private:
     SuppressionManager suppressions{};
 
     std::unique_ptr<EnumRule> enumRule{};
+    std::unique_ptr<PrivateRule> privateRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -51,8 +53,27 @@ public:
                 suppressions,
                 *diagnostics
             );
+        
+            finder.addMatcher(
+                enumDecl().bind("enum"),
+                enumRule.get()
+            );
+        }
 
-            finder.addMatcher(enumDecl().bind("enum"), enumRule.get());
+        if (config.hasRule("private")) {
+            privateRule = std::make_unique<PrivateRule>(
+                config.getRuleConfig("private"),
+                config,
+                suppressions,
+                *diagnostics
+            );
+        
+            finder.addMatcher(
+                memberExpr(
+                    hasAncestor(functionDecl().bind("parentFunction"))
+                ).bind("privateAccess"),
+                privateRule.get()
+            );
         }
 
         return finder.newASTConsumer();

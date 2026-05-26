@@ -1,0 +1,1 @@
+warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'

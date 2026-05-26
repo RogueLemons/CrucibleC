@@ -1,5 +1,5 @@
-#ifndef TESTS_DETECT_HAS_ENUM_H
-#define TESTS_DETECT_HAS_ENUM_H
+#ifndef TESTS_HEADERS_HAS_ENUM_H
+#define TESTS_HEADERS_HAS_ENUM_H
 
 enum detected_enum 
 {
@@ -15,4 +15,4 @@ enum detected_enum
     K \
 };
 
-#endif // TESTS_DETECT_HAS_ENUM_H
+#endif // TESTS_HEADERS_HAS_ENUM_H

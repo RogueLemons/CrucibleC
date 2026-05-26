@@ -17,3 +17,10 @@ rules:
   # Enum rule - forbids enum declarations
   enum:
     level: Warning
+
+  # Private rule - forbids access of private struct fields
+  private:
+    level: Warning
+    private_field: _private
+    setter_contains: pset
+    getter_contains: pget

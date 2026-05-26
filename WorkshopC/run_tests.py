@@ -36,6 +36,38 @@ def load_expected(test_file):
     return lines
 
 
+def normalize(line: str) -> str:
+    """
+    Converts full compiler diagnostics into comparable message-only form.
+    Keeps prefix (error:/warning:) but removes file/line/column.
+    """
+    line = line.strip()
+
+    if "error:" in line:
+        return "error: " + line.split("error:", 1)[1].strip()
+
+    if "warning:" in line:
+        return "warning: " + line.split("warning:", 1)[1].strip()
+
+    return line
+
+
+def collect_messages(output: str):
+    """
+    Extract normalized diagnostic messages.
+    """
+    messages = []
+
+    for line in output.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        messages.append(normalize(line))
+
+    return messages
+
+
 def main():
     exe = get_exe()
     config = RELEASE / "workshopc_config.yaml"
@@ -85,11 +117,18 @@ def main():
         if combined_output.strip():
             print(combined_output)
 
+        # normalize actual output
+        actual_messages = collect_messages(combined_output)
+        actual_set = set(actual_messages)
+
         missing = []
 
-        for line in expected_lines:
-            if line not in combined_output:
-                missing.append(line)
+        # expected is also normalized before comparison
+        for expected in expected_lines:
+            expected_norm = normalize(expected)
+
+            if expected_norm not in actual_set:
+                missing.append(expected)
 
         if result.returncode == 0 and not missing:
             print("--PASSED--")

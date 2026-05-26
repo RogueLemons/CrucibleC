@@ -1,5 +1,5 @@
-#ifndef TESTS_NOT_DETECT_HAS_ENUM_H
-#define TESTS_NOT_DETECT_HAS_ENUM_H
+#ifndef TESTS_EXTERNAL_HAS_ENUM_H
+#define TESTS_EXTERNAL_HAS_ENUM_H
 
 enum undetected_enum 
 {
@@ -15,4 +15,4 @@ enum undetected_enum
     F \
 };
 
-#endif // TESTS_NOT_DETECT_HAS_ENUM_H
+#endif // TESTS_EXTERNAL_HAS_ENUM_H

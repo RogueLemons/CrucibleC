@@ -18,7 +18,8 @@ It shall
 - Optional rules for enforcing Copied<Struct> and Moved<Struct>, or Owned<Struct>
 - Make pod structs require a make_ function and class structs require an _init function (optionally _or_die)
 - Make release folder visible in git at the end
-- Introduce private struct fields
+- Fix bug in run_tests.py that thinks a passing test fails if it detects as errors
+- Make all tests use their own yaml
 
 # WorkshopC Build System Documentation
 
