@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <signal.h>
+#include <errno.h>
 
 #include "headers/has_enum.h"
 #include "external/has_enum.h"

@@ -1,5 +1,6 @@
 #include "config_parser.hpp"
 #include "config.hpp"
+#include "suppression_manager.hpp"
 #include "rule_enum.hpp"
 
 #include <clang/Tooling/Tooling.h>
@@ -19,14 +20,16 @@ using namespace clang::ast_matchers;
 // -------------------------
 class WorkshopFrontendAction : public ASTFrontendAction {
 private:
-    MatchFinder finder;
+    MatchFinder finder{};
     const Config &config;
 
     int &warnings;
     int &errors;
 
-    std::unique_ptr<EnumRule> enumRule;
-    std::unique_ptr<Diagnostics> diagnostics;
+    std::unique_ptr<Diagnostics> diagnostics{};
+    SuppressionManager suppressions{};
+
+    std::unique_ptr<EnumRule> enumRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -45,6 +48,7 @@ public:
             enumRule = std::make_unique<EnumRule>(
                 config.getRuleConfig("enum"),
                 config,
+                suppressions,
                 *diagnostics
             );
 

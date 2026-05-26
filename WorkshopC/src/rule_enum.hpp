@@ -8,6 +8,7 @@
 
 #include "config.hpp"
 #include "diagnostics.hpp"
+#include "suppression_manager.hpp"
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -17,6 +18,7 @@ private:
     RuleConfig config;
     const Config &globalConfig;
 
+    SuppressionManager &suppressions;
     Diagnostics &diagnostics;
 
 private:
@@ -32,13 +34,16 @@ private:
 public:
     EnumRule(const RuleConfig &cfg,
              const Config &gc,
+             SuppressionManager &sup,
              Diagnostics &diag)
         : config(cfg),
           globalConfig(gc),
+          suppressions(sup),
           diagnostics(diag) {}
 
     void run(const MatchFinder::MatchResult &result) override {
-        const auto *e = result.Nodes.getNodeAs<EnumDecl>("enum");
+        const auto *e =
+            result.Nodes.getNodeAs<EnumDecl>("enum");
 
         if (!e)
             return;
@@ -53,7 +58,7 @@ public:
         bool fromMacro = loc.isMacroID();
 
         // -------------------------
-        // Resolve REAL source location
+        // Resolve locations
         // -------------------------
 
         SourceLocation spellingLoc =
@@ -62,6 +67,17 @@ public:
         SourceLocation expansionLoc =
             sm.getExpansionLoc(loc);
 
+        // -------------------------
+        // Suppression handling
+        // -------------------------
+
+        if (suppressions.isSuppressed(sm, expansionLoc))
+            return;
+
+        // -------------------------
+        // File paths
+        // -------------------------
+
         std::string spellingPath =
             sm.getFilename(spellingLoc).str();
 
@@ -69,8 +85,7 @@ public:
             sm.getFilename(expansionLoc).str();
 
         // -------------------------
-        // Ignore third-party macros
-        // based on WHERE MACRO WAS DEFINED
+        // Ignore third-party macro definitions
         // -------------------------
 
         if (!spellingPath.empty() &&
@@ -89,6 +104,10 @@ public:
             return;
         }
 
+        // -------------------------
+        // Build message
+        // -------------------------
+
         std::string name = e->getNameAsString();
 
         if (name.empty())
@@ -101,8 +120,7 @@ public:
             msg += " (macro expansion)";
 
         // -------------------------
-        // Use expansion location
-        // so diagnostics point to actual usage site
+        // Report diagnostic
         // -------------------------
 
         diagnostics.report(
