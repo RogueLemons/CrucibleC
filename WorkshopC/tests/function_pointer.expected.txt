@@ -1,0 +1,2 @@
+warning: function pointer usage is not allowed (math_func)
+warning: function pointer usage is not allowed (add_func)

@@ -2,7 +2,6 @@
 
 # Paths configuration
 # third_party_includes are not affected by rules
-
 third_party_includes:
   - external/
   - third_party/
@@ -12,7 +11,6 @@ third_party_includes:
 
 # Rules section
 # Rules can be: Off, Warning, Error
-
 rules:
   # Enum rule - forbids enum declarations
   enum:
@@ -20,7 +18,11 @@ rules:
 
   # Private rule - forbids access of private struct fields
   private:
-    level: Warning
+    level: Error
     private_field: _private
     setter_contains: pset
     getter_contains: pget
+
+  # Typedef rule - requires typedef for all function pointers
+  function_pointer:
+    level: Warning

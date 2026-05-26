@@ -3,6 +3,7 @@
 #include "suppression_manager.hpp"
 #include "rule_enum.hpp"
 #include "rule_private.hpp"
+#include "rule_function_pointer.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -32,6 +33,7 @@ private:
 
     std::unique_ptr<EnumRule> enumRule{};
     std::unique_ptr<PrivateRule> privateRule{};
+    std::unique_ptr<FunctionPointerRule> functionPointerRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -41,11 +43,13 @@ public:
         CompilerInstance &CI,
         StringRef) override
     {
+        // Diagnostics
         diagnostics = std::make_unique<Diagnostics>(
             warnings,
             errors
         );
 
+        // Enum rule
         if (config.hasRule("enum")) {
             enumRule = std::make_unique<EnumRule>(
                 config.getRuleConfig("enum"),
@@ -60,6 +64,7 @@ public:
             );
         }
 
+        // Private rule
         if (config.hasRule("private")) {
             privateRule = std::make_unique<PrivateRule>(
                 config.getRuleConfig("private"),
@@ -73,6 +78,26 @@ public:
                     hasAncestor(functionDecl().bind("parentFunction"))
                 ).bind("privateAccess"),
                 privateRule.get()
+            );
+        }
+
+        // Function pointer rule
+        if (config.hasRule("function_pointer")) {
+            functionPointerRule = std::make_unique<FunctionPointerRule>(
+                config.getRuleConfig("function_pointer"),
+                config,
+                suppressions,
+                *diagnostics
+            );
+        
+            finder.addMatcher(
+                parmVarDecl().bind("funcptr"),
+                functionPointerRule.get()
+            );
+            
+            finder.addMatcher(
+                varDecl().bind("funcptr"),
+                functionPointerRule.get()
             );
         }
 
