@@ -1,2 +1,3 @@
 warning: enum 'Color' is not allowed
 warning: enum 'detected_enum' is not allowed
+warning: enum 'macro_detected' is not allowed (macro expansion)

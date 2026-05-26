@@ -10,6 +10,11 @@ enum Color {
     BLUE
 };
 
+DEFINE_SOME_UNDETECTED_ENUM_VALUE
+
+// This should trigger a warning
+DEFINE_SOME_DETECTED_ENUM_VALUE
+
 int main() {
     enum Color c = RED;
     printf("Color: %d\n", c);

@@ -22,19 +22,17 @@ public:
         clang::SourceLocation loc,
         const std::string &message
     ) {
-        if (level == RuleLevel::Off) {
+        if (level == RuleLevel::Off)
             return;
-        }
 
-        if (loc.isInvalid()) {
+        if (loc.isInvalid())
             return;
-        }
 
-        clang::PresumedLoc presumed = sm.getPresumedLoc(loc);
+        clang::PresumedLoc presumed =
+            sm.getPresumedLoc(loc);
 
-        if (presumed.isInvalid()) {
+        if (presumed.isInvalid())
             return;
-        }
 
         const char *levelStr =
             (level == RuleLevel::Warning)
@@ -53,11 +51,9 @@ public:
             << message
             << "\n";
 
-        if (level == RuleLevel::Warning) {
+        if (level == RuleLevel::Warning)
             warnings++;
-        }
-        else if (level == RuleLevel::Error) {
+        else if (level == RuleLevel::Error)
             errors++;
-        }
     }
 };

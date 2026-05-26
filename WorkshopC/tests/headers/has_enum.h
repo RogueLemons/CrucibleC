@@ -8,4 +8,11 @@ enum detected_enum
     Z
 };
 
+#define DEFINE_SOME_DETECTED_ENUM_VALUE enum macro_detected \
+{ \
+    I, \
+    J, \
+    K \
+};
+
 #endif // TESTS_DETECT_HAS_ENUM_H

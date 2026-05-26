@@ -8,4 +8,11 @@ enum undetected_enum
     C
 };
 
+#define DEFINE_SOME_UNDETECTED_ENUM_VALUE enum macro_undetected \
+{ \
+    D, \
+    E, \
+    F \
+};
+
 #endif // TESTS_NOT_DETECT_HAS_ENUM_H

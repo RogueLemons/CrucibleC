@@ -26,6 +26,7 @@ private:
     int &errors;
 
     std::unique_ptr<EnumRule> enumRule;
+    std::unique_ptr<Diagnostics> diagnostics;
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -35,12 +36,16 @@ public:
         CompilerInstance &CI,
         StringRef) override
     {
+        diagnostics = std::make_unique<Diagnostics>(
+            warnings,
+            errors
+        );
+
         if (config.hasRule("enum")) {
             enumRule = std::make_unique<EnumRule>(
                 config.getRuleConfig("enum"),
                 config,
-                warnings,
-                errors
+                *diagnostics
             );
 
             finder.addMatcher(enumDecl().bind("enum"), enumRule.get());
