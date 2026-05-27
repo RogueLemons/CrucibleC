@@ -125,4 +125,7 @@ void test(
     struct Data struct_with_ptr = {0};
     // Allowed
     struct DataNoPtrs simple_data_obj = {0};
+
+    // Forbidden
+    struct Data init_data_with_null = { .ptr = NULL, .value = 5};
 }

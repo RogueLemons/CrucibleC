@@ -20,3 +20,4 @@ warning: taking address of non-const argument 'arg' is forbidden
 warning: taking address of non-const argument 'arg' is forbidden
 warning: object 'zero_init_ptr' containing pointers may not be initialized with {0}
 warning: object 'struct_with_ptr' containing pointers may not be initialized with {0}
+warning: NULL used in pointer field initializer for 'init_data_with_null.ptr'

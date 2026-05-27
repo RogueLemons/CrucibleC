@@ -70,15 +70,12 @@ private:
         if (!e)
             return false;
 
-        // NULL
         if (const auto *dre = dyn_cast<DeclRefExpr>(e))
             return dre->getNameInfo().getAsString() == "NULL";
 
-        // pure 0
         if (const auto *il = dyn_cast<IntegerLiteral>(e))
             return il->getValue() == 0;
 
-        // (void*)0 / (int*)0
         if (const auto *cast = dyn_cast<CStyleCastExpr>(e)) {
 
             const Expr *sub = norm(cast->getSubExpr());
@@ -87,7 +84,6 @@ private:
                 return il->getValue() == 0;
         }
 
-        // nullptr
         if (isa<CXXNullPtrLiteralExpr>(e))
             return true;
 
@@ -97,7 +93,6 @@ private:
     bool containsPointer(QualType qt) const {
         qt = qt.getUnqualifiedType();
 
-        // direct pointer
         if (qt->isPointerType())
             return true;
 
@@ -120,7 +115,6 @@ private:
             return false;
 
         for (const FieldDecl *field : rd->fields()) {
-
             if (containsPointer(field->getType()))
                 return true;
         }
@@ -128,10 +122,7 @@ private:
         return false;
     }
 
-    bool isLiteralZeroInit(
-        const Expr *e,
-        SourceManager &sm
-    ) const {
+    bool isLiteralZeroInit(const Expr *e, SourceManager &sm) const {
         if (!e)
             return false;
 
@@ -173,9 +164,6 @@ public:
     void run(const MatchFinder::MatchResult &result) override {
         SourceManager &sm = *result.SourceManager;
 
-        // =====================================================
-        // VAR DECL INITIALIZATION RULE
-        // =====================================================
         if (const auto *vd =
                 result.Nodes.getNodeAs<VarDecl>("varDecl"))
         {
@@ -203,9 +191,6 @@ public:
                 );
             }
 
-            // =====================================================
-            // forbid_zero_init_for_objects_with_pointers
-            // =====================================================
             if (opt("forbid_zero_init_for_objects_with_pointers")) {
 
                 const Expr *init = vd->getInit();
@@ -224,51 +209,98 @@ public:
                 }
             }
 
-            // =====================================================
-            // forbid_mut_arg_pointer
-            // =====================================================
-            if (opt("forbid_mut_arg_pointer")) {
+            if (opt("forbid_null_assign")) {
 
                 const Expr *init = vd->getInit();
-
                 if (!init)
                     return;
 
-                init = norm(init);
+                init = init->IgnoreImplicit();
 
-                if (const auto *uop = dyn_cast<UnaryOperator>(init)) {
+                if (const auto *ile = dyn_cast<InitListExpr>(init)) {
 
-                    if (uop->getOpcode() != UO_AddrOf)
-                        return;
+                    const RecordDecl *rd =
+                        vd->getType()->getAsRecordDecl();
 
-                    const Expr *sub = norm(uop->getSubExpr());
+                    unsigned idx = 0;
 
-                    if (const auto *dre =
-                            dyn_cast<DeclRefExpr>(sub))
-                    {
-                        if (const auto *pd =
-                                dyn_cast<ParmVarDecl>(dre->getDecl()))
-                        {
-                            if (!pd->getType().isConstQualified()) {
+                    for (const Expr *child : ile->inits()) {
+
+                        child = norm(child);
+                        if (!child)
+                            continue;
+
+                        const FieldDecl *field = nullptr;
+
+                        if (rd) {
+                            unsigned i = 0;
+                            for (const FieldDecl *f : rd->fields()) {
+                                if (i == idx) {
+                                    field = f;
+                                    break;
+                                }
+                                ++i;
+                            }
+                        }
+
+                        ++idx;
+
+                        if (field && field->getType()->isPointerType()) {
+
+                            if (isNullExpr(child)) {
 
                                 diagnostics.report(
                                     config.level,
                                     sm,
-                                    vd->getLocation(),
-                                    "taking address of non-const argument '" +
-                                    nameOf(pd) +
-                                    "' is forbidden"
+                                    child->getExprLoc(),
+                                    "NULL used in pointer field initializer for '" +
+                                    nameOf(vd) + "." +
+                                    field->getNameAsString() + "'"
                                 );
                             }
                         }
                     }
                 }
             }
+
+            // FIXED: forbid_mut_arg_pointer (now handles all Clang wrapping)
+            if (opt("forbid_mut_arg_pointer")) {
+
+                const Expr *init = vd->getInit();
+                if (!init)
+                    return;
+
+                init = norm(init);
+                init = init->IgnoreImplicit();
+
+                const Expr *sub = init;
+
+                if (const auto *uop = dyn_cast<UnaryOperator>(sub)) {
+                    if (uop->getOpcode() == UO_AddrOf)
+                        sub = norm(uop->getSubExpr());
+                }
+
+                if (const auto *dre = dyn_cast<DeclRefExpr>(sub)) {
+
+                    if (const auto *pd =
+                            dyn_cast<ParmVarDecl>(dre->getDecl()))
+                    {
+                        if (!pd->getType().isConstQualified()) {
+
+                            diagnostics.report(
+                                config.level,
+                                sm,
+                                vd->getLocation(),
+                                "taking address of non-const argument '" +
+                                nameOf(pd) +
+                                "' is forbidden"
+                            );
+                        }
+                    }
+                }
+            }
         }
 
-        // =====================================================
-        // ASSIGNMENT RULES
-        // =====================================================
         if (const auto *op =
                 result.Nodes.getNodeAs<BinaryOperator>("assignmentOp"))
         {
@@ -284,9 +316,6 @@ public:
             const Expr *lhs = norm(op->getLHS());
             const Expr *rhs = norm(op->getRHS());
 
-            // -------------------------------------------------
-            // NULL ASSIGNMENT
-            // -------------------------------------------------
             if (opt("forbid_null_assign")) {
 
                 if (lhs &&
@@ -318,13 +347,11 @@ public:
                 }
             }
 
-            // -------------------------------------------------
-            // ARGUMENT REASSIGNMENT + STRUCT RULE
-            // -------------------------------------------------
             if (opt("forbid_arg_reassign")) {
 
-                // arg = value
-                if (const auto *dre = dyn_cast<DeclRefExpr>(lhs)) {
+                const Expr *nLHS = norm(lhs);
+
+                if (const auto *dre = dyn_cast<DeclRefExpr>(nLHS)) {
 
                     if (const auto *pd =
                             dyn_cast<ParmVarDecl>(dre->getDecl()))
@@ -340,8 +367,7 @@ public:
                     }
                 }
 
-                // arg.field = value (by-value only)
-                if (const auto *me = dyn_cast<MemberExpr>(lhs)) {
+                if (const auto *me = dyn_cast<MemberExpr>(nLHS)) {
 
                     const Expr *base = norm(me->getBase());
 
@@ -371,9 +397,6 @@ public:
             }
         }
 
-        // =====================================================
-        // CALL RULE (NULL ARGUMENTS)
-        // =====================================================
         if (const auto *call =
                 result.Nodes.getNodeAs<CallExpr>("callExpr"))
         {
