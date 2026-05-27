@@ -32,6 +32,6 @@ rules:
     level: Warning
     forbid_null_assign: true
     forbid_null_as_arg: true
+    forbid_zero_init_for_objects_with_pointers: true
     forbid_arg_reassign: true
-    require_const_arg_pointer: true
-    # TODO: no zero init for struct with pointer
+    forbid_mut_arg_pointer: true

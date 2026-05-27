@@ -4,6 +4,7 @@
 #include <clang/AST/Expr.h>
 #include <clang/AST/Decl.h>
 #include <clang/Basic/SourceManager.h>
+#include <clang/Lex/Lexer.h>
 
 #include <string>
 
@@ -65,21 +66,95 @@ private:
 
     bool isNullExpr(const Expr *e) const {
         e = norm(e);
-        if (!e) return false;
 
+        if (!e)
+            return false;
+
+        // NULL
         if (const auto *dre = dyn_cast<DeclRefExpr>(e))
             return dre->getNameInfo().getAsString() == "NULL";
 
+        // pure 0
         if (const auto *il = dyn_cast<IntegerLiteral>(e))
             return il->getValue() == 0;
 
+        // (void*)0 / (int*)0
         if (const auto *cast = dyn_cast<CStyleCastExpr>(e)) {
+
             const Expr *sub = norm(cast->getSubExpr());
+
             if (const auto *il = dyn_cast<IntegerLiteral>(sub))
                 return il->getValue() == 0;
         }
 
+        // nullptr
+        if (isa<CXXNullPtrLiteralExpr>(e))
+            return true;
+
         return false;
+    }
+
+    bool containsPointer(QualType qt) const {
+        qt = qt.getUnqualifiedType();
+
+        // direct pointer
+        if (qt->isPointerType())
+            return true;
+
+        const RecordType *rt = qt->getAsStructureType();
+
+        if (!rt)
+            rt = qt->getAsUnionType();
+
+        if (!rt)
+            return false;
+
+        const RecordDecl *rd = rt->getDecl();
+
+        if (!rd)
+            return false;
+
+        rd = rd->getDefinition();
+
+        if (!rd)
+            return false;
+
+        for (const FieldDecl *field : rd->fields()) {
+
+            if (containsPointer(field->getType()))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool isLiteralZeroInit(
+        const Expr *e,
+        SourceManager &sm
+    ) const {
+        if (!e)
+            return false;
+
+        e = e->IgnoreImplicit();
+
+        const auto *ile = dyn_cast<InitListExpr>(e);
+
+        if (!ile)
+            return false;
+
+        SourceRange range = ile->getSourceRange();
+
+        if (range.isInvalid())
+            return false;
+
+        std::string text =
+            Lexer::getSourceText(
+                CharSourceRange::getTokenRange(range),
+                sm,
+                LangOptions()
+            ).str();
+
+        return text == "{0}";
     }
 
 public:
@@ -118,6 +193,7 @@ public:
             QualType qt = vd->getType().getCanonicalType();
 
             if ((qt->isBuiltinType() || qt->isPointerType()) && !vd->hasInit()) {
+
                 diagnostics.report(
                     config.level,
                     sm,
@@ -128,11 +204,33 @@ public:
             }
 
             // =====================================================
-            // forbid_mut_arg_pointer (NEW RULE)
+            // forbid_zero_init_for_objects_with_pointers
+            // =====================================================
+            if (opt("forbid_zero_init_for_objects_with_pointers")) {
+
+                const Expr *init = vd->getInit();
+
+                if (init &&
+                    containsPointer(vd->getType()) &&
+                    isLiteralZeroInit(init, sm))
+                {
+                    diagnostics.report(
+                        config.level,
+                        sm,
+                        vd->getLocation(),
+                        "object '" + nameOf(vd) +
+                        "' containing pointers may not be initialized with {0}"
+                    );
+                }
+            }
+
+            // =====================================================
+            // forbid_mut_arg_pointer
             // =====================================================
             if (opt("forbid_mut_arg_pointer")) {
 
                 const Expr *init = vd->getInit();
+
                 if (!init)
                     return;
 
@@ -191,10 +289,12 @@ public:
             // -------------------------------------------------
             if (opt("forbid_null_assign")) {
 
-                if (lhs && lhs->getType()->isPointerType()
-                    && isNullExpr(rhs))
+                if (lhs &&
+                    lhs->getType()->isPointerType() &&
+                    isNullExpr(rhs))
                 {
                     if (const auto *dre = dyn_cast<DeclRefExpr>(lhs)) {
+
                         diagnostics.report(
                             config.level,
                             sm,
@@ -205,6 +305,7 @@ public:
                         );
                     }
                     else if (const auto *me = dyn_cast<MemberExpr>(lhs)) {
+
                         diagnostics.report(
                             config.level,
                             sm,
@@ -224,6 +325,7 @@ public:
 
                 // arg = value
                 if (const auto *dre = dyn_cast<DeclRefExpr>(lhs)) {
+
                     if (const auto *pd =
                             dyn_cast<ParmVarDecl>(dre->getDecl()))
                     {

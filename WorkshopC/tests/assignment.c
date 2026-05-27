@@ -12,6 +12,12 @@ struct Data {
     int *ptr;
 };
 
+struct DataNoPtrs {
+    char c;
+    int i;
+    float f;
+};
+
 void takes_const_int(const int *p)
 {
     (void)p;
@@ -49,6 +55,8 @@ void test(
     struct Data data;
 
     // Forbidden
+    ptr = 0;
+    // Forbidden
     ptr = NULL;
     // Forbidden
     ptr = (void*)0;
@@ -58,6 +66,8 @@ void test(
     int ptr_is_null = ptr == NULL;
 
     // Forbidden
+    data.ptr = 0;
+    // Forbidden
     data.ptr = NULL;
     // Forbidden
     data.ptr = (void*)0;
@@ -66,6 +76,8 @@ void test(
     // Allowed
     int data_ptr_is_null = data.ptr == NULL;
 
+    // Forbidden
+    takes_mut_int(0);
     // Forbidden
     takes_mut_int(NULL);
     // Forbidden
@@ -106,4 +118,11 @@ void test(
     takes_mut_int(ptr);
     // Allowed
     takes_struct(data);
+
+    // Forbidden
+    float* zero_init_ptr = {0};
+    // Forbidden
+    struct Data struct_with_ptr = {0};
+    // Allowed
+    struct DataNoPtrs simple_data_obj = {0};
 }
