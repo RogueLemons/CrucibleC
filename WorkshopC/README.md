@@ -5,7 +5,6 @@ An upcoming project for parsing C code and generating tips for generating safer 
 A parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code.
 
 It shall
-- Verify const correctness of variables (possibly ignoring variables used in functions as first iteration).
 - Make all mutable pointer function arguments start their names with out_ for maximum clarity (or in_, own_, or move_, to show a transfer of ownership).
 - Look at file path and if file path is included in names (e.g. function or struct) then suggest splitting by __ (optionally user defined) to mimic namespaces and improve readability, also warn if name contains e.g. 7 underscores.
 - Verify all structs immediately contain a typedef statement on next line.
@@ -17,6 +16,8 @@ It shall
 - Make argument reassignment illegal (member reassignment still legal)
 - Optional rules for enforcing Copied<Struct> and Moved<Struct>, or Owned<Struct>
 - Make pod structs require a make_ function and class structs require an _init function (optionally _or_die)
+- Add rules for vtables and interfaces
+- Add note to use clang tidy for const correctness
 - Make release folder visible in git at the end
 
 # WorkshopC Build System Documentation
