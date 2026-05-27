@@ -1,0 +1,12 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  assignment:
+    level: Warning
+    forbid_null_assign: true
+    forbid_null_as_arg: true
+    forbid_arg_reassign: true
+    forbid_mut_arg_pointer: true

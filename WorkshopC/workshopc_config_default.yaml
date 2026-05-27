@@ -26,3 +26,12 @@ rules:
   # Typedef rule - requires typedef for all function pointers
   function_pointer:
     level: Warning
+
+  # Assignment rule - require primitives to be assigned at declaration
+  assignment:
+    level: Warning
+    forbid_null_assign: true
+    forbid_null_as_arg: true
+    forbid_arg_reassign: true
+    require_const_arg_pointer: true
+    # TODO: no zero init for struct with pointer

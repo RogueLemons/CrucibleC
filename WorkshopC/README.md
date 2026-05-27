@@ -8,16 +8,14 @@ It shall
 - Make all mutable pointer function arguments start their names with out_ for maximum clarity (or in_, own_, or move_, to show a transfer of ownership).
 - Look at file path and if file path is included in names (e.g. function or struct) then suggest splitting by __ (optionally user defined) to mimic namespaces and improve readability, also warn if name contains e.g. 7 underscores.
 - Verify all structs immediately contain a typedef statement on next line.
-- Verify that #define statements appear right above the functions they are used in if only used once in file (if in header can be used 0 times).
-- Forbid null pointers and uninitialized pointers, optionally enforce all pointers to be null-checked
 - Verify all structs are initialized with either a _populate or _init function
 - Verify if _init is used all exit paths must include _cleanup
 - Verify variables are not called with _populate or _init multiple times in same scope
-- Make argument reassignment illegal (member reassignment still legal)
 - Optional rules for enforcing Copied<Struct> and Moved<Struct>, or Owned<Struct>
 - Make pod structs require a make_ function and class structs require an _init function (optionally _or_die)
 - Add rules for vtables and interfaces
 - Add note to use clang tidy for const correctness
+- Improve assignment rules
 - Make release folder visible in git at the end
 
 # WorkshopC Build System Documentation

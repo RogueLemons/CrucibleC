@@ -4,6 +4,7 @@
 #include "rule_enum.hpp"
 #include "rule_private.hpp"
 #include "rule_function_pointer.hpp"
+#include "rule_assignment.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -34,6 +35,7 @@ private:
     std::unique_ptr<EnumRule> enumRule{};
     std::unique_ptr<PrivateRule> privateRule{};
     std::unique_ptr<FunctionPointerRule> functionPointerRule{};
+    std::unique_ptr<AssignmentRule> assignmentRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -98,6 +100,46 @@ public:
             finder.addMatcher(
                 varDecl().bind("funcptr"),
                 functionPointerRule.get()
+            );
+        }
+
+        // Assignment rule
+        if (config.hasRule("assignment")) {
+            assignmentRule = std::make_unique<AssignmentRule>(
+                config.getRuleConfig("assignment"),
+                config,
+                suppressions,
+                *diagnostics
+            );
+        
+            // =====================================================
+            // 1. Variable declarations (must NOT filter here)
+            // =====================================================
+            finder.addMatcher(
+                varDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("varDecl"),
+                assignmentRule.get()
+            );
+        
+            // =====================================================
+            // 2. Assignments
+            // =====================================================
+            finder.addMatcher(
+                binaryOperator(
+                    isAssignmentOperator()
+                ).bind("assignmentOp"),
+                assignmentRule.get()
+            );
+        
+            // =====================================================
+            // 3. Function calls (if your rule uses them)
+            // =====================================================
+            finder.addMatcher(
+                callExpr(
+                    unless(isExpansionInSystemHeader())
+                ).bind("callExpr"),
+                assignmentRule.get()
             );
         }
 

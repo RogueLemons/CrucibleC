@@ -1,0 +1,17 @@
+warning: variable 'global_unassigned_int' must be initialized at declaration
+warning: variable 'unassigned' must be initialized at declaration
+warning: variable 'unassigned_ptr' must be initialized at declaration
+warning: pointer 'ptr' cannot be assigned NULL
+warning: pointer 'ptr' cannot be assigned NULL
+warning: pointer 'ptr' cannot be assigned NULL
+warning: pointer field 'ptr' cannot be assigned NULL
+warning: pointer field 'ptr' cannot be assigned NULL
+warning: pointer field 'ptr' cannot be assigned NULL
+warning: NULL passed as argument to function 'takes_mut_int'
+warning: NULL passed as argument to function 'takes_mut_int'
+warning: NULL passed as argument to function 'takes_mut_int'
+warning: function argument 'arg' reassignment is forbidden
+warning: function argument 'ptrArg' reassignment is forbidden
+warning: fields of by-value argument 'dataArg' may not be modified
+warning: taking address of non-const argument 'arg' is forbidden
+warning: taking address of non-const argument 'arg' is forbidden
