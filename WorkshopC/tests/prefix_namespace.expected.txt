@@ -1,0 +1,4 @@
+warning: missing include guard 'TESTS_HEADERS_A_B_C_PREFIX_TESTING_BAD_H'
+warning: struct 'bad_name' must use namespace prefix 'tests__headers__a__b__c__'
+warning: typedef 'bad_typedef' must use namespace prefix 'tests__headers__a__b__c__'
+warning: function 'bad_function_name' must use namespace prefix 'tests__headers__a__b__c__'

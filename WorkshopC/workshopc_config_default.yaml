@@ -35,3 +35,15 @@ rules:
     forbid_zero_init_for_objects_with_pointers: true
     forbid_arg_reassign: true
     forbid_mut_arg_pointer: true
+
+  # Prefix namespace rule - require header declarations to include folder structure in name
+  prefix_namespace:
+    level: Warning
+    stop_at_dir: src
+    stop_at_count: 10
+    use_seperator: true
+    seperator: __
+    apply_to_functions: true
+    apply_to_structs: true
+    apply_to_typedefs: true
+    require_ifndef_for_filepath: true

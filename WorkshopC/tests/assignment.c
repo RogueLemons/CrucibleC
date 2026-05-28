@@ -1,7 +1,5 @@
 #include <stddef.h>
 
-#include <stddef.h>
-
 // Forbidden
 static int global_unassigned_int;
 // Allowed

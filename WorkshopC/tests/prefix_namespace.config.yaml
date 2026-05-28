@@ -1,0 +1,17 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  prefix_namespace:
+    level: Warning
+    top_dir: WorkshopC
+    work_from_top: true
+    stop_at_count: 10
+    use_seperator: true
+    seperator: __
+    apply_to_functions: true
+    apply_to_structs: true
+    apply_to_typedefs: true
+    require_ifndef_for_filepath: true

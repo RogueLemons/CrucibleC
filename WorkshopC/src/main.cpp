@@ -5,6 +5,7 @@
 #include "rule_private.hpp"
 #include "rule_function_pointer.hpp"
 #include "rule_assignment.hpp"
+#include "rule_prefix_namespace.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -36,6 +37,7 @@ private:
     std::unique_ptr<PrivateRule> privateRule{};
     std::unique_ptr<FunctionPointerRule> functionPointerRule{};
     std::unique_ptr<AssignmentRule> assignmentRule{};
+    std::unique_ptr<PrefixNamespaceRule> prefixNamespaceRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -140,6 +142,53 @@ public:
                     unless(isExpansionInSystemHeader())
                 ).bind("callExpr"),
                 assignmentRule.get()
+            );
+        }
+
+        // Prefix namespace rule
+        if (config.hasRule("prefix_namespace")) {
+
+            prefixNamespaceRule =
+                std::make_unique<PrefixNamespaceRule>(
+                    config.getRuleConfig(
+                        "prefix_namespace"
+                    ),
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+
+            // =====================================================
+            // Functions
+            // =====================================================
+
+            finder.addMatcher(
+                functionDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("function"),
+                prefixNamespaceRule.get()
+            );
+
+            // =====================================================
+            // Structs
+            // =====================================================
+
+            finder.addMatcher(
+                recordDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("record"),
+                prefixNamespaceRule.get()
+            );
+
+            // =====================================================
+            // Typedefs
+            // =====================================================
+
+            finder.addMatcher(
+                typedefDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("typedef"),
+                prefixNamespaceRule.get()
             );
         }
 
