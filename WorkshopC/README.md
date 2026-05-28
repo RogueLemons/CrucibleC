@@ -16,6 +16,7 @@ It shall
 - Add note to use clang tidy for const correctness
 - Improve assignment rules
 - Make release folder visible in git at the end
+- Enter V1
 
 # WorkshopC Build System Documentation
 
