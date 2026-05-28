@@ -6,7 +6,6 @@ A parser must be implemented to transfer goals of EasyCTranspiler into a warning
 
 It shall
 - Make all mutable pointer function arguments start their names with out_ for maximum clarity (or in_, own_, or move_, to show a transfer of ownership).
-- Look at file path and if file path is included in names (e.g. function or struct) then suggest splitting by __ (optionally user defined) to mimic namespaces and improve readability, also warn if name contains e.g. 7 underscores.
 - Verify all structs immediately contain a typedef statement on next line.
 - Verify all structs are initialized with either a _populate or _init function
 - Verify if _init is used all exit paths must include _cleanup
