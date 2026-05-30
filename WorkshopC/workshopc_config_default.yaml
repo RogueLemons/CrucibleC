@@ -23,7 +23,7 @@ rules:
     setter_contains: pset
     getter_contains: pget
 
-  # Typedef rule - requires typedef for all function pointers
+  # Function pointer rule - requires typedef for all function pointers
   function_pointer:
     level: Warning
 
