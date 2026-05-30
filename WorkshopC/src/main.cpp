@@ -4,6 +4,7 @@
 #include "rule_enum.hpp"
 #include "rule_private.hpp"
 #include "rule_function_pointer.hpp"
+#include "rule_typedef_struct.hpp"
 #include "rule_assignment.hpp"
 #include "rule_prefix_namespace.hpp"
 #include "rule_null_check.hpp"
@@ -40,6 +41,7 @@ private:
     std::unique_ptr<AssignmentRule> assignmentRule{};
     std::unique_ptr<PrefixNamespaceRule> prefixNamespaceRule{};
     std::unique_ptr<NullCheckRule> nullCheckRule{};
+    std::unique_ptr<TypedefStructRule> typedefStructRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -104,6 +106,33 @@ public:
             finder.addMatcher(
                 varDecl().bind("funcptr"),
                 functionPointerRule.get()
+            );
+        }
+
+        // Typedef struct rule
+        if (config.hasRule("typedef_struct")) {
+        
+            typedefStructRule =
+                std::make_unique<TypedefStructRule>(
+                    config.getRuleConfig("typedef_struct"),
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+            
+            finder.addMatcher(
+                recordDecl(
+                    isStruct(),
+                    unless(isExpansionInSystemHeader())
+                ).bind("struct"),
+                typedefStructRule.get()
+            );
+        
+            finder.addMatcher(
+                typedefDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("typedef"),
+                typedefStructRule.get()
             );
         }
 

@@ -5,18 +5,17 @@ An upcoming project for parsing C code and generating tips for generating safer 
 A parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code.
 
 It shall
-- Make all mutable pointer function arguments start their names with out_ for maximum clarity (or in_, own_, or move_, to show a transfer of ownership).
-- Verify all structs immediately contain a typedef statement on next line.
+- **Make all mutable pointer function arguments start their names with out_ for maximum clarity (or in_, own_, or move_, to show a transfer of ownership).**
 - Verify all structs are initialized with either a _populate or _init function
 - Verify if _init is used all exit paths must include _cleanup
 - Verify variables are not called with _populate or _init multiple times in same scope
 - Optional rules for enforcing Copied<Struct> and Moved<Struct>, or Owned<Struct>
-- Make pod structs require a make_ function and class structs require an _init function (optionally _or_die)
+- **Make pod structs require a make_ function and class structs require an _init function (optionally _or_die)**
 - Add rules for vtables and interfaces
-- Add note to use clang tidy for const correctness
+- **Add note to use clang tidy for const correctness**
 - Improve assignment rules
-- Make release folder visible in git at the end
-- Enter V1
+- **Make release folder visible in git at the end**
+- **Enter V1**
 
 # WorkshopC Build System Documentation
 

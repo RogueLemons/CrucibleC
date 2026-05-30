@@ -1,0 +1,9 @@
+warning: struct 'BadStructA' must have a typedef
+warning: struct 'BadStructC' must have a typedef
+warning: struct 'BadStructD' must have a typedef
+warning: struct 'NestedBad' must have a typedef
+warning: struct 'MacroBad' must have a typedef
+warning: struct 'BadInHeader' must have a typedef
+warning: struct 'BadStructInsideHeader' must have a typedef
+warning: struct 'BadStructFromHeaderDefine' must have a typedef
+warning: struct 'BadStructFromExternalHeaderDefine' must have a typedef

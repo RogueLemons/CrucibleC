@@ -27,6 +27,10 @@ rules:
   function_pointer:
     level: Warning
 
+  # Typedef struct rule - requires typedef for all structs
+  typedef_struct:
+    level: Warning
+
   # Assignment rule - require primitives to be assigned at declaration
   assignment:
     level: Warning

@@ -111,6 +111,6 @@ add_custom_command(TARGET workshopc POST_BUILD
 # Copy config
 add_custom_command(TARGET workshopc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/workshopc_config_default.yaml
-        ${RELEASE_DIR}/workshopc_config.yaml
+        ${CMAKE_SOURCE_DIR}/workshopc_default.config.yaml
+        ${RELEASE_DIR}/workshopc.config.yaml
 )
