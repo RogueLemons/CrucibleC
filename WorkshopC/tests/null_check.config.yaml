@@ -1,0 +1,9 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  null_check:
+    level: Warning
+    allow_direct_ptr_in_if_statement: true

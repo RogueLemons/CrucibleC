@@ -47,3 +47,8 @@ rules:
     apply_to_structs: true
     apply_to_typedefs: true
     require_ifndef_for_filepath: true
+
+  # Null check rule - require first use of pointer argument to be checked if null
+  null_check:
+    level: Error
+    allow_direct_ptr_in_if_statement: true

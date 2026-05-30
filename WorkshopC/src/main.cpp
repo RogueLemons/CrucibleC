@@ -6,6 +6,7 @@
 #include "rule_function_pointer.hpp"
 #include "rule_assignment.hpp"
 #include "rule_prefix_namespace.hpp"
+#include "rule_null_check.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -38,6 +39,7 @@ private:
     std::unique_ptr<FunctionPointerRule> functionPointerRule{};
     std::unique_ptr<AssignmentRule> assignmentRule{};
     std::unique_ptr<PrefixNamespaceRule> prefixNamespaceRule{};
+    std::unique_ptr<NullCheckRule> nullCheckRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -114,9 +116,6 @@ public:
                 *diagnostics
             );
         
-            // =====================================================
-            // 1. Variable declarations (must NOT filter here)
-            // =====================================================
             finder.addMatcher(
                 varDecl(
                     unless(isExpansionInSystemHeader())
@@ -124,19 +123,13 @@ public:
                 assignmentRule.get()
             );
         
-            // =====================================================
-            // 2. Assignments
-            // =====================================================
             finder.addMatcher(
                 binaryOperator(
                     isAssignmentOperator()
                 ).bind("assignmentOp"),
                 assignmentRule.get()
             );
-        
-            // =====================================================
-            // 3. Function calls (if your rule uses them)
-            // =====================================================
+
             finder.addMatcher(
                 callExpr(
                     unless(isExpansionInSystemHeader())
@@ -158,20 +151,12 @@ public:
                     *diagnostics
                 );
 
-            // =====================================================
-            // Functions
-            // =====================================================
-
             finder.addMatcher(
                 functionDecl(
                     unless(isExpansionInSystemHeader())
                 ).bind("function"),
                 prefixNamespaceRule.get()
             );
-
-            // =====================================================
-            // Structs
-            // =====================================================
 
             finder.addMatcher(
                 recordDecl(
@@ -180,15 +165,31 @@ public:
                 prefixNamespaceRule.get()
             );
 
-            // =====================================================
-            // Typedefs
-            // =====================================================
-
             finder.addMatcher(
                 typedefDecl(
                     unless(isExpansionInSystemHeader())
                 ).bind("typedef"),
                 prefixNamespaceRule.get()
+            );
+        }
+
+        // Null check rule
+        if (config.hasRule("null_check")) {
+        
+            nullCheckRule =
+                std::make_unique<NullCheckRule>(
+                    config.getRuleConfig("null_check"),
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+            
+            finder.addMatcher(
+                functionDecl(
+                    isDefinition(),
+                    unless(isExpansionInSystemHeader())
+                ).bind("function"),
+                nullCheckRule.get()
             );
         }
 
