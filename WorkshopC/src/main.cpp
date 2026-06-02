@@ -8,6 +8,8 @@
 #include "rule_assignment.hpp"
 #include "rule_prefix_namespace.hpp"
 #include "rule_null_check.hpp"
+#include "rule_arg_ptr_move.hpp"
+#include "rule_arg_ptr_move_callsite.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -42,6 +44,8 @@ private:
     std::unique_ptr<PrefixNamespaceRule> prefixNamespaceRule{};
     std::unique_ptr<NullCheckRule> nullCheckRule{};
     std::unique_ptr<TypedefStructRule> typedefStructRule{};
+    std::unique_ptr<ArgumentPointerMovementRule> argumentPointerMovementRule{};
+    std::unique_ptr<ArgumentPointerCallsiteRule> argumentPointerCallsiteRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -222,6 +226,53 @@ public:
             );
         }
 
+        // Argument pointer movement rule
+        if (config.hasRule("argument_pointer_movement")) {
+        
+            argumentPointerMovementRule =
+                std::make_unique<
+                    ArgumentPointerMovementRule>(
+                        config.getRuleConfig(
+                            "argument_pointer_movement"
+                        ),
+                        config,
+                        suppressions,
+                        *diagnostics
+                    );
+                
+            finder.addMatcher(
+                functionDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("func"),
+                argumentPointerMovementRule.get()
+            );
+
+            finder.addMatcher(
+                callExpr(
+                    unless(isExpansionInSystemHeader())
+                ).bind("call"),
+                argumentPointerMovementRule.get()
+            );
+        }
+
+        // Argument pointer movement rule for callsite
+        if (config.hasRule("argument_pointer_movement")) {
+
+            argumentPointerCallsiteRule =
+                std::make_unique<ArgumentPointerCallsiteRule>(
+                    config.getRuleConfig("argument_pointer_movement"),
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+            
+            finder.addMatcher(
+                callExpr(unless(isExpansionInSystemHeader()))
+                    .bind("call"),
+                argumentPointerCallsiteRule.get()
+            );
+        }
+
         return finder.newASTConsumer();
     }
 };
@@ -294,6 +345,14 @@ int main(int argc, const char **argv) {
     tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster(
             {"-x", "c"},
+            ArgumentInsertPosition::BEGIN
+        )
+    );
+
+    // Provide WorkshopC macro tag
+    tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster(
+            {"-DWORKSHOPC_PARSING=1"},
             ArgumentInsertPosition::BEGIN
         )
     );

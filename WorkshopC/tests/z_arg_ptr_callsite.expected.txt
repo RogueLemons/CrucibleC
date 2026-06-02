@@ -1,0 +1,9 @@
+warning: missing modify_operator(...) at call site for parameter 'mutable_char_ptr' in function 'func_that_modifies'
+warning: missing modify_operator(...) at call site for parameter 'mutable_char_ptr' in function 'func_that_modifies'
+warning: missing move_operator(...) at call site for parameter 'moved_int_ptr' in function 'func_that_takes_move'
+warning: missing move_operator(...) at call site for parameter 'moved_int_ptr' in function 'func_that_takes_move'
+warning: missing out_operator(...) at call site for parameter 'out_float_ptr' in function 'func_that_gives_out'
+warning: missing out_operator(...) at call site for parameter 'out_float_ptr' in function 'func_that_gives_out'
+warning: move_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
+warning: out_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
+warning: modify_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged

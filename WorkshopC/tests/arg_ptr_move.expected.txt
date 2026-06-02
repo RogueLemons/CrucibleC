@@ -1,0 +1,10 @@
+warning: function 'declared_in_header' parameter 'bad_arg' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
+warning: function 'declared_function_5' parameter 'int_ptr_without_tag' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
+warning: function 'defined_function_2' parameter 'float_ptr_without_tag' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
+warning: function 'mismatch_in_declaration_and_definition' parameter 'some_ptr' movement attribute mismatch between declaration and definition
+warning: function 'header_and_source_tag_mismatch' parameter 'f_ptr' movement attribute mismatch between declaration and definition
+warning: function 'multiple_bad_arguments' parameter 'out_float_ptr' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
+warning: function 'multiple_bad_arguments' parameter 'mutable_char_ptr' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
+warning: modify_operator(...) used for parameter 'mutable_char_ptr' in function 'declared_function_3', but modify callsite operators are disabled
+warning: move_operator(...) used for parameter 'moved_int_ptr' in function 'declared_function_1', but move callsite operators are disabled
+warning: out_operator(...) used for parameter 'out_float_ptr' in function 'declared_function_2', but out callsite operators are disabled

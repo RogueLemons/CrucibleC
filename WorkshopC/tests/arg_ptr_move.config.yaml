@@ -1,0 +1,11 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  argument_pointer_movement:
+    level: Warning
+    require_operator_for_move_callsite: false
+    require_operator_for_out_callsite: false
+    require_operator_for_modify_callsite: false

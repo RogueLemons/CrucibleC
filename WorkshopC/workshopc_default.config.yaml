@@ -56,3 +56,10 @@ rules:
   null_check:
     level: Error
     allow_direct_ptr_in_if_statement: true
+
+  # Argument pointer movement rule - require use of movement notation for non-const pointers
+  argument_pointer_movement:
+    level: Warning
+    require_operator_for_move_callsite: true
+    require_operator_for_out_callsite: true
+    require_operator_for_modify_callsite: false

@@ -5,7 +5,6 @@ An upcoming project for parsing C code and generating tips for generating safer 
 A parser must be implemented to transfer goals of EasyCTranspiler into a warning/suggestion system for pure C code.
 
 It shall
-- **Make all mutable pointer function arguments start their names with out_ for maximum clarity (or in_, own_, or move_, to show a transfer of ownership).**
 - Verify all structs are initialized with either a _populate or _init function
 - Verify if _init is used all exit paths must include _cleanup
 - Verify variables are not called with _populate or _init multiple times in same scope
