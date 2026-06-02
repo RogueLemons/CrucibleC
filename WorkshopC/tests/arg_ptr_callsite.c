@@ -45,4 +45,13 @@ void foo(void)
     declared_in_external_header(move_cast(&i));
     declared_in_external_header(out_cast(&i));
     declared_in_external_header(mod_cast(&i));
+
+    // System header
+    // Good
+    const char* str = "Hello, world!";
+    const char* str_2 = "Hello, world!";
+    int result = strcmp(str, str_2);
+    char buf[100];
+    strcpy(buf, "hello");
+    strcat(buf, " world");
 }

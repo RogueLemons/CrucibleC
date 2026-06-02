@@ -108,9 +108,12 @@ add_custom_command(TARGET workshopc POST_BUILD
         ${RELEASE_DIR}/$<TARGET_FILE_NAME:workshopc>
 )
 
-# Copy config
+# Copy defaults
 add_custom_command(TARGET workshopc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/workshopc_default.config.yaml
+        ${CMAKE_SOURCE_DIR}/default/workshopc.config.yaml
         ${RELEASE_DIR}/workshopc.config.yaml
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/default/move_tags.h
+        ${RELEASE_DIR}/move_tags.h
 )
