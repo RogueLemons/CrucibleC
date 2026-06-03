@@ -1,4 +1,4 @@
-# WorkshopC
+# WorkshopC (in progress)
 An upcoming project for parsing C code and generating tips for generating safer code or adhere to a certain style.
 
 ## TODO
@@ -14,6 +14,8 @@ It shall
 - **Add note to use clang tidy for const correctness**
 - Improve assignment rules
 - **Make release folder visible in git at the end**
+- Build for Linux
+- Add ability to take folder of source code instead of single file
 - **Enter V1**
 
 # WorkshopC Build System Documentation
