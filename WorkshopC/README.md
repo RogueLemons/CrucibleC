@@ -50,21 +50,29 @@ It is **NOT** a portable build system. It assumes:
 
 After building, you will get the `workshopc` executable in the `release/` folder.
 
-Run it like this:
+### Command Line Arguments
+
+The tool requires three arguments:
 
 ```bash
-workshopc <config.yaml> <source_file.c>
+workshopc <config.yaml> <source-file.c> <compdb-dir>
 ```
 
-Example:
+**Arguments:**
+- `<config.yaml>` — Path to the YAML rule configuration file
+- `<source-file.c>` — Path to the C source file to analyze
+- `<compdb-dir>` — Directory containing `compile_commands.json` (typically the CMake build directory)
+
+### Example
 
 ```bash
-workshopc workshopc_config.yaml tests/enum.test.c
+workshopc workshopc.config.yaml tests/enum.c build/
 ```
 
 ### What it does
 
-- Reads your YAML rule configuration
+- Reads your YAML rule configuration from the config file
+- Loads the compilation database to understand compiler flags and settings
 - Parses the provided C source file
 - Analyzes code using Clang AST
 - Prints warnings and errors to the console
@@ -74,9 +82,12 @@ workshopc workshopc_config.yaml tests/enum.test.c
 
 ### Notes
 
-- Warnings do not fail the build by default
+- The compilation database is typically located in your CMake build directory (e.g., `build/`)
+- It's generated automatically by CMake when configured with `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
+- Warnings do not fail the tool by default
 - Errors are considered hard failures
 - Output is intended for use in CI pipelines or pre-commit checks
+- If the compilation database cannot be found, the tool will fail with an error message
 
 ## Requirements
 
@@ -111,9 +122,11 @@ python windows_rebuild.py
 The script will:
 
 1. Delete the `build/` directory
-2. Configure CMake using Ninja
+2. Configure CMake using Ninja (generates `compile_commands.json` in the build directory)
 3. Build the project
-4. Run `workshopc` on `tests/enum.test.c` (if present)
+4. Copy the executable and configuration files to the `release/` folder
+
+After building, you can run the tool using the compilation database from the build directory.
 
 ## What the Python script assumes
 
@@ -213,6 +226,21 @@ cmake -S . -B build \
 ```bash
 cmake --build build
 ```
+
+This generates:
+- The `workshopc` executable
+- `compile_commands.json` in the build directory (required by the tool)
+
+## Running the tool
+
+After building, use the tool with the compilation database from the build directory:
+
+```bash
+# Example: analyze a test file
+./build/workshopc workshopc.config.yaml tests/enum.c build/
+```
+
+The tool requires access to the compilation database to understand compiler flags and include paths.
 
 ## What makes this CMake portable
 
