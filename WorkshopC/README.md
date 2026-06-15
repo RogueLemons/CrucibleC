@@ -38,7 +38,7 @@ Example:
 workshopc workshopc.config.yaml tests/enum.c build/
 ```
 
-[Here is a premade config.yaml file ready for use as is and provide a base to easily edit](/default/workshopc.config.yaml).
+[Here is a premade config.yaml file ready for use as is and provide a base to easily edit](./default/workshopc.config.yaml).
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
@@ -262,7 +262,7 @@ int dereference_safely(int* i_ptr)
 ```
 
 ### Argument pointer movement rule
-This rule enforces user defined macro tags and "operators" for handling ownership of pointers, and making sure both the callsite and function match their "operator" and tag. [Here is a premade document for tags](/default/move_tags.h) that can be used as is, but all macro definitions can be changed as well.  
+This rule enforces user defined macro tags and "operators" for handling ownership of pointers, and making sure both the callsite and function match their "operator" and tag. [Here is a premade document for tags](./default/move_tags.h) that can be used as is, but all macro definitions can be changed as well.  
 
 For these settings
 
