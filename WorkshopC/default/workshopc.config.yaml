@@ -34,9 +34,9 @@ rules:
   # Assignment rule - require primitives to be assigned at declaration
   assignment:
     level: Warning
-    forbid_null_assign: true
-    forbid_null_as_arg: true
-    forbid_zero_init_for_objects_with_pointers: true
+    forbid_null_assign: false
+    forbid_null_as_arg: false
+    forbid_zero_init_for_objects_with_pointers: false
     forbid_arg_reassign: true
     forbid_mut_arg_pointer: true
 
