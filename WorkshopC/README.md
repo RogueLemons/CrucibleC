@@ -1,4 +1,4 @@
-# WorkshopC (in progress)
+# WorkshopC
 An upcoming project for parsing C code and generating tips for generating safer code or adhere to a certain style.
 
 ## TODO

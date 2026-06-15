@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "example/easyc/file..h"
+#include "example/cruciblec/file.h"
 #include "normal/c/file.h"
 
 #ifndef ALC__NULL__CHECK

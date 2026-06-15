@@ -177,7 +177,7 @@ All generated files come with a generation warning and automatically converts .a
 ```c
 #include <stdio.h>
 #include <stdlib.h>
-#include "example/easyc/file.alh"
+#include "example/cruciblec/file.alh"
 #include "normal/c/file.h"
 ```
 ##### Transpiled C
