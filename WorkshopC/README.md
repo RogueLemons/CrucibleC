@@ -1,5 +1,5 @@
 # WorkshopC
-A project for parsing C code and generating tips for generating safer code or adhere to a certain style.
+A project for parsing C code and generating tips for writing safer code or adhering to a certain style.
 
 ## Contents
 - [How to use](#how-to-use)
@@ -168,14 +168,14 @@ This rule gets triggered whenever a primitive type, e.g. a pointer or integer, i
 
 ```c
 int a;      // Triggers parser
-int b = 5;  // Ok
+int b = 5;  // OK
 ```
 
 It also comes with extra settings. The first three help forbid null assignment for codebases that follow a strict "nothing may be null" rule to make sure no null dereferences occur. 
 
 ```c
-int* i_ptr = NULL;  // Not OK with forbid_null_assign: false
-foo(NULL, 3, 7);    // Not ok with forbid_null_as_arg: false
+int* i_ptr = NULL;  // Not OK with forbid_null_assign: true
+foo(NULL, 3, 7);    // Not OK with forbid_null_as_arg: true
 
 struct Setting
 {
@@ -184,7 +184,7 @@ struct Setting
 }
 typedef struct Setting Setting;
 
-Setting setting = {0}; // Not OK with forbid_zero_init_for_objects_with_pointers: false
+Setting setting = {0}; // Not OK with forbid_zero_init_for_objects_with_pointers: true
 ```
 
 Many programmers are not fond of const correctness when it comes to arguments, but that does not mean it is not important for code clarity. Instead of enforcing const correctness for argument values, rules can be enabled to simply forbid modifying argument values. Note that this does not affect reassignment of data a pointer points to.
@@ -301,7 +301,7 @@ void example(void)
 
 Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `mut` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `mutable`, `output`, or `moved` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior. 
 
-As mentioned, the tags are just macro defintions (even if they must follow some simple rules shown in linked document above). This means that the user can provide any names the user wants. For example, `move` and `move_cast()` with `out` and `out_cast`; or `moved` with `move`, `outed` with `out`, and `modded` with `mod`. They can of course all also be caps. 
+As mentioned, the tags are just macro definitions (even if they must follow some simple rules shown in linked document above). This means that the user can provide any names the user wants. For example, `move` and `move_cast()` with `out` and `out_cast`; or `moved` with `move`, `outed` with `out`, and `modded` with `mod`. They can of course all also be caps. 
 
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
@@ -608,17 +608,16 @@ This ensures:
 - Minimal platform-specific logic
 - Official build system for the project
 
-
 ## TODO
 A parser must be implemented to transfer goals of AlloyCTranspiler into a warning/suggestion system for pure C code.
 
 For V0.9 it shall
-- **Make pod structs require a make_ function and class structs require an _init function (optionally _or_die)**
-- Improve assignment rules
-- **Add note to use clang tidy for const correctness**
-- Verify all structs are initialized with either a _populate or _init function
-- Verify if _init is used all exit paths must include _cleanup
-- Verify variables are not called with _populate or _init multiple times in same scope
+- **Make pod structs require a _pod function and class structs require a _make function,  and "free" structs an _init function**
+- verify pod and class structs are initialized with an assignment at declaration (class struct must use function)
+- verify class structs are never assigned anything again
+- verify class structs call _destroy before all scope exits
+- verify class structs have _move, _copy, _destroy, and _valid functions (they might be invalid but never illegal)
+- **Add note to use clang-tidy for const correctness**
 
 For V1 it shall
 - **Make release folder visible in git at the end**
