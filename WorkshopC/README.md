@@ -68,7 +68,7 @@ extern Color Color_Blue;      // Could also be #define COLOR_BLUE ((const Color)
 // Alternatively
 
 struct ColorInternal;
-typedef struct ColorInternal *Color;
+typedef struct ColorInternal* Color;
 
 extern Color Color_Red;
 extern Color Color_Green;
@@ -261,6 +261,8 @@ int dereference_safely(int* i_ptr)
 }
 ```
 
+Note that many more options are valid for checking null, including `if (i_ptr) { ... }` if `allow_direct_ptr_in_if_statement` is true in config.  
+
 ### Argument pointer movement rule
 This rule enforces user defined macro tags and "operators" for handling ownership of pointers, and making sure both the callsite and function match their "operator" and tag. [Here is a premade document for tags](./default/move_tags.h) that can be used as is, but all macro definitions can be changed as well.  
 
@@ -285,14 +287,14 @@ typedef struct Data Data;
 
 int get_data_i(const Data* data);
 
-void initialize_data(output Data* data);
+void initialize_data(output Data** data);
 void edit_data(mutable Data* data, int i, int j, int k);
 void give_data_to_other_section(moved Data* data);
 
 void example(void)
 {
   Data* data = NULL;
-  initialize_data(out(data));
+  initialize_data(out(&data));
   edit_data(data, 3, 5, 7);
   int i = get_data_i(data);
   give_data_to_other_section(move(data));
