@@ -1,12 +1,8 @@
 # WorkshopC Configuration File
 
-# Paths configuration
-# third_party_includes are not affected by rules
 third_party_includes:
   - external/
 
-# Rules section
-# Rules can be: Off, Warning, Error
 rules:
   struct_resource_management:
     level: Error

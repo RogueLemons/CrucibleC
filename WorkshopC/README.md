@@ -617,9 +617,10 @@ For V0.9 it shall
 - **Make pod structs require a _pod function and class structs require a _make function,  and "free" structs an _init function**
 - verify pod and class structs are initialized with an assignment at declaration (class struct must use function)
 - verify class structs are never assigned anything again
-- verify class structs call _destroy before all scope exits
+- verify class structs call _destroy before all scope exits (unless static)
 - verify class structs have _move, _copy, _destroy, and _valid functions (they might be invalid but never illegal)
 - **Add note to use clang-tidy for const correctness**
+- verify pod structs can only contain pod structs
 
 For V1 it shall
 - **Make release folder visible in git at the end**
