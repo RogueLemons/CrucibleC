@@ -63,3 +63,14 @@ rules:
     require_operator_for_move_callsite: true
     require_operator_for_out_callsite: true
     require_operator_for_modify_callsite: false
+
+  # Struct resource management rule - require use of RAII with structs that manage resources
+  struct_resource_management:
+    level: Error
+    pod_struct_creator_suffix: _pod
+    raii_struct_creator_suffix: _make
+    raii_struct_destroyer_suffix: _destroy
+    raii_struct_copy_suffix: _copy
+    raii_struct_move_suffix: _move
+    raii_struct_valid_suffix: _valid
+    free_struct_creator_suffix: _init

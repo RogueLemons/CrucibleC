@@ -11,6 +11,9 @@
 #include "rule_arg_ptr_move.hpp"
 #include "rule_arg_ptr_move_callsite.hpp"
 
+#include "struct_database.hpp"
+#include "struct_database_rule.hpp"
+
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
 #include <clang/Frontend/FrontendActions.h>
@@ -46,6 +49,9 @@ private:
     std::unique_ptr<TypedefStructRule> typedefStructRule{};
     std::unique_ptr<ArgumentPointerMovementRule> argumentPointerMovementRule{};
     std::unique_ptr<ArgumentPointerCallsiteRule> argumentPointerCallsiteRule{};
+    
+    StructDatabase structDatabase{};
+    std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -271,6 +277,32 @@ public:
                     .bind("call"),
                 argumentPointerCallsiteRule.get()
             );
+        }
+
+        // Struct kind database rule
+        if (config.hasRule("struct_resource_management")) {
+
+            structDatabaseRule =
+                std::make_unique<StructDatabaseRule>(
+                    config.getRuleConfig("struct_resource_management"),
+                    config,
+                    suppressions,
+                    *diagnostics,
+                    structDatabase
+                );
+
+            finder.addMatcher(
+                recordDecl(
+                    isStruct(),
+                    unless(isExpansionInSystemHeader())
+                ).bind("struct"),
+                structDatabaseRule.get());
+            
+            finder.addMatcher(
+                functionDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("function"),
+                structDatabaseRule.get());
         }
 
         return finder.newASTConsumer();
