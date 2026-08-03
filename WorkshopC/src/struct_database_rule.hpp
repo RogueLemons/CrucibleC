@@ -271,4 +271,46 @@ public:
     void onEndOfTranslationUnit() override
     {
         database.finalize();
+
+        std::cout << "\n===== Struct Database =====\n";
+
+    for (const auto &[name, info] : database.allStructs()) {
+
+        std::cout << name << "\n";
+
+        std::cout << "  kind: ";
+
+        switch (info.kind) {
+        case StructDatabase::Kind::Free:
+            std::cout << "Free";
+            break;
+
+        case StructDatabase::Kind::Pod:
+            std::cout << "Pod";
+            break;
+
+        case StructDatabase::Kind::Raii:
+            std::cout << "Raii";
+            break;
+
+        case StructDatabase::Kind::Invalid:
+            std::cout << "Invalid";
+            break;
+        }
+
+        std::cout << "\n";
+
+        std::cout << "  free creator : " << info.hasFreeCreator << "\n";
+        std::cout << "  pod creator  : " << info.hasPodCreator << "\n";
+        std::cout << "  raii creator : " << info.hasRaiiCreator << "\n";
+        std::cout << "  destroy      : " << info.hasDestroy << "\n";
+        std::cout << "  copy         : " << info.hasCopy << "\n";
+        std::cout << "  move         : " << info.hasMove << "\n";
+        std::cout << "  valid        : " << info.hasValid << "\n";
+
+        std::cout << "\n";
+    }
+
+    std::cout << "===========================\n";
+    }
 };
