@@ -13,6 +13,7 @@
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
+#include "struct_init_rule.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -52,6 +53,7 @@ private:
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
+    std::unique_ptr<StructInitRule> structInitRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -279,9 +281,10 @@ public:
             );
         }
 
-        // Struct kind database rule
+        // struct resource management rule
         if (config.hasRule("struct_resource_management")) {
-
+            
+            // Struct kind database rule
             structDatabaseRule =
                 std::make_unique<StructDatabaseRule>(
                     config.getRuleConfig("struct_resource_management"),
@@ -303,6 +306,40 @@ public:
                     unless(isExpansionInSystemHeader())
                 ).bind("function"),
                 structDatabaseRule.get());
+
+            structInitRule =
+                std::make_unique<StructInitRule>(
+                    config.getRuleConfig("struct_resource_management"),
+                    config,
+                    suppressions,
+                    *diagnostics,
+                    structDatabase
+                );
+
+            finder.addMatcher(
+                varDecl(
+                    unless(isExpansionInSystemHeader())
+                ).bind("varDecl"),
+                structInitRule.get());
+
+            finder.addMatcher(
+                binaryOperator(
+                    isAssignmentOperator()
+                ).bind("assignment"),
+                structInitRule.get());
+
+            finder.addMatcher(
+                callExpr(
+                    unless(isExpansionInSystemHeader())
+                ).bind("call"),
+                structInitRule.get());
+
+            finder.addMatcher(
+                recordDecl(
+                    isStruct(),
+                    unless(isExpansionInSystemHeader())
+                ).bind("record"),
+                structInitRule.get());
         }
 
         return finder.newASTConsumer();

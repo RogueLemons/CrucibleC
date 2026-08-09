@@ -1,0 +1,16 @@
+error: struct field 'vec' inside pod struct 'bad_pod_with_raii_struct' must be a pod struct
+error: struct field 'free_field' inside pod struct 'bad_pod_with_free_struct' must be a pod struct
+error: variable 'vec' of type struct 'int_vector' cannot be reassigned with another struct value because it is a RAII struct
+error: pointer dereference '*vec_ptr' of struct 'int_vector' cannot be reassigned with another struct value because it is a RAII struct
+error: pointer dereference '*self' of struct 'int_vector' cannot be reassigned with another struct value because it is a RAII struct
+error: struct variable 'vec2' of type 'int_vector' should be initialized from a function return value
+error: struct variable 'vec3' of type 'int_vector' should be initialized from a function return value
+error: struct variable 'pos2' of type 'pos' should be initialized from a function return value or another struct variable
+error: struct variable 'pos4' of type 'pos' should be initialized from a function return value or another struct variable
+error: struct variable 'pos5' of type 'pos' should be initialized from a function return value or another struct variable
+error: struct variable 'vec_3' of type 'int_vector' should be initialized from a function return value
+error: array variable 'matrix' of type 'int_vector' is not allowed outside of structs
+error: array variable 'matrix2' of type 'int_vector' is not allowed outside of structs
+error: array variable 'positions' of type 'pos' is not allowed outside of structs
+error: array variable 'positions2' of type 'pos' is not allowed outside of structs
+error: struct 'int_vector' array element 'vec_array.vecs[...]' cannot be reassigned with another struct value because it is a RAII struct

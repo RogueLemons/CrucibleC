@@ -631,3 +631,5 @@ For V1 it shall
 For V1.1 it shall
 - Add rules for vtables and interfaces
 - Enforce no use after move for pointer tags, and no move of mut or out variable
+- Enforce no use of _move functions on pointer arguments (only local scope variables)
+- Allow pod struct arrays (outside of structs) if properly initialized all elements

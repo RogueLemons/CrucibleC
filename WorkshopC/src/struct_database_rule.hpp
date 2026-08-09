@@ -554,10 +554,13 @@ public:
 
         sourceManager = result.SourceManager;
 
-        if (const auto *RD =
-            result.Nodes.getNodeAs<RecordDecl>(
-                "struct")) {
+        const auto *RD =
+            result.Nodes.getNodeAs<RecordDecl>("struct");
 
+        if (!RD)
+            RD = result.Nodes.getNodeAs<RecordDecl>("record");
+
+        if (RD) {
             if (!shouldIgnore(
                     sm,
                     RD->getLocation()))
