@@ -45,67 +45,98 @@ private:
             : owner(owner), function(function) {
         }
 
-        void scanStmt(const Stmt *stmt) {
+        void scanStmt(const Stmt *stmt)
+        {
             if (!stmt)
                 return;
-
+        
+            // A compound statement introduces a new lexical scope.
             if (const auto *compound = dyn_cast<CompoundStmt>(stmt)) {
                 scopes.emplace_back();
-
-                for (const auto *child : compound->body())
-                    scanStmt(child);
-
+            
+                // Scan everything in this scope.
+                for (const Stmt *child : compound->body()) {
+                    if (child)
+                        scanStmt(child);
+                }
+            
+                // Anything still alive when we reach the closing brace
+                // must have been explicitly destroyed.
                 owner.reportPendingVarsForScopeExit(
-                    compound->getBeginLoc(),
+                    compound->getEndLoc(),
                     scopes.back(),
                     reportedVars);
-
+                
                 scopes.pop_back();
                 return;
             }
-
+        
+            // Track local RAII struct declarations.
             if (const auto *declStmt = dyn_cast<DeclStmt>(stmt)) {
-                for (const auto *decl : declStmt->decls()) {
-                    if (const auto *var = dyn_cast<VarDecl>(decl))
+                for (const Decl *decl : declStmt->decls()) {
+                    const auto *var = dyn_cast<VarDecl>(decl);
+                
+                    if (var)
                         trackVar(var);
                 }
             }
-
+        
+            // A destroy call can occur anywhere inside an expression tree.
             if (const auto *call = dyn_cast<CallExpr>(stmt))
                 markDestroyedIfNeeded(call);
-
-            if (isa<ReturnStmt>(stmt) || isa<BreakStmt>(stmt) ||
-                isa<ContinueStmt>(stmt) || isa<GotoStmt>(stmt)) {
+        
+            // These statements cause the current scopes to be exited.
+            //
+            // The actual scope unwinding is more complicated for nested
+            // control-flow constructs, but this at least ensures that
+            // variables are diagnosed before an explicit control-flow exit.
+            if (const auto *returnStmt = dyn_cast<ReturnStmt>(stmt)
+                // || isa<BreakStmt>(stmt) 
+                // || isa<ContinueStmt>(stmt) 
+                // || isa<GotoStmt>(stmt)
+                ) {
                 owner.reportPendingVarsForExit(
-                    function,
+                    returnStmt->getEndLoc(),
                     scopes,
                     params,
                     reportedVars);
             }
-
-            for (auto it = stmt->child_begin(), end = stmt->child_end(); it != end; ++it) {
+        
+            // Continue recursively through all child statements/expressions.
+            for (auto it = stmt->child_begin(),
+                      end = stmt->child_end();
+                 it != end;
+                 ++it) {
+                
                 if (*it)
                     scanStmt(*it);
             }
         }
 
-        void trackVar(const VarDecl *var) {
-            if (!var || !var->isLocalVarDecl())
+        void trackVar(const VarDecl *var)
+        {
+            if (!var)
                 return;
-
-            if (var->getStorageClass() == clang::SC_Static)
+        
+            // Function-local static variables have static storage duration and
+            // are intentionally not tracked by this scope-based cleanup rule.
+            if (var->isStaticLocal())
                 return;
-
+        
+            if (!var->hasLocalStorage())
+                return;
+        
             if (!owner.shouldTrackVar(var, function))
                 return;
-
+        
             if (scopes.empty())
                 return;
-
+        
             TrackedVar tracked;
             tracked.decl = var;
             tracked.structName = owner.getStructName(var->getType());
             tracked.destroyed = false;
+        
             scopes.back().vars.push_back(tracked);
         }
 
@@ -173,6 +204,16 @@ private:
     StructDatabase &database;
 
     const SourceManager *sourceManager = nullptr;
+
+    std::vector<const FunctionDecl *> pendingFunctions;
+
+    const std::string podSuffix;
+    const std::string raiiSuffix;
+    const std::string destroySuffix;
+    const std::string copySuffix;
+    const std::string moveSuffix;
+    const std::string validSuffix;
+    const std::string freeSuffix;
 
 private:
     static std::string getOption(
@@ -266,14 +307,17 @@ private:
         if (!function || structName.empty())
             return false;
 
-        const std::string name = function->getNameAsString();
+        const std::string name =
+            function->getNameAsString();
 
-        return name == structName + "_pod" ||
-            name == structName + "_make" ||
-            name == structName + "_copy" ||
-            name == structName + "_move" ||
-            name == structName + "_destroy" ||
-            name == structName + "_valid";
+        return 
+            // name == structName + podSuffix ||
+            name == structName + raiiSuffix ||
+            // name == structName + freeSuffix ||
+            name == structName + destroySuffix ||
+            name == structName + copySuffix ||
+            name == structName + moveSuffix ||
+            name == structName + validSuffix;
     }
 
     const VarDecl *getReferencedVarDecl(const Expr *expr) const
@@ -287,7 +331,8 @@ private:
             return dyn_cast<VarDecl>(declRef->getDecl());
 
         if (const auto *unary = dyn_cast<UnaryOperator>(expr)) {
-            if (unary->getOpcode() == UO_Deref)
+            if (unary->getOpcode() == UO_Deref ||
+                unary->getOpcode() == UO_AddrOf)
                 return getReferencedVarDecl(unary->getSubExpr());
         }
 
@@ -310,11 +355,21 @@ private:
         if (var->isStaticLocal())
             return false;
 
-        if (!var->isLocalVarDecl())
+        // Normal local variables and function parameters can own
+        // a RAII struct value.
+        if (!var->isLocalVarDecl() &&
+            !isa<ParmVarDecl>(var))
+            return false;
+
+        // A pointer to a RAII struct does not own the struct itself.
+        // Cleanup is required for the struct value, not for pointer variables.
+        QualType type = var->getType().getUnqualifiedType();
+
+        if (type->isPointerType())
             return false;
 
         std::string structName;
-        if (!isStructType(var->getType(), &structName))
+        if (!isStructType(type, &structName))
             return false;
 
         if (function && isInsideHelperFunction(function, structName))
@@ -333,7 +388,16 @@ private:
 
     bool isDestroyCall(const std::string &name) const
     {
-        return name.size() > 8 && name.substr(name.size() - 8) == "_destroy";
+        if (destroySuffix.empty())
+            return false;
+
+        if (name.size() < destroySuffix.size())
+            return false;
+
+        return name.compare(
+            name.size() - destroySuffix.size(),
+            destroySuffix.size(),
+            destroySuffix) == 0;
     }
 
     void reportUsageIssue(
@@ -366,24 +430,26 @@ private:
 
             reportUsageIssue(
                 loc,
-                "RAII struct variable '" + tracked.decl->getNameAsString() +
-                    "' of type '" + tracked.structName +
-                    "' must be destroyed before scope exit");
+                "struct variable '" +
+                tracked.decl->getNameAsString() +
+                "' of type '" +
+                tracked.structName +
+                "' must be destroyed with '" +
+                tracked.structName +
+                destroySuffix +
+                "' before scope exit because it is a RAII struct");
         }
     }
 
     void reportPendingVarsForExit(
-        const FunctionDecl *function,
+        SourceLocation loc,
         const std::vector<ScopeState> &scopes,
         const std::vector<TrackedVar> &params,
         std::unordered_set<const VarDecl *> &reportedVars) const
     {
-        if (!function)
-            return;
-
         for (const auto &scope : scopes) {
             reportPendingVarsForScopeExit(
-                function->getLocation(),
+                loc,
                 scope,
                 reportedVars);
         }
@@ -398,10 +464,15 @@ private:
             reportedVars.insert(tracked.decl);
 
             reportUsageIssue(
-                function->getLocation(),
-                "RAII struct parameter '" + tracked.decl->getNameAsString() +
-                    "' of type '" + tracked.structName +
-                    "' must be destroyed before function exit");
+                loc,
+                "struct parameter '" +
+                tracked.decl->getNameAsString() +
+                "' of type '" +
+                tracked.structName +
+                "' must be destroyed with '" +
+                tracked.structName +
+                destroySuffix +
+                "' before scope exit because it is a RAII struct");
         }
     }
 
@@ -424,9 +495,12 @@ private:
 
             reportUsageIssue(
                 function->getLocation(),
-                "RAII struct parameter '" + tracked.decl->getNameAsString() +
+                "struct parameter '" + tracked.decl->getNameAsString() +
                     "' of type '" + tracked.structName +
-                    "' must be destroyed before function exit");
+                    "' must be destroyed with '" +
+                tracked.structName +
+                destroySuffix +
+                "' before scope exit because it is a RAII struct");
         }
     }
 
@@ -441,7 +515,14 @@ public:
           globalConfig(gc),
           suppressions(sup),
           diagnostics(diag),
-          database(db)
+          database(db),
+          podSuffix(getOption(cfg,"pod_struct_creator_suffix")),
+          raiiSuffix(getOption(cfg,"raii_struct_creator_suffix")),
+          destroySuffix(getOption(cfg, "raii_struct_destroyer_suffix")),
+          copySuffix(getOption(cfg,"raii_struct_copy_suffix")),
+          moveSuffix(getOption(cfg,"raii_struct_move_suffix")),
+          validSuffix(getOption(cfg,"raii_struct_valid_suffix")),
+          freeSuffix(getOption(cfg,"free_struct_creator_suffix"))
     {
     }
 
@@ -458,13 +539,22 @@ public:
         if (!function || !function->doesThisDeclarationHaveABody())
             return;
 
-        CleanupAnalyzer analyzer(*this, function);
+        pendingFunctions.push_back(function);
+    }
 
-        for (const auto *param : function->parameters()) {
-            analyzer.addParameter(param);
+    void finalize()
+    {
+        for (const auto *function : pendingFunctions) {
+            if (!function)
+                continue;
+
+            CleanupAnalyzer analyzer(*this, function);
+
+            for (const auto *param : function->parameters())
+                analyzer.addParameter(param);
+
+            analyzer.scanStmt(function->getBody());
+            analyzer.finalize();
         }
-
-        analyzer.scanStmt(function->getBody());
-        analyzer.finalize();
     }
 };

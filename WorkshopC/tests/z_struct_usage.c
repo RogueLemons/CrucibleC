@@ -160,7 +160,7 @@ void int_vector_foo_with_supression(int_vector_t* const self)
     int_vector_destroy(&vec);                 // good
 }
 
-void foo()
+void initialization_testing()
 {
     int_vector_t vec = int_vector_make(10);     // good
     int_vector_t vec2;                          // bad
@@ -201,7 +201,11 @@ void raii_array_testing()
     int_vector_t vec_2 = int_vector_copy(&vec_array.vecs[1]);        // good
     int_vector_t vec_3 = vec_array.vecs[2];                          // bad
 
+    int_vector_destroy(&vec_1);                                      // good
+    int_vector_destroy(&vec_2);                                      // good
+    int_vector_destroy(&vec_3);                                      // good
     int_vector_array_destroy(&vec_array);                            // good
+
 }
 
 struct pos_array
@@ -221,7 +225,173 @@ void pod_array_testing()
     pos_t pos_2 = pos_array.positions[1];                      // good
 }
 
-// TODO:
-// 1. done! Fix error message to include the variable name (inside foo)
-// 2. Make pod_array_testing function
-// 3. Add errors for bad pod and raii struct arrays
+void take_raii_struct_by_value(int_vector_t raii_value_arg)
+{
+    int_vector_foo(&raii_value_arg);
+    int_vector_destroy(&raii_value_arg);
+}
+
+void give_raii_struct_by_value()
+{
+    int_vector_t vec = int_vector_make(10);              // good
+    take_raii_struct_by_value(vec);                      // bad
+    
+    int_vector_t* vec_ptr = &vec;                        // good               
+    take_raii_struct_by_value(*vec_ptr);                 // bad
+
+    struct int_vector_array vec_array = int_vector_array_make(); // good
+    take_raii_struct_by_value(vec_array.vecs[0]);         // bad
+
+    int int_arr[5] = {1, 2, 3, 4, 5};                    // good
+    take_raii_struct_by_value((int_vector_t){int_arr, 5, 5}); // bad
+
+    take_raii_struct_by_value(int_vector_make(10));      // good
+    take_raii_struct_by_value(int_vector_copy(&vec));    // good
+    take_raii_struct_by_value(int_vector_move(&vec));    // good
+
+    int_vector_array_destroy(&vec_array);                // good
+    int_vector_destroy(&vec);                            // good
+}
+
+int take_pod_by_value(pos_t pod_value_arg)
+{
+    return pod_value_arg.x + pod_value_arg.y;
+}
+
+int give_pod_struct_by_value()
+{
+    pos_t pos = pos_pod(1, 2);                          // good
+    int res1 = take_pod_by_value(pos);                  // good
+    pos_t* pos_ptr = &pos;                              // good
+    int res2 = take_pod_by_value(*pos_ptr);             // good
+    struct pos_array pos_arr = pos_array_pod();         // good
+    int res3 = take_pod_by_value(pos_arr.positions[1]); // good
+
+    int res4 = take_pod_by_value((pos_t){3,4});         // bad
+
+    return res1 + res2 + res3 + res4;
+}
+
+pos_t bad_pod_return()
+{
+    return (pos_t){5, 6}; // bad
+}
+
+pos_t good_pod_return()
+{
+    return pos_pod(7, 8); // good
+}
+
+pos_t good_pod_return_2()
+{
+    pos_t pos = pos_pod(9, 10);
+    return pos;
+}
+
+pos_t good_pod_return_3()
+{
+    pos_t pos = pos_pod(11, 12);
+    pos_t* pos_ptr = &pos;
+    return *pos_ptr;
+}
+
+int_vector_t good_raii_return()
+{ 
+    return int_vector_make(10);
+}
+
+int_vector_t good_raii_return_2(int_vector_t* vec_ptr)
+{
+    return int_vector_copy(vec_ptr);
+}
+
+int_vector_t bad_raii_return()
+{
+    int int_arr[3] = { 1, 2, 3};
+    return (int_vector_t){int_arr, 3, 3};
+}
+
+int_vector_t bad_raii_return_2()
+{
+    int_vector_t vec = int_vector_make(10);
+    int_vector_destroy(&vec);
+    return vec;
+}
+
+int_vector_t bad_raii_return_3()
+{
+    int_vector_t vec = int_vector_make(10);
+    int_vector_t* vec_ptr = &vec;
+    int_vector_destroy(&vec);
+    return *vec_ptr;
+}
+
+void detect_no_cleanup()
+{
+    int_vector_t no_cleanup_var = int_vector_make(10);
+    int_vector_foo(&no_cleanup_var);
+    // Cleanup is missing here, should be:
+    // int_vector_destroy(&no_cleanup_var);
+}
+
+void detect_no_cleanup_of_arg(int_vector_t no_cleanup_arg)
+{
+    int_vector_foo(&no_cleanup_arg);
+    // Cleanup is missing here, should be:
+    // int_vector_destroy(&no_cleanup_arg);
+}
+
+int detect_many_missing_cleanups(int_vector_t arg1, int_vector_t arg2)
+{
+    int_vector_t local1 = int_vector_make(10);
+    int_vector_t local2 = int_vector_copy(&arg1);
+    int_vector_t local3 = int_vector_move(&arg2);
+
+    // Cleanup is missing for arg1, arg2, local1, local2, local3
+    return 0;
+}
+
+void complex_missing_cleanup(int i, int_vector_t arg)
+{
+    int_vector_t local1 = int_vector_make(10);
+    int_vector_t local2 = int_vector_copy(&arg);
+
+    if (i > 0) {
+        int_vector_t local3 = int_vector_move(&local1);
+        int_vector_t local4 = int_vector_copy(&local3);
+
+        // Cleanup is missing for local1, local2, local3
+        int_vector_destroy(&arg);
+        int_vector_destroy(&local4);
+        return;
+    }
+
+    // Cleanup missing for local1
+    int_vector_destroy(&local2);
+    int_vector_destroy(&arg);
+}
+
+void complex_missing_cleanup_2(int i)
+{
+    int_vector_t local_vec_1 = int_vector_make(10);
+
+    for (int j = 0; j < i; ++j) {
+        int_vector_t local_vec_2 = int_vector_copy(&local_vec_1);
+
+        if (j % 2 == 0) {
+            int_vector_t local_vec_3 = int_vector_move(&local_vec_2);
+            // Cleanup missing for local_vec_3
+            int_vector_destroy(&local_vec_1);
+            int_vector_destroy(&local_vec_2);
+            continue;
+        }
+
+        if (i > 10)
+        {
+            int_vector_destroy(&local_vec_2);
+            break;
+        }
+        // Cleanup missing for local_vec_2
+    }
+    int_vector_destroy(&local_vec_1);
+}

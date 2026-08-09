@@ -32,6 +32,7 @@ private:
     std::vector<std::pair<const VarDecl *, const FunctionDecl *>> pendingVarDecls;
     std::vector<std::pair<const BinaryOperator *, const FunctionDecl *>> pendingAssignments;
     std::vector<std::pair<const CallExpr *, const FunctionDecl *>> pendingCalls;
+    std::vector<std::pair<const ReturnStmt *, const FunctionDecl *>> pendingReturns;
     std::vector<const RecordDecl *> pendingRecords;
 
 private:
@@ -232,10 +233,10 @@ private:
         std::string *structName = nullptr) const
     {
         expr = unwrapExpr(expr);
-    
+
         if (!expr)
             return false;
-    
+
         // Direct struct variable:
         //
         //     pos2 = pos;
@@ -243,10 +244,10 @@ private:
         if (const auto *declRef = dyn_cast<DeclRefExpr>(expr)) {
             if (const auto *varDecl = dyn_cast<VarDecl>(declRef->getDecl()))
                 return isStructType(varDecl->getType(), structName);
-        
+
             return false;
         }
-    
+
         // Dereferenced struct pointer:
         //
         //     pos2 = *pos_ptr;
@@ -255,15 +256,15 @@ private:
             if (unary->getOpcode() == UO_Deref) {
                 const Expr *subExpr =
                     unwrapExpr(unary->getSubExpr());
-            
+
                 if (!subExpr)
                     return false;
-            
+
                 // The dereferenced expression itself must be a struct.
                 return isStructType(expr->getType(), structName);
             }
         }
-    
+
         // Struct element from an array:
         //
         //     pos2 = positions[1];
@@ -272,17 +273,17 @@ private:
         //
         if (const auto *arraySubscript =
                 dyn_cast<ArraySubscriptExpr>(expr)) {
-                
+
             // The resulting array element must be a struct.
             if (!isStructType(expr->getType(), structName))
                 return false;
-                
+
             const Expr *base =
                 unwrapExpr(arraySubscript->getBase());
-                
+
             if (!base)
                 return false;
-                
+
             // Direct array variable:
             //
             //     positions[1]
@@ -290,22 +291,22 @@ private:
             if (const auto *declRef = dyn_cast<DeclRefExpr>(base)) {
                 const auto *varDecl =
                     dyn_cast<VarDecl>(declRef->getDecl());
-            
+
                 if (!varDecl)
                     return false;
-            
+
                 bool isArray = false;
                 std::string baseStructName;
-            
+
                 if (!isStructType(
                         varDecl->getType(),
                         &baseStructName,
                         &isArray))
                     return false;
-                
+
                 return isArray;
             }
-        
+
             // Struct member containing an array:
             //
             //     pos_array.positions[1]
@@ -313,28 +314,28 @@ private:
             if (const auto *memberExpr = dyn_cast<MemberExpr>(base)) {
                 const auto *memberDecl =
                     memberExpr->getMemberDecl();
-            
+
                 if (!memberDecl)
                     return false;
-            
+
                 const auto *fieldDecl =
                     dyn_cast<FieldDecl>(memberDecl);
-            
+
                 if (!fieldDecl)
                     return false;
-            
+
                 bool isArray = false;
                 std::string fieldStructName;
-            
+
                 if (!isStructType(
                         fieldDecl->getType(),
                         &fieldStructName,
                         &isArray))
                     return false;
-                
+
                 return isArray;
             }
-        
+
             // Nested array:
             //
             //     pos_arrays[0][1]
@@ -343,10 +344,10 @@ private:
                 return exprIsStructVariableReference(
                     base,
                     structName);
-                
+
             return false;
         }
-    
+
         return false;
     }
 
@@ -395,6 +396,13 @@ private:
         const FunctionDecl *enclosingFunction) const
     {
         if (!varDecl)
+            return;
+
+        // Function parameters are not local variable declarations.
+        // A by-value struct parameter is already initialized by the
+        // caller, so it must not be checked by the variable
+        // initialization rule.
+        if (isa<ParmVarDecl>(varDecl))
             return;
 
         std::string structName;
@@ -633,7 +641,9 @@ private:
         }
     }
 
-    void checkCallArguments(const CallExpr *call, const FunctionDecl *enclosingFunction) const
+    void checkCallArguments(
+        const CallExpr *call,
+        const FunctionDecl *enclosingFunction) const
     {
         if (!call)
             return;
@@ -642,43 +652,200 @@ private:
         if (!calleeDecl)
             return;
 
-        const auto *functionDecl = dyn_cast<FunctionDecl>(calleeDecl);
+        const auto *functionDecl =
+            dyn_cast<FunctionDecl>(calleeDecl);
+
         if (!functionDecl)
             return;
 
+        const std::string functionName =
+            functionDecl->getNameAsString();
+
         for (unsigned i = 0; i < call->getNumArgs(); ++i) {
             const Expr *arg = call->getArg(i);
+
             if (!arg)
                 continue;
 
-            const auto *paramDecl = functionDecl->getParamDecl(i);
+            const auto *paramDecl =
+                functionDecl->getParamDecl(i);
+
             if (!paramDecl)
                 continue;
 
             std::string structName;
-            if (!isStructType(paramDecl->getType(), &structName))
+
+            if (!isStructType(
+                    paramDecl->getType(),
+                    &structName))
                 continue;
 
-            if (enclosingFunction && isInsideHelperFunction(enclosingFunction, structName))
+            if (enclosingFunction &&
+                isInsideHelperFunction(
+                    enclosingFunction,
+                    structName))
                 continue;
 
-            const auto *info = database.find(structName);
+            const auto *info =
+                database.find(structName);
+
             if (!info)
                 continue;
 
-            if (info->kind == StructDatabase::Kind::Pod) {
-                if (!exprIsStructValue(arg)) {
-                    reportUsageIssue(
-                        arg->getExprLoc(),
-                        "struct '" + structName + "' should be passed from a function return value or another struct variable");
+            // Get the argument name when the argument is a
+            // simple variable reference.
+            std::string argumentName;
+
+            const Expr *unwrappedArg =
+                unwrapExpr(arg);
+
+            if (const auto *declRef =
+                    dyn_cast<DeclRefExpr>(unwrappedArg)) {
+
+                if (const auto *varDecl =
+                        dyn_cast<VarDecl>(
+                            declRef->getDecl())) {
+
+                    argumentName =
+                        varDecl->getNameAsString();
                 }
             }
-            else if (info->kind == StructDatabase::Kind::Raii) {
-                if (!exprIsStructReturnValue(arg)) {
+
+            // Fall back to the parameter name if the argument
+            // is not a simple variable reference.
+            if (argumentName.empty())
+                argumentName =
+                    paramDecl->getNameAsString();
+
+            if (info->kind == StructDatabase::Kind::Pod) {
+
+                if (!exprIsStructValue(arg)) {
+
                     reportUsageIssue(
                         arg->getExprLoc(),
-                        "struct '" + structName + "' should be passed from a function return value");
+                        "struct '" +
+                        structName +
+                        "' argument '" +
+                        argumentName +
+                        "' passed to function '" +
+                        functionName +
+                        "' should be passed from a function return value or another struct variable");
                 }
+            }
+            else if (info->kind ==
+                     StructDatabase::Kind::Raii) {
+
+                if (!exprIsStructReturnValue(arg)) {
+
+                    reportUsageIssue(
+                        arg->getExprLoc(),
+                        "struct '" +
+                        structName +
+                        "' argument '" +
+                        argumentName +
+                        "' passed to function '" +
+                        functionName +
+                        "' should be passed from a function return value");
+                }
+            }
+        }
+    }
+
+    void checkReturnStmt(
+        const ReturnStmt *returnStmt,
+        const FunctionDecl *enclosingFunction) const
+    {
+        if (!returnStmt || !enclosingFunction)
+            return;
+
+        std::string structName;
+
+        // The function itself must return a struct by value.
+        if (!isStructType(
+                enclosingFunction->getReturnType(),
+                &structName))
+            return;
+
+        if (isInsideHelperFunction(enclosingFunction, structName))
+            return;
+
+        const auto *info = database.find(structName);
+        if (!info)
+            return;
+
+        const Expr *returnValue =
+            returnStmt->getRetValue();
+
+        // A non-void struct-returning function must have
+        // a return expression.
+        if (!returnValue) {
+            if (info->kind == StructDatabase::Kind::Pod) {
+                reportUsageIssue(
+                    returnStmt->getReturnLoc(),
+                    "function '" +
+                    enclosingFunction->getNameAsString() +
+                    "' returning pod struct '" +
+                    structName +
+                    "' should return a function return value or another struct variable");
+            }
+            else if (info->kind == StructDatabase::Kind::Raii) {
+                reportUsageIssue(
+                    returnStmt->getReturnLoc(),
+                    "function '" +
+                    enclosingFunction->getNameAsString() +
+                    "' returning RAII struct '" +
+                    structName +
+                    "' should return a function call");
+            }
+
+            return;
+        }
+
+        if (info->kind == StructDatabase::Kind::Pod) {
+
+            // Pod structs may be returned from:
+            //
+            //     return make_pos();
+            //     return pos;
+            //     return *pos_ptr;
+            //     return positions[0];
+            //
+            // but not from:
+            //
+            //     return (pos_t){5, 6};
+            //
+            if (!exprIsStructValue(returnValue)) {
+                reportUsageIssue(
+                    returnValue->getExprLoc(),
+                    "function '" +
+                    enclosingFunction->getNameAsString() +
+                    "' returning struct '" +
+                    structName +
+                    "' should return a function return value or another struct variable");
+            }
+        }
+        else if (info->kind == StructDatabase::Kind::Raii) {
+
+            // RAII structs may only be returned directly from
+            // another function returning the same kind of struct:
+            //
+            //     return make_int_vector();
+            //
+            // but not:
+            //
+            //     return vec;
+            //     return *vec_ptr;
+            //     return vec_array.vecs[0];
+            //     return (int_vector_t){...};
+            //
+            if (!exprIsStructReturnValue(returnValue)) {
+                reportUsageIssue(
+                    returnValue->getExprLoc(),
+                    "function '" +
+                    enclosingFunction->getNameAsString() +
+                    "' returning RAII struct '" +
+                    structName +
+                    "' should return a function call");
             }
         }
     }
@@ -758,15 +925,24 @@ public:
                 findEnclosingFunction(*result.Context, DynTypedNode::create(*call))});
         }
 
+        if (const auto *returnStmt =
+            result.Nodes.getNodeAs<ReturnStmt>("returnStmt")) {
+                
+                pendingReturns.push_back({
+                    returnStmt,
+                    findEnclosingFunction(
+                        *result.Context,
+                        DynTypedNode::create(*returnStmt))
+                });
+        }
+
         if (const auto *recordDecl = result.Nodes.getNodeAs<RecordDecl>("record")) {
             pendingRecords.push_back(recordDecl);
         }
     }
 
-    void onEndOfTranslationUnit() override
+    void finalize()
     {
-        database.finalize();
-
         for (const auto &[varDecl, function] : pendingVarDecls)
             checkVarDecl(varDecl, function);
 
@@ -775,6 +951,9 @@ public:
 
         for (const auto &[call, function] : pendingCalls)
             checkCallArguments(call, function);
+
+        for (const auto &[returnStmt, function] : pendingReturns)
+            checkReturnStmt(returnStmt, function);
 
         for (const auto *recordDecl : pendingRecords)
             checkRecordDecl(recordDecl);

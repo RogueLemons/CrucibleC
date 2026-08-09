@@ -614,14 +614,11 @@ This ensures:
 A parser must be implemented to transfer goals of AlloyCTranspiler into a warning/suggestion system for pure C code.
 
 For V0.9 it shall
-- **Make pod structs require a _pod function and class structs require a _make function,  and "free" structs an _init function**
-- verify pod and class structs are initialized with an assignment at declaration (class struct must use function)
-- verify pod structs can only contain pod structs
-- verify class structs are never assigned anything again
-- verify class structs call _destroy before all scope exits (unless static)
-- verify class structs have _move, _copy, _destroy, and _valid functions (they might be invalid but never illegal)
+- verify class structs call _destroy before all scope exits
 - **Add note to use clang-tidy for const correctness**
-- write readme section for pod and class structs
+- write readme section for pod and class structs (raii struct may be invalid but never illegal)
+- allow local scope raii structs to be passed by value in return statements
+- give correct compile_commands.json for running tests
 
 For V1 it shall
 - **Make release folder visible in git at the end**
@@ -633,3 +630,5 @@ For V1.1 it shall
 - Enforce no use after move for pointer tags, and no move of mut or out variable
 - Enforce no use of _move functions on pointer arguments (only local scope variables)
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
+- Optionally enforce raii struct destroy calls in reverse init order
+- Optionally disallow multiple destroy calls and optionally forbid use after destroy

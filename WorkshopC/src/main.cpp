@@ -14,6 +14,8 @@
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
 #include "struct_init_rule.hpp"
+#include "struct_cleanup_rule.hpp"
+#include "finder_and_finalizer_consumer.hpp"
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CompilationDatabase.h>
@@ -54,6 +56,7 @@ private:
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
     std::unique_ptr<StructInitRule> structInitRule{};
+    std::unique_ptr<StructCleanupRule> structCleanupRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -307,6 +310,7 @@ public:
                 ).bind("function"),
                 structDatabaseRule.get());
 
+            // Struct initialization and assignment rule
             structInitRule =
                 std::make_unique<StructInitRule>(
                     config.getRuleConfig("struct_resource_management"),
@@ -334,15 +338,44 @@ public:
                 ).bind("call"),
                 structInitRule.get());
 
+            finder.addMatcher( 
+                returnStmt( 
+                    unless(isExpansionInSystemHeader()) 
+                ).bind("returnStmt"), 
+                structInitRule.get());
+
             finder.addMatcher(
                 recordDecl(
                     isStruct(),
                     unless(isExpansionInSystemHeader())
                 ).bind("record"),
                 structInitRule.get());
+
+            // Struct cleanup rule
+            structCleanupRule =
+                std::make_unique<StructCleanupRule>(
+                    config.getRuleConfig("struct_resource_management"),
+                    config,
+                    suppressions,
+                    *diagnostics,
+                    structDatabase
+                );
+
+            finder.addMatcher(
+                functionDecl(
+                    isDefinition(),
+                    unless(isExpansionInSystemHeader())
+                ).bind("function"),
+                structCleanupRule.get());
         }
 
-        return finder.newASTConsumer();
+        return std::make_unique<FinderAndFinalizerConsumer>(
+            finder,
+            structDatabase,
+            structDatabaseRule.get(),
+            structInitRule.get(),
+            structCleanupRule.get()
+        );
     }
 };
 
