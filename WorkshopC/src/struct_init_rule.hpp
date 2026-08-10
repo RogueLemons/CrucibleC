@@ -623,21 +623,21 @@ private:
                 assignment->getOperatorLoc(),
                 "pointer dereference '" + targetName +
                     "' of struct '" + structName +
-                    "' cannot be reassigned with another struct value because it is a RAII struct");
+                    "' cannot be reassigned with another struct value (raii)");
         }
         else if (isa<ArraySubscriptExpr>(lhs)) {
             reportUsageIssue(
                 assignment->getOperatorLoc(),
                 "struct '" + structName +
                     "' array element '" + targetName +
-                    "' cannot be reassigned with another struct value because it is a RAII struct");
+                    "' cannot be reassigned with another struct value (raii)");
         }
         else {
             reportUsageIssue(
                 assignment->getOperatorLoc(),
                 "variable '" + targetName +
                     "' of type struct '" + structName +
-                    "' cannot be reassigned with another struct value because it is a RAII struct");
+                    "' cannot be reassigned with another struct value (raii)");
         }
     }
 

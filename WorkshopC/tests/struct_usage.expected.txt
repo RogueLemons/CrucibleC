@@ -1,8 +1,8 @@
 error: struct field 'vec' inside pod struct 'bad_pod_with_raii_struct' must be a pod struct
 error: struct field 'free_field' inside pod struct 'bad_pod_with_free_struct' must be a pod struct
-error: variable 'vec' of type struct 'int_vector' cannot be reassigned with another struct value because it is a RAII struct
-error: pointer dereference '*vec_ptr' of struct 'int_vector' cannot be reassigned with another struct value because it is a RAII struct
-error: pointer dereference '*self' of struct 'int_vector' cannot be reassigned with another struct value because it is a RAII struct
+error: variable 'vec' of type struct 'int_vector' cannot be reassigned with another struct value (raii)
+error: pointer dereference '*vec_ptr' of struct 'int_vector' cannot be reassigned with another struct value (raii)
+error: pointer dereference '*self' of struct 'int_vector' cannot be reassigned with another struct value (raii)
 error: struct variable 'vec2' of type 'int_vector' should be initialized from a function return value
 error: struct variable 'vec3' of type 'int_vector' should be initialized from a function return value
 error: struct variable 'pos2' of type 'pos' should be initialized from a function return value or another struct variable
@@ -13,7 +13,7 @@ error: array variable 'matrix' of type 'int_vector' is not allowed outside of st
 error: array variable 'matrix2' of type 'int_vector' is not allowed outside of structs
 error: array variable 'positions' of type 'pos' is not allowed outside of structs
 error: array variable 'positions2' of type 'pos' is not allowed outside of structs
-error: struct 'int_vector' array element 'vec_array.vecs[...]' cannot be reassigned with another struct value because it is a RAII struct
+error: struct 'int_vector' array element 'vec_array.vecs[...]' cannot be reassigned with another struct value (raii)
 error: struct 'int_vector' argument 'vec' passed to function 'take_raii_struct_by_value' should be passed from a function return value
 error: struct 'int_vector' argument 'raii_value_arg' passed to function 'take_raii_struct_by_value' should be passed from a function return value
 error: struct 'int_vector' argument 'raii_value_arg' passed to function 'take_raii_struct_by_value' should be passed from a function return value
@@ -23,3 +23,7 @@ error: function 'bad_pod_return' returning struct 'pos' should return a function
 error: function 'bad_raii_return' returning RAII struct 'int_vector' should return a function call
 error: function 'bad_raii_return_2' returning RAII struct 'int_vector' should return a function call
 error: function 'bad_raii_return_3' returning RAII struct 'int_vector' should return a function call
+error: struct variable 'vec_not_init' of type 'int_vector' should be initialized from a function return value
+error: struct variable 'vec_not_init' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
+error: struct variable 'vec_not_init' of type 'int_vector' should be initialized from a function return value
+error: struct variable 'vec_not_init' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)

@@ -617,7 +617,7 @@ For V0.9 it shall
 - verify class structs call _destroy before all scope exits
 - **Add note to use clang-tidy for const correctness**
 - write readme section for pod and class structs (raii struct may be invalid but never illegal)
-- allow local scope raii structs to be passed by value in return statements
+- allow return constructor in return statements for raii structs
 - give correct compile_commands.json for running tests
 
 For V1 it shall

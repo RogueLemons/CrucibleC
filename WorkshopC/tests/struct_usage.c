@@ -325,3 +325,43 @@ int_vector_t bad_raii_return_3()
     int_vector_destroy(&vec);
     return *vec_ptr;
 }
+
+struct pod_with_bad_raii_in_constructor
+{
+    char a;
+    char b;
+    char c;
+};
+typedef struct pod_with_bad_raii_in_constructor pod_with_bad_raii_in_constructor_t;
+
+static inline pod_with_bad_raii_in_constructor_t pod_with_bad_raii_in_constructor_pod()
+{
+    int_vector_t vec_not_init;
+
+    pod_with_bad_raii_in_constructor_t self = {0};
+    self.a = 'a';
+    self.b = 'b';
+    self.c = 'c';
+    return self;
+}
+
+struct raii_with_bad_raii_in_constructor
+{
+    int i;
+    char c;
+};
+typedef struct raii_with_bad_raii_in_constructor raii_with_bad_raii_in_constructor_t;
+
+static inline raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_make()
+{
+    int_vector_t vec_not_init;
+
+    raii_with_bad_raii_in_constructor_t self = {0};
+    self.i = 42;
+    self.c = 'c';
+    return self;
+}
+raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_copy(const raii_with_bad_raii_in_constructor_t* self);
+raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_move(raii_with_bad_raii_in_constructor_t* self);
+void raii_with_bad_raii_in_constructor_destroy(raii_with_bad_raii_in_constructor_t* self);
+_Bool raii_with_bad_raii_in_constructor_valid(const raii_with_bad_raii_in_constructor_t* self);

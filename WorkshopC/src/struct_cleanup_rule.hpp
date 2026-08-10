@@ -45,18 +45,6 @@ private:
      *
      *     - the variable
      *     - the source location of the exit
-     *
-     * This means:
-     *
-     *     variable + return #1
-     *     variable + return #2
-     *     variable + break #1
-     *
-     * are three different reports.
-     *
-     * At the same time, if the same variable reaches the same exit
-     * through multiple analysis paths, the diagnostic is emitted only
-     * once for that location.
      */
     struct ReportKey {
         const VarDecl *decl = nullptr;
@@ -106,33 +94,36 @@ private:
         std::vector<ScopeState> scopes;
         std::vector<TrackedVar> params;
 
-        /*
-         * Do NOT track only VarDecl* here.
+    /*
+     * IMPORTANT:
+     *
+     * Do not use a global "hasNormalExit" flag here.
+     *
+     * A return inside one branch does not mean that the whole
+     * function has no normal exit.
          *
-         * The same variable may legitimately need diagnostics at
-         * several different bad exits.
+     * Example:
+     *
+     *     if (condition)
+     *         return;
+     *
+     *     // normal path still exists
+     *
+     * The final Flow returned by scanStmt(functionBody) is
+     * what tells us whether the function as a whole can reach
+     * its closing brace.
          */
+
         std::unordered_set<ReportKey, ReportKeyHash> reportedVars;
 
         /*
          * Each entry is the index in 'scopes' belonging to the
          * corresponding active loop.
-         *
-         * Example:
-         *
-         *     function scope -> 0
-         *     for scope     -> 1
-         *     loop body     -> 2
-         *
-         * loopScopeStack.back() == 1
          */
         std::vector<size_t> loopScopeStack;
 
         /*
          * Switch statements are break targets too.
-         *
-         * A break targets whichever is the nearest enclosing
-         * loop or switch.
          */
         std::vector<size_t> switchScopeStack;
 
@@ -400,23 +391,20 @@ private:
                  */
                 restoreState(before);
 
-                if (thenFlow == elseFlow)
-                    return thenFlow;
-
                 /*
-                 * Mixed abnormal exits.
+             * Both branches exit abnormally.
                  *
-                 * No normal path reaches the following statement.
+             * If they use the same kind of exit, preserve that
+             * flow. Otherwise treat the entire if as abnormal.
                  */
+            if (thenFlow == elseFlow)
+                return thenFlow;
+
                 return Flow::Return;
             }
 
             /*
              * for-loop.
-             *
-             * The for-loop initializer and condition have a scope
-             * which survives through the loop. The loop body has
-             * its own nested scope.
              */
             if (const auto *forStmt =
                     dyn_cast<ForStmt>(stmt)) {
@@ -466,8 +454,7 @@ private:
                 }
 
                 /*
-                 * A continue executes the increment expression
-                 * for a traditional for-loop.
+             * A continue executes the increment expression.
                  */
                 if (bodyFlow == Flow::Continue) {
 
@@ -488,9 +475,6 @@ private:
                 /*
                  * The loop scope itself is exited when the loop
                  * terminates normally.
-                 *
-                 * If the body returned or broke, the actual jump
-                 * already checked the appropriate cleanup boundary.
                  */
                 if (bodyFlow == Flow::Normal) {
 
@@ -558,9 +542,6 @@ private:
                 /*
                  * The loop scope is exited when the while-loop
                  * ends normally.
-                 *
-                 * A break/return already handled its own exit
-                 * boundary.
                  */
                 if (bodyFlow == Flow::Normal) {
 
@@ -610,7 +591,7 @@ private:
                         scanStmt(body);
 
                 /*
-                 * continue reaches the condition of the do-while.
+             * continue reaches the condition.
                  */
                 if (bodyFlow == Flow::Normal ||
                     bodyFlow == Flow::Continue) {
@@ -778,9 +759,6 @@ private:
 
             /*
              * Generic recursive traversal.
-             *
-             * This handles expressions, binary operators, unary
-             * operators, assignments, casts, etc.
              */
             for (auto it = stmt->child_begin(),
                       end = stmt->child_end();
@@ -936,21 +914,40 @@ private:
                 tracked);
         }
 
-        void finalize()
+    /*
+     * Finalize the analysis using the flow of the entire
+     * function body.
+     *
+     * If the body can reach the closing brace, parameters
+     * must be checked there.
+     *
+     * If the body cannot reach the closing brace, every
+     * reachable return path has already checked parameters.
+     */
+    void finalize(
+        Flow functionFlow)
         {
-            owner.reportPendingParams(
-                function,
-                params,
-                reportedVars);
-        }
+        if (functionFlow != Flow::Normal)
+            return;
+            
+        if (!function)
+            return;
+            
+        const Stmt *body =
+            function->getBody();
+            
+        if (!body)
+            return;
+            
+        owner.reportPendingParams(
+            body->getEndLoc(),
+            params,
+            reportedVars);
+            }
 
     private:
         /*
          * Handle cleanup required by a continue.
-         *
-         * A continue leaves every lexical scope between the
-         * current point and the loop's controlling scope, but
-         * it does NOT leave the loop's own scope.
          */
         void reportContinueCleanup(
             SourceLocation loc)
@@ -966,18 +963,6 @@ private:
 
             /*
              * Report scopes strictly inside the loop scope.
-             *
-             * Example:
-             *
-             *   function scope  [0]
-             *   loop scope      [1]
-             *   body scope      [2]
-             *   nested scope    [3]
-             *
-             * continue reports [3], [2].
-             *
-             * It does NOT report [1] because the loop itself
-             * remains alive while the next iteration is started.
              */
             for (size_t i = scopes.size();
                  i > loopScope + 1;
@@ -992,8 +977,6 @@ private:
 
         /*
          * Handle cleanup required by a break.
-         *
-         * break exits the nearest enclosing loop or switch.
          */
         void reportBreakCleanup(
             SourceLocation loc)
@@ -1009,9 +992,6 @@ private:
 
             /*
              * Find the nearest break target.
-             *
-             * The larger scope index is the construct entered
-             * most recently and is therefore the innermost target.
              */
             if (!switchScopeStack.empty())
                 targetScope =
@@ -1038,8 +1018,6 @@ private:
             /*
              * break exits the target construct as well as every
              * nested lexical scope inside it.
-             *
-             * Therefore include targetScope itself.
              */
             for (size_t i = scopes.size();
                  i > targetScope;
@@ -1305,10 +1283,22 @@ private:
                 }
             }
 
+        /*
+         * IMPORTANT:
+         *
+         * QualType does not provide getPointeeType().
+         * The pointee API belongs to PointerType.
+         */
             if (current->isPointerType()) {
 
+            const auto *pointerType =
+                current->getAs<PointerType>();
+
+            if (!pointerType)
+                break;
+
                 current =
-                    current->getPointeeType();
+                pointerType->getPointeeType();
 
                 continue;
             }
@@ -1528,14 +1518,6 @@ private:
                 !tracked.decl)
                 continue;
 
-            /*
-             * IMPORTANT:
-             *
-             * The same variable may be reported at multiple
-             * different exits.
-             *
-             * Therefore the location is part of the key.
-             */
             const ReportKey key{
                 tracked.decl,
                 loc.getRawEncoding()
@@ -1555,7 +1537,7 @@ private:
                 "' must be destroyed with '" +
                 tracked.structName +
                 destroySuffix +
-                "' before scope exit because it is a RAII struct");
+                "' before scope exit (raii)");
         }
     }
 
@@ -1569,9 +1551,6 @@ private:
     {
         /*
          * Check all active lexical scopes.
-         *
-         * Walk from innermost to outermost to mirror actual C++
-         * destruction order.
          */
         for (auto it = scopes.rbegin();
              it != scopes.rend();
@@ -1594,11 +1573,6 @@ private:
                 !tracked.decl)
                 continue;
 
-            /*
-             * Parameters also use variable + location as their
-             * report identity, allowing the same parameter to
-             * produce diagnostics at multiple return sites.
-             */
             const ReportKey key{
                 tracked.decl,
                 loc.getRawEncoding()
@@ -1618,89 +1592,49 @@ private:
                 "' must be destroyed with '" +
                 tracked.structName +
                 destroySuffix +
-                "' before scope exit because it is a RAII struct");
-        }
-    }
-
-    void reportPendingParamsAt(
-        SourceLocation loc,
-        const std::vector<TrackedVar> &params,
-        std::unordered_set<
-            ReportKey,
-            ReportKeyHash> &reportedVars) const
-    {
-        for (const auto &tracked :
-             params) {
-
-            if (tracked.destroyed ||
-                !tracked.decl)
-                continue;
-
-            const ReportKey key{
-                tracked.decl,
-                loc.getRawEncoding()
-            };
-
-            if (reportedVars.count(key))
-                continue;
-
-            reportedVars.insert(key);
-
-            reportUsageIssue(
-                loc,
-                "struct parameter '" +
-                tracked.decl->getNameAsString() +
-                "' of type '" +
-                tracked.structName +
-                "' must be destroyed with '" +
-                tracked.structName +
-                destroySuffix +
-                "' before scope exit because it is a RAII struct");
+                "' before scope exit (raii)");
         }
     }
 
     void reportPendingParams(
-        const FunctionDecl *function,
-        const std::vector<TrackedVar> &params,
-        std::unordered_set<
-            ReportKey,
-            ReportKeyHash> &reportedVars) const
-    {
-        if (!function)
-            return;
+    SourceLocation loc,
+    const std::vector<TrackedVar> &params,
+    std::unordered_set<
+        ReportKey,
+        ReportKeyHash> &reportedVars) const
+{
+    if (loc.isInvalid())
+        return;
 
-        for (const auto &tracked :
-             params) {
+    for (const auto &tracked :
+         params) {
 
-            if (tracked.destroyed ||
-                !tracked.decl)
-                continue;
+        if (tracked.destroyed ||
+            !tracked.decl)
+            continue;
 
-            const SourceLocation loc =
-                function->getLocation();
+        const ReportKey key{
+            tracked.decl,
+            loc.getRawEncoding()
+        };
 
-            const ReportKey key{
-                tracked.decl,
-                loc.getRawEncoding()
-            };
+        if (reportedVars.count(key))
+            continue;
 
-            if (reportedVars.count(key))
-                continue;
+        reportedVars.insert(key);
 
-            reportedVars.insert(key);
-
-            reportUsageIssue(
-                loc,
-                "struct parameter '" +
-                tracked.decl->getNameAsString() +
-                "' of type '" +
-                tracked.structName +
-                "' must be destroyed with '" +
-                tracked.structName +
-                destroySuffix +
-                "' before scope exit because it is a RAII struct");
-        }
+        reportUsageIssue(
+            loc,
+            "struct parameter '" +
+            tracked.decl->getNameAsString() +
+            "' of type '" +
+            tracked.structName +
+            "' must be destroyed with '" +
+            tracked.structName +
+            destroySuffix +
+            "' before scope exit (raii)");
     }
+}
 
 public:
     StructCleanupRule(
@@ -1786,10 +1720,12 @@ public:
                     param);
             }
 
-            analyzer.scanStmt(
-                function->getBody());
+            const auto functionFlow =
+                analyzer.scanStmt(
+                    function->getBody());
 
-            analyzer.finalize();
+            analyzer.finalize(
+                functionFlow);
         }
     }
 };
