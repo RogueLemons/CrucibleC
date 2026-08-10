@@ -614,9 +614,8 @@ This ensures:
 A parser must be implemented to transfer goals of AlloyCTranspiler into a warning/suggestion system for pure C code.
 
 For V0.9 it shall
-- verify class structs call _destroy before all scope exits
 - **Add note to use clang-tidy for const correctness**
-- write readme section for pod and class structs (raii struct may be invalid but never illegal)
+- write readme section for pod and raii structs (raii struct may be invalid but never illegal)
 - allow return constructor in return statements for raii structs
 - give correct compile_commands.json for running tests
 

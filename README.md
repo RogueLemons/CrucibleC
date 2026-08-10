@@ -10,4 +10,4 @@ Includes:
 - [AlloyCTranspiler (Prototype)](AlloyCTranspiler_Prototype): adds extra keywords to C for safety and readability
 - [IronCLib (V0.9)](IronCLib): a quick-and-easy drop-in header library for safer C code
 - [SteelCLib (upcoming)](SteelCLib): a bigger, better version of IronCLib with more flexibility at complexity cost
-- [WorkshopC (V0.8.5)](WorkshopC): a code parser for safer and clearer code to follow a mold of coding
+- [WorkshopC (V0.8.6)](WorkshopC): a code parser for safer and clearer code to follow a mold of coding
