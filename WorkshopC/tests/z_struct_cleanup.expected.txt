@@ -1,0 +1,7 @@
+error: struct variable 'no_cleanup_var' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit because it is a RAII struct
+error: struct parameter 'no_cleanup_arg' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit because it is a RAII struct
+error: struct variable 'local1' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit because it is a RAII struct
+error: struct variable 'local2' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit because it is a RAII struct
+error: struct variable 'local3' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit because it is a RAII struct
+error: struct parameter 'arg1' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit because it is a RAII struct
+error: struct parameter 'arg2' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit because it is a RAII struct
