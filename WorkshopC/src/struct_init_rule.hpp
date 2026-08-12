@@ -22,6 +22,15 @@ private:
     RuleConfig config;
     const Config &globalConfig;
 
+    const std::string freeSuffix;
+    const std::string podSuffix;
+    const std::string raiiSuffix;
+    const std::string destroySuffix;
+    const std::string copySuffix;
+    const std::string moveSuffix;
+    const std::string returnSuffix;
+    const std::string validSuffix;
+
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
 
@@ -31,7 +40,12 @@ private:
 
     std::vector<std::pair<const VarDecl *, const FunctionDecl *>> pendingVarDecls;
     std::vector<std::pair<const BinaryOperator *, const FunctionDecl *>> pendingAssignments;
-    std::vector<std::pair<const CallExpr *, const FunctionDecl *>> pendingCalls;
+    struct PendingCall {
+        const CallExpr *call = nullptr;
+        const FunctionDecl *function = nullptr;
+        ASTContext *context = nullptr;
+    };
+    std::vector<PendingCall> pendingCalls;
     std::vector<std::pair<const ReturnStmt *, const FunctionDecl *>> pendingReturns;
     std::vector<const RecordDecl *> pendingRecords;
 
@@ -146,12 +160,13 @@ private:
 
         const std::string name = function->getNameAsString();
 
-        return name == structName + "_pod" ||
-            name == structName + "_make" ||
-            name == structName + "_copy" ||
-            name == structName + "_move" ||
-            name == structName + "_destroy" ||
-            name == structName + "_valid";
+        return name == structName + podSuffix ||
+            name == structName + raiiSuffix ||
+            name == structName + copySuffix ||
+            name == structName + moveSuffix ||
+            name == structName + destroySuffix ||
+            name == structName + returnSuffix ||
+            name == structName + validSuffix;
     }
 
     const FunctionDecl *findEnclosingFunction(
@@ -209,6 +224,175 @@ private:
         }
 
         return expr;
+    }
+
+    bool isStructReturnFunction(
+        const CallExpr *call,
+        std::string *structName = nullptr) const
+    {
+        if (!call)
+            return false;
+
+        const auto *callee =
+            call->getDirectCallee();
+
+        if (!callee)
+            return false;
+
+        const std::string functionName =
+            callee->getNameAsString();
+
+        if (returnSuffix.empty())
+            return false;
+
+        if (functionName.size() <= returnSuffix.size())
+            return false;
+
+        if (functionName.compare(
+                functionName.size() - returnSuffix.size(),
+                returnSuffix.size(),
+                returnSuffix) != 0)
+            return false;
+
+        const std::string candidateName =
+            functionName.substr(
+                0,
+                functionName.size() - returnSuffix.size());
+
+        if (candidateName.empty())
+            return false;
+
+        std::string actualReturnStructName;
+
+        if (!isStructType(
+                callee->getReturnType(),
+                &actualReturnStructName))
+            return false;
+
+        if (actualReturnStructName != candidateName)
+            return false;
+
+        if (callee->getNumParams() != 1)
+            return false;
+
+        const auto *selfParam =
+            callee->getParamDecl(0);
+
+        if (!selfParam)
+            return false;
+
+        if (selfParam->getNameAsString() != "self")
+            return false;
+
+        if (!selfParam->getType()->isPointerType())
+            return false;
+
+        std::string parameterStructName;
+
+        if (!isStructType(
+                selfParam->getType()->getPointeeType(),
+                &parameterStructName))
+            return false;
+
+        if (parameterStructName != actualReturnStructName)
+            return false;
+
+        if (structName)
+            *structName = actualReturnStructName;
+
+        return true;
+    }
+
+    bool isDirectReturnExpression(
+        const CallExpr *call,
+        ASTContext &context) const
+    {
+        if (!call)
+            return false;
+
+        const Expr *current = call;
+
+        for (int i = 0; i < 8; ++i) {
+
+            const auto parents =
+                context.getParents(*current);
+
+            if (parents.empty())
+                return false;
+
+            bool movedThroughWrapper = false;
+
+            for (const auto &parent : parents) {
+
+                if (const auto *returnStmt =
+                        parent.get<ReturnStmt>()) {
+
+                    const Expr *returnValue =
+                        returnStmt->getRetValue();
+
+                    return unwrapExpr(returnValue) == call;
+                }
+
+                if (const auto *expr =
+                        parent.get<Expr>()) {
+
+                    if (isa<ParenExpr>(expr) ||
+                        isa<ImplicitCastExpr>(expr)) {
+
+                        current = expr;
+                        movedThroughWrapper = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!movedThroughWrapper)
+                return false;
+        }
+
+        return false;
+    }
+
+    void checkReturnFunctionUsage(
+        const CallExpr *call,
+        const FunctionDecl *enclosingFunction,
+        ASTContext &context) const
+    {
+        if (!call)
+            return;
+    
+        std::string structName;
+    
+        if (!isStructReturnFunction(
+                call,
+                &structName))
+            return;
+        
+        // The return helper itself is exempt from the
+        // normal rules for its own struct.
+        if (enclosingFunction &&
+            isInsideHelperFunction(
+                enclosingFunction,
+                structName))
+            return;
+            
+        const auto *info =
+            database.find(structName);
+            
+        if (!info ||
+            info->kind != StructDatabase::Kind::Raii)
+            return;
+        
+        if (isDirectReturnExpression(
+                call,
+                context))
+            return;
+        
+        reportUsageIssue(
+            call->getExprLoc(),
+            "RAII return function '" +
+            call->getDirectCallee()->getNameAsString() +
+            "' may only be used directly in a return statement");
     }
 
     bool exprIsStructReturnValue(const Expr *expr, std::string *structName = nullptr) const
@@ -894,6 +1078,14 @@ public:
         StructDatabase &db)
         : config(cfg),
           globalConfig(gc),
+          freeSuffix(getOption(cfg, "free_struct_creator_suffix")),
+          podSuffix(getOption(cfg, "pod_struct_creator_suffix")),
+          raiiSuffix(getOption(cfg, "raii_struct_creator_suffix")),
+          destroySuffix(getOption(cfg, "raii_struct_destroyer_suffix")),
+          copySuffix(getOption(cfg, "raii_struct_copy_suffix")),
+          moveSuffix(getOption(cfg, "raii_struct_move_suffix")),
+          returnSuffix(getOption(cfg, "raii_struct_return_suffix")),
+          validSuffix(getOption(cfg, "raii_struct_valid_suffix")),
           suppressions(sup),
           diagnostics(diag),
           database(db)
@@ -922,7 +1114,11 @@ public:
         if (const auto *call = result.Nodes.getNodeAs<CallExpr>("call")) {
             pendingCalls.push_back({
                 call,
-                findEnclosingFunction(*result.Context, DynTypedNode::create(*call))});
+                findEnclosingFunction(
+                    *result.Context,
+                    DynTypedNode::create(*call)),
+                result.Context
+            });
         }
 
         if (const auto *returnStmt =
@@ -949,8 +1145,18 @@ public:
         for (const auto &[assignment, function] : pendingAssignments)
             checkAssignment(assignment, function);
 
-        for (const auto &[call, function] : pendingCalls)
-            checkCallArguments(call, function);
+        for (const auto &pending : pendingCalls) {
+            checkCallArguments(
+                pending.call,
+                pending.function);
+            
+            if (pending.context) {
+                checkReturnFunctionUsage(
+                    pending.call,
+                    pending.function,
+                    *pending.context);
+            }
+        }
 
         for (const auto &[returnStmt, function] : pendingReturns)
             checkReturnStmt(returnStmt, function);

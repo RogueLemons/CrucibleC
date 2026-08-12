@@ -616,12 +616,11 @@ A parser must be implemented to transfer goals of AlloyCTranspiler into a warnin
 For V0.9 it shall
 - **Add note to use clang-tidy for const correctness**
 - write readme section for pod and raii structs (raii struct may be invalid but never illegal)
-- allow return constructor in return statements for raii structs
 - give correct compile_commands.json for running tests
 
 For V1 it shall
 - **Make release folder visible in git at the end**
-- Build for Linux
+- Verify build for Linux
 - Add ability to take folder of source code instead of single file
 
 For V1.1 it shall
@@ -630,4 +629,4 @@ For V1.1 it shall
 - Enforce no use of _move functions on pointer arguments (only local scope variables)
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
-- Optionally disallow multiple destroy calls and optionally forbid use after destroy
+- Optionally disallow multiple raii struct destroy calls and optionally forbid use after destroy

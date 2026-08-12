@@ -21,6 +21,7 @@ public:
         Destroy,
         Copy,
         Move,
+        Return,
         Valid
     };
 
@@ -34,6 +35,7 @@ public:
         bool hasDestroy = false;
         bool hasCopy = false;
         bool hasMove = false;
+        bool hasReturn = false;
         bool hasValid = false;
 
         Kind kind = Kind::Invalid;
@@ -79,6 +81,10 @@ public:
 
         case FunctionKind::Move:
             info.hasMove = true;
+            break;
+
+        case FunctionKind::Return:
+            info.hasReturn = true;
             break;
 
         case FunctionKind::Valid:

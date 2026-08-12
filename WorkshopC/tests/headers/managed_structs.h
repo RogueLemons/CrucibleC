@@ -16,6 +16,7 @@ int_vector_t int_vector_make(int capacity);
 int_vector_t int_vector_copy(const int_vector_t* const self);
 int_vector_t int_vector_move(int_vector_t* const self);
 void int_vector_destroy(int_vector_t* const self);
+int_vector_t int_vector_return(int_vector_t* self);
 _Bool int_vector_valid(const int_vector_t* const self);
 
 struct free_struct {

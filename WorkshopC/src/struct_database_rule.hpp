@@ -36,6 +36,7 @@ private:
     const std::string destroySuffix;
     const std::string copySuffix;
     const std::string moveSuffix;
+    const std::string returnSuffix;
     const std::string validSuffix;
 
 private:
@@ -284,6 +285,29 @@ private:
             isStructType(FD->getReturnType(), &structName);
     }
 
+    bool matchesReturn(
+        const FunctionDecl *FD,
+        const std::string &structName) const
+    {
+        if (FD->getNumParams() != 1)
+            return false;
+
+        const auto *selfParam = FD->getParamDecl(0);
+
+        if (!selfParam)
+            return false;
+
+        if (selfParam->getNameAsString() != "self")
+            return false;
+
+        return isPointerToStructType(
+                selfParam->getType(),
+                &structName) &&
+            isStructType(
+                FD->getReturnType(),
+                &structName);
+    }
+
     bool matchesDestroy(
         const FunctionDecl *FD,
         const std::string &structName) const
@@ -397,6 +421,19 @@ private:
                 message);
         }
 
+        if (!info.hasReturn) {
+            std::string message =
+                "struct '" + structName + "' is missing required return function '" +
+                structName + " " + structName + returnSuffix + "(" +
+                structName + "* self)'";
+
+            diagnostics.report(
+                config.level,
+                *sourceManager,
+                info.decl->getLocation(),
+                message);
+        }
+
         if (!info.hasValid) {
             std::string message =
                 "struct '" + structName + "' is missing required valididation function '_Bool / bool " +
@@ -493,6 +530,14 @@ private:
                 }))
             return;
 
+        if (matchSuffix(
+                returnSuffix,
+                StructDatabase::FunctionKind::Return,
+                [this](const FunctionDecl *fn, const std::string &structName) {
+                    return matchesReturn(fn, structName);
+                }))
+            return;
+
         matchSuffix(
             validSuffix,
             StructDatabase::FunctionKind::Valid,
@@ -538,6 +583,10 @@ public:
         moveSuffix(getOption(
             cfg,
             "raii_struct_move_suffix")),
+
+        returnSuffix(getOption(
+            cfg,
+            "raii_struct_return_suffix")),
 
         validSuffix(getOption(
             cfg,

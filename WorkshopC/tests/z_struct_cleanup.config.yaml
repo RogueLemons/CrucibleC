@@ -11,5 +11,6 @@ rules:
     raii_struct_destroyer_suffix: _destroy
     raii_struct_copy_suffix: _copy
     raii_struct_move_suffix: _move
+    raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
     free_struct_creator_suffix: _init

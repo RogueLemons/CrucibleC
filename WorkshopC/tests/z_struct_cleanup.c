@@ -457,3 +457,46 @@ void missing_cleanup_complex_flow(int_vector_t vec_arg_complex_flow, int value)
 
     int_vector_destroy(&vec_arg_complex_flow);
 }
+
+int_vector_t some_int_vector_func(int_vector_t some_arg);
+
+int_vector_t using_return_function_in_wrong_place(int i)
+{
+    int_vector_t res_vec = int_vector_make(8);
+
+    if (i == 0)
+    {
+        return res_vec;                                             // bad
+    }
+    if (i == 1)
+    {
+        return some_int_vector_func(int_vector_return(&res_vec));   // bad
+    }
+    
+    return int_vector_return(&res_vec);
+}
+
+void wrongful_creation_with_return_function()
+{
+    int_vector_t some_vec = int_vector_make(3);
+    int_vector_t illegal_vec_creation = int_vector_return(&some_vec);
+
+    int_vector_destroy(&some_vec);
+    int_vector_destroy(&illegal_vec_creation);
+}
+
+void random_destroy(int_vector_t* self);
+
+void destroy_call_with_bad_destroy()
+{
+    int_vector_t vec_with_wrong_destroy = int_vector_make(4);
+    random_destroy(&vec_with_wrong_destroy);
+}
+
+int_vector_t random_return(int_vector_t* self);
+
+int_vector_t return_call_with_bad_return()
+{
+    int_vector_t vec_with_wrong_return = int_vector_make(5);
+    return random_return(&vec_with_wrong_return);
+}

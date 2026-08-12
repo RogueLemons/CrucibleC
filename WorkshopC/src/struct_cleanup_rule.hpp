@@ -812,75 +812,85 @@ private:
                 tracked);
         }
 
-        void markDestroyedIfNeeded(
-            const CallExpr *call)
+        void markDestroyedIfNeeded(const CallExpr *call)
         {
             if (!call)
                 return;
-
+        
             const auto *calleeDecl =
                 call->getDirectCallee();
-
+        
             if (!calleeDecl)
                 return;
-
+        
             const auto *functionDecl =
-                dyn_cast<FunctionDecl>(
-                    calleeDecl);
-
+                dyn_cast<FunctionDecl>(calleeDecl);
+        
             if (!functionDecl)
                 return;
-
+        
             const std::string calleeName =
                 functionDecl->getNameAsString();
-
+        
             if (calleeName.empty())
                 return;
-
-            if (!owner.isDestroyCall(
-                    calleeName))
-                return;
-
+        
+            // We need the first argument before determining which
+            // variable the destroy/return helper operates on.
             if (call->getNumArgs() < 1)
                 return;
-
+        
             const Expr *arg =
                 call->getArg(0);
-
+        
             if (!arg)
                 return;
-
+        
             const auto *target =
-                owner.getReferencedVarDecl(
-                    arg);
-
+                owner.getReferencedVarDecl(arg);
+        
             if (!target)
                 return;
-
+        
+            std::string structName;
+        
+            if (!owner.isStructType(
+                    target->getType(),
+                    &structName))
+                return;
+            
+            if (!owner.isDestroyCall(
+                    calleeName,
+                    structName) &&
+                !owner.isReturnCall(
+                    calleeName,
+                    structName))
+                return;
+                
             for (auto &scope :
                  scopes) {
-
+                
                 for (auto &tracked :
                      scope.vars) {
-
+                    
                     if (tracked.decl ==
                         target) {
-
+                        
                         tracked.destroyed =
                             true;
-
+                        
                         scope.destroyed.insert(
                             target);
                     }
                 }
             }
-
+        
             for (auto &tracked :
                  params) {
-
+                
                 if (tracked.decl ==
                     target) {
-
+                    
                     tracked.destroyed =
                         true;
                 }
@@ -1194,6 +1204,7 @@ private:
     const std::string destroySuffix;
     const std::string copySuffix;
     const std::string moveSuffix;
+    const std::string returnSuffix;
     const std::string validSuffix;
     const std::string freeSuffix;
 
@@ -1355,6 +1366,7 @@ private:
             matches(destroySuffix) ||
             matches(copySuffix) ||
             matches(moveSuffix) ||
+            matches(returnSuffix) ||
             matches(validSuffix);
     }
 
@@ -1469,20 +1481,29 @@ private:
     }
 
     bool isDestroyCall(
-        const std::string &name) const
+        const std::string &name,
+        const std::string &structName) const
     {
-        if (destroySuffix.empty())
+        if (name.empty() ||
+            structName.empty() ||
+            destroySuffix.empty())
             return false;
 
-        if (name.size() <
-            destroySuffix.size())
+        return name ==
+            structName + destroySuffix;
+    }
+
+    bool isReturnCall(
+        const std::string &name,
+        const std::string &structName) const
+    {
+        if (name.empty() ||
+            structName.empty() ||
+            returnSuffix.empty())
             return false;
 
-        return name.compare(
-            name.size() -
-                destroySuffix.size(),
-            destroySuffix.size(),
-            destroySuffix) == 0;
+        return name ==
+            structName + returnSuffix;
     }
 
     void reportUsageIssue(
@@ -1668,6 +1689,10 @@ public:
               getOption(
                   cfg,
                   "raii_struct_move_suffix")),
+          returnSuffix(
+              getOption(
+                  cfg,
+                  "raii_struct_return_suffix")),
           validSuffix(
               getOption(
                   cfg,

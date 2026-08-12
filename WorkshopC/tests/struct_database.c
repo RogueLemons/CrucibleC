@@ -56,6 +56,7 @@ static inline RaiiStruct RaiiStruct_make()
 RaiiStruct RaiiStruct_copy(const RaiiStruct* self);
 RaiiStruct RaiiStruct_move(RaiiStruct* self);
 void RaiiStruct_destroy(RaiiStruct* self);
+RaiiStruct RaiiStruct_return(RaiiStruct* self);
 _Bool RaiiStruct_valid(const RaiiStruct* self);
 
 struct FreeStruct
@@ -112,6 +113,7 @@ BadRaiiStruct BadRaiiStruct_make();
 BadRaiiStruct BadRaiiStruct_copy(const BadRaiiStruct* bad_self);
 BadRaiiStruct BadRaiiStruct_move(BadRaiiStruct* bad_self);
 void BadRaiiStruct_destroy(BadRaiiStruct* bad_self);
+BadRaiiStruct BadRaiiStruct_return(BadRaiiStruct* bad_self);
 _Bool BadRaiiStruct_valid(const BadRaiiStruct* bad_self);
 
 struct BadRaiiStruct2

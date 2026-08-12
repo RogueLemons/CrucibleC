@@ -8,3 +8,5 @@ error: struct 'BadRaiiStruct2' is missing required valididation function '_Bool 
 error: struct 'InvalidStruct' is invalid: it requires exactly one of the following constructor functions: 'InvalidStruct InvalidStruct_pod(...)', 'InvalidStruct InvalidStruct_make(...)', or '<any> InvalidStruct_init(InvalidStruct* self, ...)'
 error: struct 'BadFreeStruct' is invalid: it requires exactly one of the following constructor functions: 'BadFreeStruct BadFreeStruct_pod(...)', 'BadFreeStruct BadFreeStruct_make(...)', or '<any> BadFreeStruct_init(BadFreeStruct* self, ...)'
 error: struct 'BadPodStruct' is invalid: it requires exactly one of the following constructor functions: 'BadPodStruct BadPodStruct_pod(...)', 'BadPodStruct BadPodStruct_make(...)', or '<any> BadPodStruct_init(BadPodStruct* self, ...)'
+error: struct 'BadRaiiStruct2' is missing required return function 'BadRaiiStruct2 BadRaiiStruct2_return(BadRaiiStruct2* self)'
+error: struct 'BadRaiiStruct' is missing required return function 'BadRaiiStruct BadRaiiStruct_return(BadRaiiStruct* self)'

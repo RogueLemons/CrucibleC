@@ -106,6 +106,20 @@ int_vector_t int_vector_move(int_vector_t* const self)
 
     return moved;
 }
+int_vector_t int_vector_return(int_vector_t* self)
+{
+    if (!self)
+    {
+        int_vector_t invalid = {0};
+        invalid.capacity = -1;
+        return invalid;
+    }
+
+    int_vector_t returned = int_vector_copy(self);
+    int_vector_destroy(self);   // move logic would be more efficient
+
+    return returned;
+}
 void int_vector_destroy(int_vector_t* const self)
 {
     if (!self)
@@ -188,6 +202,7 @@ struct int_vector_array int_vector_array_make();
 struct int_vector_array int_vector_array_copy(const struct int_vector_array* const self);
 struct int_vector_array int_vector_array_move(struct int_vector_array* const self);
 void int_vector_array_destroy(struct int_vector_array* const self);
+struct int_vector_array int_vector_array_return(struct int_vector_array* self);
 _Bool int_vector_array_valid(const struct int_vector_array* const self);
 
 void raii_array_testing()
@@ -364,4 +379,5 @@ static inline raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_construc
 raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_copy(const raii_with_bad_raii_in_constructor_t* self);
 raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_move(raii_with_bad_raii_in_constructor_t* self);
 void raii_with_bad_raii_in_constructor_destroy(raii_with_bad_raii_in_constructor_t* self);
+raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_return(raii_with_bad_raii_in_constructor_t* self);
 _Bool raii_with_bad_raii_in_constructor_valid(const raii_with_bad_raii_in_constructor_t* self);

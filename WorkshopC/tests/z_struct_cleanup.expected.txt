@@ -39,3 +39,9 @@ error: struct parameter 'vec_arg_complex_flow' of type 'int_vector' must be dest
 error: struct variable 'local_vec_complex_flow' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
 error: struct variable 'local_vec_complex_flow' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
 error: struct variable 'local_vec_complex_flow' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
+error: RAII return function 'int_vector_return' may only be used directly in a return statement
+error: RAII return function 'int_vector_return' may only be used directly in a return statement
+error: function 'using_return_function_in_wrong_place' returning RAII struct 'int_vector' should return a function call
+error: struct variable 'res_vec' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
+error: struct variable 'vec_with_wrong_destroy' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
+error: struct variable 'vec_with_wrong_return' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
