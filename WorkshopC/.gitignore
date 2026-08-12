@@ -27,10 +27,10 @@ CTestTestfile.cmake
 
 # Build outputs
 Debug/
-Release/
+# Release/
 x64/
 x86/
-*.exe
+# *.exe
 *.obj
 *.pdb
 *.ilk
