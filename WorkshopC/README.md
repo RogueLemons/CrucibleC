@@ -12,6 +12,7 @@ A project for parsing C code and generating tips for writing safer code or adher
   - [Prefix namespace rule](#prefix-namespace-rule)
   - [Null check rule](#null-check-rule)
   - [Argument pointer movement rule](#argument-pointer-movement-rule)
+  - [RAII and struct resource management](#raii-and-struct-resource-management)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -187,7 +188,7 @@ typedef struct Setting Setting;
 Setting setting = {0}; // Not OK with forbid_zero_init_for_objects_with_pointers: true
 ```
 
-Many programmers are not fond of const correctness when it comes to arguments, but that does not mean it is not important for code clarity. Instead of enforcing const correctness for argument values, rules can be enabled to simply forbid modifying argument values. Note that this does not affect reassignment of data a pointer points to.
+Many programmers are not fond of const correctness when it comes to arguments, but that does not mean it is not important for code clarity. Instead of enforcing const correctness for argument values, rules can be enabled to simply forbid modifying argument values. Note that this does not affect reassignment of the data a pointer points to.
 
 ```c
 typedef struct RGB
@@ -304,6 +305,109 @@ void example(void)
 Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `mut` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `mutable`, `output`, or `moved` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior. 
 
 As mentioned, the tags are just macro definitions (even if they must follow some simple rules shown in linked document above). This means that the user can provide any names the user wants. For example, `move` and `move_cast()` with `out` and `out_cast`; or `moved` with `move`, `outed` with `out`, and `modded` with `mod`. They can of course all also be caps. 
+
+### RAII and struct resource management
+This rule introduces struct categorization and centralizes resource management within them to a given set of functions, effectively creating a RAII system. 
+
+The structs are given their category "type" by the creation function they are accompanied with, whose name is the struct name plus a suffix given by the config file. The creation functions are exempt from all rules, meaning any need to e.g. initialize a variable does not exist in these functions. The following is true for these settings:
+
+```yaml
+struct_resource_management:
+    level: Error
+    pod_struct_creator_suffix: _pod
+    raii_struct_creator_suffix: _make
+    raii_struct_destroyer_suffix: _destroy
+    raii_struct_copy_suffix: _copy
+    raii_struct_move_suffix: _move
+    raii_struct_return_suffix: _return
+    raii_struct_valid_suffix: _valid
+    free_struct_creator_suffix: _init
+```
+
+#### POD structs
+Plain Old Data (POD) structs come with only one rule: they must always be initialized. A pod struct requires a create function of signature `struct <structname> <structname>_pod(...)` and must always be initialized. They are used to avoid uninitialized variables and make sure they are always initialized correctly. The initial assignment must come from this function or another variable. 
+
+```c
+typedef struct position
+{
+  int x, y, z;
+} position_t;
+
+static inline position_t position_pod(int x, int, y, int z)
+{
+  return (position_t){x, y, z};   // This initialization is only legal in the _pod function
+}
+
+static inline position_t position_default()
+{
+  return position_pod(0, 0, 0);   // This function is based on the core create function above
+}
+
+void foo()
+{
+  position_t no_init_pos;                 // No init, causes an error
+  position_t pos = position_default();
+  pos = position_pod(1, 2, 3);
+  position_t pos_2 = pos;
+  pos_2.y = 10;
+}
+```
+
+#### RAII struct
+Resource Acquisition Is Initialization (raii) structs are more powerful but also come with a lot more rules. The main rule is that they can only be assigned *once* and must be so through function calls. They can however still be edited. They also require a set of functions to be declared (definition is optional):
+
+- make function: creates the struct and initializes all members (constructor)
+- copy function: safely creates a copy of another struct (copy constructor)
+- move function: creates a new struct and transfers ownership of resources to it (move constructor), good practice to leave argument object in a valid but "empty" state
+- destroy function: cleans up and frees all resources in the struct (destructor)
+- return function: used in return statements to safely move ownership out of function (effectively an easy to optimize combination of copy and destroy)
+- valid function: used to verify if the struct is in a valid and usable state (similar to catching an exception from a constructor), where a raii struct object may be valid or invalid but never in an illegal state
+
+The parser helps make sure all functions exist. All functions other than the make function must have its first argument be a pointer to the struct type and name it `self`. Here is a simple example:
+
+```c
+struct dynamic_string
+{
+    char* data;
+    size_t size;
+    size_t capacity;
+};
+typedef struct dynamic_string d_str;
+
+// These functions are mandatory
+d_str dynamic_string_make(const char* c_str);   // Performs malloc and copies c_string argument
+d_str dynamic_string_copy(const d_str* self);   // Performs malloc for new object copy of argument
+d_str dynamic_string_move(d_str* self);         // Moves data from argument to new object, and sets argument data to null
+d_str dynamic_string_destroy(d_str* self);      // Frees data memory, possibly makes object invalid
+d_str dynamic_string_return(d_str* self);       // Copies data in struct to new (no cleanup needed in this case)
+d_str dynamic_string_valid(d_str* self);        // Checks internal logic if struct instance is valid (e.g. size > capacity as primitive invalid state)
+
+// These functions are optional and an example
+const char* dynamic_string_data(const d_str* self);
+void dynamic_string_add(d_str* self, const char* c_str);
+void dynamic_string_concat(d_str* self, const d_str* addition);
+void dynamic_string_reset(d_str* self);
+```
+
+This rule works better when combined with the [private members rule](#private-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled. It is of course possible to also e.g. make all private fields in the struct just have their names start with the prefix `p_`, or even implement a tag system similar to the [argument pointer movement rule](#argument-pointer-movement-rule) where the end user can just write `private int i;` inside the struct.
+
+#### Free struct
+Finally, there is also a free struct supported where no rules apply to how the struct is used. The pod struct and raii struct work on a safety-first rule and the assumption that the compilers can handle copy elision and `static inline` functions. The free struct is instead about complete freedom for the programmer with no restrictions, other than needing a function called `<void or any> <struct name>_init(<struct name>* self, ...);`. This allows users to optimize without restriction when needed. Here is an example:
+
+```c
+struct graphics_renderer
+{
+  // Add fields here
+};
+typedef struct graphics_renderer graphics_renderer;
+typedef const char* graphics_error_msg;
+int graphics_renderer_init(graphics_renderer* self, int arg1, float arg2, graphics_error_msg* result_msg);
+```
+
+It can be given an enforced initializer function name that makes user act more carefully such as `free_struct_creator_suffix: _init_manual_management_struct` by editing the config.
+
+#### Standard and 3rd party structs
+Structs from the standard library or 3rd party libraries are unaffected. Therefore, to ensure that these are always properly initialized and their memory and resources are taken care of, they can be wrapped in pod and raii structs. 
 
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
@@ -615,7 +719,6 @@ A parser must be implemented to transfer goals of AlloyCTranspiler into a warnin
 
 For V0.9 it shall
 - **Add note to use clang-tidy for const correctness**
-- write readme section for pod and raii structs (raii struct may be invalid but never illegal)
 - give correct compile_commands.json for running tests
 
 For V1 it shall
