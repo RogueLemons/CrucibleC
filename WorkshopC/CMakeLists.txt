@@ -117,3 +117,13 @@ add_custom_command(TARGET workshopc POST_BUILD
         ${CMAKE_SOURCE_DIR}/default/move_tags.h
         ${RELEASE_DIR}/move_tags.h
 )
+
+# Copy licenses
+add_custom_command(TARGET workshopc POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/../LICENSE
+        ${RELEASE_DIR}/LICENSE
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/../THIRD-PARTY-NOTICES.txt
+        ${RELEASE_DIR}/THIRD-PARTY-NOTICES.txt
+)
