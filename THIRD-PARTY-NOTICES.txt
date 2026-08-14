@@ -1,0 +1,13 @@
+WorkshopC (part of CrucibleC) — Third-Party Notices
+
+LLVM / Clang
+------------
+
+WorkshopC's C parser uses the LLVM and Clang libraries.
+
+LLVM and Clang
+Copyright © The LLVM Project
+
+Licensed under the Apache License 2.0 with LLVM Exceptions.
+
+https://llvm.org/
