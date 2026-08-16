@@ -167,18 +167,27 @@ private:
                isMacroNullCheck(expr);
     }
 
-    bool isDerefOfParam(const Expr *expr,
-                        const ParmVarDecl *param) const {
+    bool isDerefOfParam(
+        const Expr *expr,
+        const ParmVarDecl *param
+    ) const {
         if (!expr)
             return false;
-
+    
         expr = expr->IgnoreParenImpCasts();
-
+    
+        // Explicit: *param
         if (const auto *un = dyn_cast<UnaryOperator>(expr)) {
             if (un->getOpcode() == UO_Deref)
                 return isParamRef(un->getSubExpr(), param);
         }
-
+    
+        // Implicit dereference: param->member
+        if (const auto *member = dyn_cast<MemberExpr>(expr)) {
+            if (member->isArrow())
+                return isParamRef(member->getBase(), param);
+        }
+    
         return false;
     }
 

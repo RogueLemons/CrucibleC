@@ -1,0 +1,78 @@
+# WorkshopC Configuration File
+
+# Paths configuration
+# third_party_includes are not affected by rules
+third_party_includes:
+  - external/
+  - third_party/
+  - vendor/
+  - libs/
+  - dependencies/
+
+# Rules section
+# Rules can be: Off, Warning, Error
+rules:
+  # Enum rule - forbids enum declarations
+  enum:
+    level: Error
+
+  # Private rule - forbids access of private struct fields
+  private:
+    level: Error
+    private_field: _private
+    setter_contains: pset
+    getter_contains: pget
+
+  # Function pointer rule - requires typedef for all function pointers
+  function_pointer:
+    level: Error
+
+  # Typedef struct rule - requires typedef for all structs
+  typedef_struct:
+    level: Error
+
+  # Assignment rule - require primitives to be assigned at declaration
+  assignment:
+    level: Error
+    forbid_null_assign: false
+    forbid_null_as_arg: false
+    forbid_zero_init_for_objects_with_pointers: false
+    forbid_arg_reassign: true
+    forbid_mut_arg_pointer: true
+
+  # Prefix namespace rule - require header declarations to include folder structure in name
+  prefix_namespace:
+    level: Error
+    top_dir: headers
+    work_from_top: true
+    stop_at_count: 10
+    use_seperator: true
+    seperator: __
+    apply_to_functions: true
+    apply_to_structs: true
+    apply_to_typedefs: true
+    require_ifndef_for_filepath: true
+
+  # Null check rule - require first use of pointer argument to be checked if null
+  null_check:
+    level: Error
+    allow_direct_ptr_in_if_statement: true
+
+  # Argument pointer movement rule - require use of movement notation for non-const pointers
+  argument_pointer_movement:
+    level: Error
+    require_operator_for_move_callsite: true
+    require_operator_for_out_callsite: true
+    require_operator_for_modify_callsite: false
+
+  # Struct resource management rule - require use of RAII with structs that manage resources
+  struct_resource_management:
+    level: Error
+    pod_struct_creator_suffix: __pod
+    raii_struct_creator_suffix: __make
+    raii_struct_destroyer_suffix: __destroy
+    raii_struct_copy_suffix: __copy
+    raii_struct_move_suffix: __move
+    raii_struct_return_suffix: __return
+    raii_struct_valid_suffix: __valid
+    free_struct_creator_suffix: __init_manually

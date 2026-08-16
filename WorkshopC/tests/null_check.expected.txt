@@ -1,3 +1,6 @@
 warning: pointer parameter 'i_ptr_inside_header' is dereferenced before null check
 warning: pointer parameter 'c_ptr' is dereferenced before null check
 warning: pointer parameter 'arg_ptr' is dereferenced before null check
+warning: pointer parameter 'wrap_1' is dereferenced before null check
+warning: pointer parameter 'wrap_2' is dereferenced before null check
+warning: pointer parameter 'wrap_3' is dereferenced before null check

@@ -103,3 +103,34 @@ static char self_made_null_macro(char* some_char)
     }
     return *some_char;
 }
+
+typedef struct int_wrapper
+{
+    int value;
+} int_wrapper;
+
+static int field_access_without_null_check(const int_wrapper* wrap_1)
+{
+    return wrap_1->value;
+}
+
+static int field_access_without_null_check_2(const int_wrapper* wrap_2)
+{
+    int value = wrap_2->value;
+    return value;
+}
+
+static int field_access_without_null_check_3(const int_wrapper* wrap_3)
+{
+    int_wrapper copy = (*wrap_3);
+    return copy.value;
+}
+
+static int field_access_with_null_check(const int_wrapper* good_use_wrap)
+{
+    if (!good_use_wrap)
+    {
+        return 0;
+    }
+    return good_use_wrap->value;
+}

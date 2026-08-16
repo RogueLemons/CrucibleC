@@ -43,7 +43,8 @@ rules:
   # Prefix namespace rule - require header declarations to include folder structure in name
   prefix_namespace:
     level: Warning
-    stop_at_dir: src
+    top_dir: WorkshopC
+    work_from_top: true
     stop_at_count: 10
     use_seperator: true
     seperator: __
