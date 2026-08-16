@@ -732,7 +732,3 @@ For V1.1 it shall
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
 - Optionally disallow multiple raii struct destroy calls and optionally forbid use after destroy
-
-
-// Copy license and notices into release folder
-// Write test for using all of the rules at once
