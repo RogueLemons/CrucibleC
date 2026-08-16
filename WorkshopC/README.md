@@ -387,6 +387,23 @@ const char* dynamic_string_data(const d_str* self);
 void dynamic_string_add(d_str* self, const char* c_str);
 void dynamic_string_concat(d_str* self, const d_str* addition);
 void dynamic_string_reset(d_str* self);
+
+void take_dynamic_string_and_print(d_str string_as_value);
+
+void print_hello_world()
+{
+  d_str greeting = dynamic_string_make("Hello, world!");
+  if (!dynamic_string_valid(&greeting))
+  {
+    dynamic_string_destroy(&greeting);
+    return;
+  }
+
+  dynamic_string_add(&greeting, " Hello, everyone!");
+  take_dynamic_string_and_print(dynamic_string_move(&greeting));
+
+  dynamic_string_destroy(&greeting);
+}
 ```
 
 This rule works better when combined with the [private members rule](#private-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled. It is of course possible to also e.g. make all private fields in the struct just have their names start with the prefix `p_`, or even implement a tag system similar to the [argument pointer movement rule](#argument-pointer-movement-rule) where the end user can just write `private int i;` inside the struct.
