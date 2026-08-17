@@ -354,13 +354,13 @@ void foo()
 ```
 
 #### RAII struct
-Resource Acquisition Is Initialization (raii) structs are more powerful but also come with a lot more rules. The main rule is that they can only be assigned *once* and must be so through function calls. They can however still be edited. They also require a set of functions to be declared (definition is optional):
+Resource Acquisition Is Initialization (raii) structs are more powerful but also come with a lot more rules. They can only be assigned *once* and must be so through function calls (they can however still be edited). Furthermore, the rule ensures that no scope exit occurs without either a destroy function call or a return function call. They also require a set of functions to be declared (definition is optional):
 
 - make function: creates the struct and initializes all members (constructor)
 - copy function: safely creates a copy of another struct (copy constructor)
 - move function: creates a new struct and transfers ownership of resources to it (move constructor), good practice to leave argument object in a valid but "empty" state
-- destroy function: cleans up and frees all resources in the struct (destructor)
-- return function: used in return statements to safely move ownership out of function (effectively an easy to optimize combination of copy and destroy)
+- destroy function: cleans up and frees all resources in the struct (destructor), checked if used before scope exit
+- return function: used in return statements to safely move ownership out of function (effectively an easy to optimize combination of copy and destroy), checked if used before scope exit
 - valid function: used to verify if the struct is in a valid and usable state (similar to catching an exception from a constructor), where a raii struct object may be valid or invalid but never in an illegal state
 
 The parser helps make sure all functions exist. All functions other than the make function must have its first argument be a pointer to the struct type and name it `self`. Here is a simple example:
