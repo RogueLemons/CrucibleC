@@ -378,19 +378,23 @@ typedef struct dynamic_string d_str;
 d_str dynamic_string_make(const char* c_str);   // Performs malloc and copies c_string argument
 d_str dynamic_string_copy(const d_str* self);   // Performs malloc for new object copy of argument
 d_str dynamic_string_move(d_str* self);         // Moves data from argument to new object, and sets argument data to null
-d_str dynamic_string_destroy(d_str* self);      // Frees data memory, possibly makes object invalid
+void  dynamic_string_destroy(d_str* self);      // Frees data memory, possibly makes object invalid
 d_str dynamic_string_return(d_str* self);       // Copies data in struct to new (no cleanup needed in this case)
-d_str dynamic_string_valid(d_str* self);        // Checks internal logic if struct instance is valid (e.g. size > capacity as primitive invalid state)
+_Bool dynamic_string_valid(d_str* self);        // Checks internal logic if struct instance is valid (e.g. size > capacity as primitive invalid state)
 
 // These functions are optional and an example
 const char* dynamic_string_data(const d_str* self);
 void dynamic_string_add(d_str* self, const char* c_str);
 void dynamic_string_concat(d_str* self, const d_str* addition);
 void dynamic_string_reset(d_str* self);
+```
 
+With the example raii struct set up, here is an example of usage.
+
+```c
+// Example of setting up dynamic string and moving its ownership to print function
 void take_dynamic_string_and_print(d_str string_as_value);
-
-void print_hello_world()
+void print_big_greeting()
 {
   d_str greeting = dynamic_string_make("Hello, world!");
   if (!dynamic_string_valid(&greeting))
