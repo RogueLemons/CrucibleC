@@ -242,7 +242,7 @@ void app__chrono__start_timer_with_callback(app__chrono__timer_t* timer,
 ```
 
 ### Null check rule
-This rule gets triggered whenever a pointer argument in a function is used without first checking if it is null. 
+This rule gets triggered whenever the first usage of a pointer argument (determined by lines) in a function is used without first checking if it is null. 
 
 ```c
 int dereference_without_check(int* i_ptr)
