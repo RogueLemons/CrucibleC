@@ -242,7 +242,7 @@ void app__chrono__start_timer_with_callback(app__chrono__timer_t* timer,
 ```
 
 ### Null check rule
-This rule gets triggered whenever the first usage of a pointer argument (determined by lines) in a function is used without first checking if it is null. 
+This rule gets triggered whenever the first usage of a pointer argument in a function is used without first checking if it is null. 
 
 ```c
 int dereference_without_check(int* i_ptr)
@@ -260,7 +260,7 @@ int dereference_safely(int* i_ptr)
 }
 ```
 
-Note that many more options are valid for checking null, including `if (i_ptr) { ... }` if `allow_direct_ptr_in_if_statement` is true in config.  
+Note that many more options are valid for checking null, including `if (i_ptr) { ... }` if `allow_direct_ptr_in_if_statement` is true in config. The usage being first is determined simply by being the first line and only verifies that the comparison was made, not that the user implemented its logic correctly thereafter. 
 
 ### Argument pointer movement rule
 This rule enforces user defined macro tags and "operators" for handling ownership of pointers, and making sure both the callsite and function match their "operator" and tag. [Here is a premade document for tags](./default/move_tags.h) that can be used as is, but all macro definitions can be changed as well.  
