@@ -186,6 +186,8 @@ Setting setting = {0}; // Not OK with forbid_zero_init_for_objects_with_pointers
 
 Many programmers are not fond of const correctness when it comes to arguments, but that does not mean it is not important for code clarity. Instead of enforcing const correctness for argument values, rules can be enabled to simply forbid modifying argument values. Note that this does not affect reassignment of the data a pointer points to.
 
+> *Note: For const correctness across all variables, a tool like clang-tidy can be used.*
+
 ```c
 typedef struct RGB
 {
@@ -734,7 +736,6 @@ This ensures:
 ## TODO
 
 For V0.9 it shall
-- **Add note to use clang-tidy for const correctness**
 - give correct compile_commands.json for running tests
 
 For V1 it shall
