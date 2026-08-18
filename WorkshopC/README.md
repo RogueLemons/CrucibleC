@@ -58,22 +58,18 @@ enum Color { // Triggers parser
 Instead a user can create a set of static or extern struct objects, or declare a struct and then typedef its pointer as the "enum".
 
 ```c
-struct Color {
-  int value;
-};
-typedef struct Color Color;
-extern Color Color_Red;       // Could also be static
-extern Color Color_Green;     // Could also be function returning pointer to static
-extern Color Color_Blue;      // Could also be #define COLOR_BLUE ((const Color){ .value = 3 })
+// This is one option to mimic enums with type safety
+// The functions return pointers to static ColorTag objects
+struct ColorTag;
+typedef const struct ColorTag* Color;
+Color color_red();
+Color color_green();
+Color color_blue();
 
-// Alternatively
-
-struct ColorInternal;
-typedef struct ColorInternal* Color;
-
-extern Color Color_Red;
-extern Color Color_Green;
-extern Color Color_Blue;
+// Adding these define statements makes end usage look as expected from enum usage
+#define RED color_red()
+#define GREEN color_green()
+#define BLUE color_blue()
 ```
 
 ### Private rule
