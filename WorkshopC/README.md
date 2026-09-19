@@ -737,11 +737,12 @@ This ensures:
 
 For V0.9 it shall
 - give correct compile_commands.json for running tests
+- raii structs shall not allow reassignment when accessed from a struct (both . and ->)
 
 For V1 it shall
-- **Make release folder visible in git at the end**
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
+- Add PRIVATE tag system for struct members which can only be accessed in functions of correct name
 
 For V1.1 it shall
 - Add rules for vtables and interfaces

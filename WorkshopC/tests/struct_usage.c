@@ -381,3 +381,104 @@ raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_move(raii_
 void raii_with_bad_raii_in_constructor_destroy(raii_with_bad_raii_in_constructor_t* self);
 raii_with_bad_raii_in_constructor_t raii_with_bad_raii_in_constructor_return(raii_with_bad_raii_in_constructor_t* self);
 _Bool raii_with_bad_raii_in_constructor_valid(const raii_with_bad_raii_in_constructor_t* self);
+
+
+typedef struct color
+{
+    int r;
+    int g;
+    int b;
+    int a;
+} color_t;
+color_t color_make(int r, int g, int b, int a)
+{
+    color_t self = {0};
+    self.r = r;
+    self.g = g;
+    self.b = b;
+    self.a = a;
+    return self;
+}
+color_t color_default()
+{
+    return color_make(0, 0, 0, 255);
+}
+color_t color_copy(const color_t* const self);
+color_t color_move(color_t* const self);
+void color_destroy(color_t* const self);
+color_t color_return(color_t* self);
+_Bool color_valid(const color_t* const self);
+
+typedef struct color_element
+{
+    color_t color;
+} color_element_t;
+
+void color_element_init(color_element_t* const self, int r, int g, int b, int a)
+{
+    if (!self)
+        return;
+
+    color_element_t temp = (color_element_t){color_make(r, g, b, a)};
+    *self = temp;
+}
+
+#define COLOR_LIST_ARRAY_COUNT 10
+typedef struct color_list
+{
+    color_element_t array[COLOR_LIST_ARRAY_COUNT];
+    color_element_t* heap;
+    int heap_count;
+} color_list_t;
+
+color_list_t color_list_make(int heap_count)
+{
+    // It must be possible to create element objects with init function, 
+    // so that arrays and heaps can be created of raii objects.
+
+    color_list_t self = {0};
+    
+    self.heap_count = heap_count;
+    // self.heap = (color_element_t*)malloc(heap_count * sizeof(color_element_t));
+    if (!self.heap) {
+        self.heap_count = -1;
+        return self;
+    }
+    for (int i = 0; i < heap_count; ++i)
+    {
+        color_element_init(&self.heap[i], 0, 0, 0, 255);
+    }
+    
+    for (int i = 0; i < COLOR_LIST_ARRAY_COUNT; ++i)
+    {
+        color_element_init(&self.array[i], 0, 0, 0, 255);
+    }
+
+    return self;
+}
+color_list_t color_list_copy(const color_list_t* const self);
+color_list_t color_list_move(color_list_t* const self);
+color_list_t color_list_return(color_list_t* self);
+_Bool color_list_valid(const color_list_t* const self);
+void color_list_destroy(color_list_t* const self)
+{
+    if (!self)
+        return;
+
+    if (self->heap) 
+    {
+        for (int i = 0; i < self->heap_count; ++i)
+        {
+            color_destroy(&self->heap[i].color);
+        }
+
+        // free(self->heap);
+        self->heap = (void*)0;
+        self->heap_count = 0;
+    }
+
+    for (int i = 0; i < COLOR_LIST_ARRAY_COUNT; ++i)
+    {
+        color_destroy(&self->array[i].color);
+    }
+}
