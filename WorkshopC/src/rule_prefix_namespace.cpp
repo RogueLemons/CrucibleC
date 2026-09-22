@@ -1,0 +1,550 @@
+#include "rule_prefix_namespace.hpp"
+
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
+bool PrefixNamespaceRule::isThirdParty(const std::string &path) const {
+    for (const auto &p : config.thirdPartyIncludes) {
+        if (path.find(p) != std::string::npos)
+            return true;
+    }
+
+    return false;
+}
+
+bool PrefixNamespaceRule::isHeaderFile(const std::string &path) const {
+    std::string lower = path;
+
+    std::transform(
+        lower.begin(),
+        lower.end(),
+        lower.begin(),
+        [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+
+    return lower.ends_with(".h")   ||
+           lower.ends_with(".hpp") ||
+           lower.ends_with(".hh")  ||
+           lower.ends_with(".hxx");
+}
+
+std::string PrefixNamespaceRule::sanitize(const std::string &s) const {
+    std::string out;
+
+    for (char c : s) {
+
+        if (std::isalnum(static_cast<unsigned char>(c))) {
+            out += static_cast<char>(
+                std::tolower(static_cast<unsigned char>(c)));
+        }
+        else {
+            out += '_';
+        }
+    }
+
+    return out;
+}
+
+std::string PrefixNamespaceRule::upper(const std::string &s) const {
+    std::string out = s;
+
+    std::transform(
+        out.begin(),
+        out.end(),
+        out.begin(),
+        [](unsigned char c) {
+            return static_cast<char>(std::toupper(c));
+        });
+
+    return out;
+}
+
+std::vector<std::string> PrefixNamespaceRule::splitPath(
+    const std::string &path) const {
+
+    std::vector<std::string> out;
+
+    std::filesystem::path p(path);
+
+    for (const auto &part : p) {
+
+        std::string s = part.string();
+
+        if (!s.empty())
+            out.push_back(s);
+    }
+
+    return out;
+}
+
+std::vector<std::string> PrefixNamespaceRule::extractDirs(
+    const std::string &path) const {
+
+    const std::string topDir =
+        sanitize(config.prefixNamespaceRule.topDir);
+
+    std::vector<std::string> parts =
+        splitPath(path);
+
+    std::vector<std::string> dirs;
+
+    bool collecting = topDir.empty();
+
+    for (const std::string &raw : parts) {
+
+        std::string part = sanitize(raw);
+
+        if (part.empty())
+            continue;
+
+        if (!collecting) {
+
+            if (part == topDir)
+                collecting = true;
+
+            continue;
+        }
+
+        // skip filename
+        if (raw.find('.') != std::string::npos)
+            break;
+
+        dirs.push_back(part);
+    }
+
+    return dirs;
+}
+
+std::string PrefixNamespaceRule::buildPrefix(
+    const std::string &path) const {
+
+    const bool workFromTop =
+        config.prefixNamespaceRule.workFromTop;
+
+    const int stopAtCount =
+        config.prefixNamespaceRule.stopAtCount;
+
+    const bool useSeparator =
+        config.prefixNamespaceRule.useSeparator;
+
+    const std::string separator =
+        useSeparator
+            ? config.prefixNamespaceRule.separator
+            : "";
+
+    std::vector<std::string> dirs =
+        extractDirs(path);
+
+    if (dirs.empty())
+        return "";
+
+    std::vector<std::string> selected;
+
+    if (workFromTop) {
+
+        for (size_t i = 0;
+             i < dirs.size() &&
+             (int)i < stopAtCount;
+             ++i)
+        {
+            selected.push_back(dirs[i]);
+        }
+    }
+    else {
+
+        int begin =
+            std::max(
+                0,
+                (int)dirs.size() - stopAtCount);
+
+        for (size_t i = begin;
+             i < dirs.size();
+             ++i)
+        {
+            selected.push_back(dirs[i]);
+        }
+    }
+
+    if (selected.empty())
+        return "";
+
+    std::ostringstream oss;
+
+    for (size_t i = 0; i < selected.size(); ++i) {
+
+        oss << selected[i];
+
+        if (i + 1 < selected.size())
+            oss << separator;
+    }
+
+    oss << separator;
+
+    return oss.str();
+}
+
+std::string PrefixNamespaceRule::buildIncludeGuardName(
+    const std::string &path) const {
+
+    const std::string topDir =
+        sanitize(config.prefixNamespaceRule.topDir);
+
+    std::vector<std::string> parts =
+        splitPath(path);
+
+    std::vector<std::string> collected;
+
+    bool collecting = topDir.empty();
+
+    for (const std::string &raw : parts) {
+
+        std::string part =
+            sanitize(raw);
+
+        if (part.empty())
+            continue;
+
+        if (!collecting) {
+
+            if (part == topDir)
+                collecting = true;
+
+            continue;
+        }
+
+        collected.push_back(
+            upper(part));
+    }
+
+    if (collected.empty())
+        return "";
+
+    std::ostringstream oss;
+
+    for (size_t i = 0;
+         i < collected.size();
+         ++i)
+    {
+        oss << collected[i];
+
+        if (i + 1 < collected.size())
+            oss << "_";
+    }
+
+    return oss.str();
+}
+
+bool PrefixNamespaceRule::shouldCheckPath(
+    const std::string &path) const {
+
+    if (path.empty())
+        return false;
+
+    if (isThirdParty(path))
+        return false;
+
+    if (!isHeaderFile(path))
+        return false;
+
+    return true;
+}
+
+void PrefixNamespaceRule::checkName(SourceManager &sm,
+               SourceLocation loc,
+               const std::string &path,
+               const std::string &kind,
+               const std::string &name) {
+
+    std::string prefix =
+        buildPrefix(path);
+
+    if (prefix.empty())
+        return;
+
+    if (name.starts_with(prefix))
+        return;
+
+    diagnostics.report(
+        config.prefixNamespaceRule.level,
+        sm,
+        loc,
+        kind + " '" + name +
+        "' must use namespace prefix '" +
+        prefix + "'"
+    );
+}
+
+void PrefixNamespaceRule::checkIncludeGuard(SourceManager &sm,
+                       SourceLocation loc,
+                       const std::string &path) {
+
+    if (!config.prefixNamespaceRule.requireIfndefForFilepath)
+        return;
+
+    std::ifstream file(path);
+
+    if (!file.is_open())
+        return;
+
+    std::string expected =
+        buildIncludeGuardName(path);
+
+    if (expected.empty())
+        return;
+
+    std::string line;
+    int lineNo = 0;
+
+    while (std::getline(file, line)) {
+
+        ++lineNo;
+
+        if (lineNo > 10)
+            break;
+
+        size_t start =
+            line.find_first_not_of(" \t");
+
+        if (start == std::string::npos)
+            continue;
+
+        line = line.substr(start);
+
+        if (!line.starts_with("#ifndef"))
+            continue;
+
+        std::string actual =
+            line.substr(7);
+
+        start =
+            actual.find_first_not_of(" \t");
+
+        if (start == std::string::npos)
+            break;
+
+        actual =
+            actual.substr(start);
+
+        size_t end =
+            actual.find_last_not_of(" \t\r\n");
+
+        if (end != std::string::npos)
+            actual =
+                actual.substr(0, end + 1);
+
+        if (actual != expected) {
+
+            diagnostics.report(
+                config.prefixNamespaceRule.level,
+                sm,
+                loc,
+                "missing include guard '" +
+                expected + "'"
+            );
+        }
+
+        return;
+    }
+
+    diagnostics.report(
+        config.prefixNamespaceRule.level,
+        sm,
+        loc,
+        "missing include guard '" +
+        expected + "'"
+    );
+}
+
+void PrefixNamespaceRule::checkFileIncludeGuard(SourceManager &sm,
+                           SourceLocation loc,
+                           const std::string &path) {
+
+    static std::unordered_set<std::string> checked;
+
+    if (!checked.insert(path).second)
+        return;
+
+    checkIncludeGuard(sm, loc, path);
+}
+
+PrefixNamespaceRule::PrefixNamespaceRule(
+    const Config &cfg,
+    SuppressionManager &sup,
+    Diagnostics &diag
+)
+    : config(cfg),
+      suppressions(sup),
+      diagnostics(diag)
+{}
+
+void PrefixNamespaceRule::bindFinder(MatchFinder &finder) {
+    finder.addMatcher(
+        functionDecl(
+            unless(isExpansionInSystemHeader())
+        ).bind("function"),
+        this
+    );
+
+    finder.addMatcher(
+        recordDecl(
+            unless(isExpansionInSystemHeader())
+        ).bind("record"),
+        this
+    );
+
+    finder.addMatcher(
+        typedefDecl(
+            unless(isExpansionInSystemHeader())
+        ).bind("typedef"),
+        this
+    );
+}
+
+void PrefixNamespaceRule::run(
+    const MatchFinder::MatchResult &result) {
+
+    if (config.prefixNamespaceRule.level == RuleLevel::Off)
+        return;
+
+    SourceManager &sm =
+        *result.SourceManager;
+
+    // =====================================================
+    // FUNCTIONS
+    // =====================================================
+
+    if (config.prefixNamespaceRule.applyToFunctions) {
+
+        if (const auto *fd =
+                result.Nodes.getNodeAs<FunctionDecl>(
+                    "function"))
+        {
+            if (fd->isImplicit())
+                return;
+
+            SourceLocation loc =
+                fd->getLocation();
+
+            SourceLocation expLoc =
+                sm.getExpansionLoc(loc);
+
+            if (suppressions.isSuppressed(sm, expLoc))
+                return;
+
+            std::string path =
+                sm.getFilename(
+                    sm.getSpellingLoc(loc)).str();
+
+            if (!shouldCheckPath(path))
+                return;
+
+            checkFileIncludeGuard(
+                sm,
+                expLoc,
+                path);
+
+            if (fd->getStorageClass() == SC_Static)
+                return;
+
+            checkName(
+                sm,
+                expLoc,
+                path,
+                "function",
+                fd->getNameAsString()
+            );
+        }
+    }
+
+    // =====================================================
+    // STRUCTS
+    // =====================================================
+
+    if (config.prefixNamespaceRule.applyToStructs) {
+
+        if (const auto *rd =
+                result.Nodes.getNodeAs<RecordDecl>(
+                    "record"))
+        {
+            if (!rd->isStruct() ||
+                rd->isImplicit())
+            {
+                return;
+            }
+
+            SourceLocation loc =
+                rd->getLocation();
+
+            SourceLocation expLoc =
+                sm.getExpansionLoc(loc);
+
+            if (suppressions.isSuppressed(sm, expLoc))
+                return;
+
+            std::string path =
+                sm.getFilename(
+                    sm.getSpellingLoc(loc)).str();
+
+            if (!shouldCheckPath(path))
+                return;
+
+            checkFileIncludeGuard(
+                sm,
+                expLoc,
+                path);
+
+            checkName(
+                sm,
+                expLoc,
+                path,
+                "struct",
+                rd->getNameAsString()
+            );
+        }
+    }
+
+    // =====================================================
+    // TYPEDEFS
+    // =====================================================
+
+    if (config.prefixNamespaceRule.applyToTypedefs) {
+
+        if (const auto *td =
+                result.Nodes.getNodeAs<TypedefDecl>(
+                    "typedef"))
+        {
+            SourceLocation loc =
+                td->getLocation();
+
+            SourceLocation expLoc =
+                sm.getExpansionLoc(loc);
+
+            if (suppressions.isSuppressed(sm, expLoc))
+                return;
+
+            std::string path =
+                sm.getFilename(
+                    sm.getSpellingLoc(loc)).str();
+
+            if (!shouldCheckPath(path))
+                return;
+
+            checkFileIncludeGuard(
+                sm,
+                expLoc,
+                path);
+
+            checkName(
+                sm,
+                expLoc,
+                path,
+                "typedef",
+                td->getNameAsString()
+            );
+        }
+    }
+}

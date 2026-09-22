@@ -50,6 +50,23 @@ add_compile_definitions(${LLVM_DEFINITIONS_LIST})
 # =====================================================
 set(SOURCES
     src/main.cpp
+    src/config_parser.cpp
+    src/diagnostics.cpp
+    src/suppression_manager.cpp
+    src/struct_database.cpp
+    src/finder_and_finalizer_consumer.cpp
+    src/rule_enum.cpp
+    src/rule_private.cpp
+    src/rule_function_pointer.cpp
+    src/rule_typedef_struct.cpp
+    src/rule_assignment.cpp
+    src/rule_prefix_namespace.cpp
+    src/rule_null_check.cpp
+    src/rule_arg_ptr_move.cpp
+    src/rule_arg_ptr_move_callsite.cpp
+    src/struct_database_rule.cpp
+    src/struct_init_rule.cpp
+    src/struct_cleanup_rule.cpp
 )
 
 add_executable(workshopc ${SOURCES})

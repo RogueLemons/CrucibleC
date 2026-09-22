@@ -1,0 +1,581 @@
+#include "struct_database_rule.hpp"
+
+bool StructDatabaseRule::endsWith(
+    const std::string &str,
+    const std::string &suffix) const
+{
+    if (suffix.empty())
+        return false;
+
+    if (str.size() < suffix.size())
+        return false;
+
+    return str.compare(
+        str.size() - suffix.size(),
+        suffix.size(),
+        suffix) == 0;
+}
+
+bool StructDatabaseRule::isThirdParty(const std::string &file) const
+{
+    for (const auto &p : config.thirdPartyIncludes) {
+        if (!p.empty() &&
+            file.find(p) != std::string::npos)
+            return true;
+    }
+
+    return false;
+}
+
+bool StructDatabaseRule::shouldIgnore(
+    const SourceManager &sm,
+    SourceLocation loc) const
+{
+    if (loc.isInvalid())
+        return true;
+
+    if (suppressions.isSuppressed(sm, loc))
+        return true;
+
+    SourceLocation spell =
+        sm.getSpellingLoc(loc);
+
+    if (sm.isInSystemHeader(spell))
+        return true;
+
+    std::string file =
+        sm.getFilename(spell).str();
+
+    if (file.empty())
+        return true;
+
+    return isThirdParty(file);
+}
+
+void StructDatabaseRule::registerStruct(
+    const RecordDecl *RD)
+{
+    if (!RD->isStruct())
+        return;
+
+    if (!RD->isThisDeclarationADefinition())
+        return;
+
+    if (!RD->getIdentifier())
+        return;
+
+    const TagDecl *canon =
+        RD->getCanonicalDecl();
+
+    if (!canon)
+        return;
+
+    if (seen.count(canon))
+        return;
+
+    seen.insert(canon);
+
+    database.registerStruct(RD);
+}
+
+const RecordDecl *StructDatabaseRule::getStructDecl(QualType type) const
+{
+    QualType current = type.getUnqualifiedType();
+
+    for (int i = 0; i < 8; ++i) {
+        current = current.getCanonicalType().getUnqualifiedType();
+
+        if (const auto *recordType = current->getAs<RecordType>())
+            return recordType->getDecl();
+
+        if (const auto *typedefType = current->getAs<TypedefType>()) {
+            current = typedefType->desugar();
+            continue;
+        }
+
+        if (current->isEnumeralType() || current->isRecordType()) {
+            break;
+        }
+
+        if (const auto *typedefType = current->getAs<TypedefType>()) {
+            current = typedefType->desugar();
+            continue;
+        }
+
+        if (const auto *tagType = current->getAs<TagType>()) {
+            current = tagType->desugar();
+            continue;
+        }
+
+        break;
+    }
+
+    return nullptr;
+}
+
+bool StructDatabaseRule::isStructType(
+    QualType type,
+    const std::string *expectedName) const
+{
+    const auto *recordDecl = getStructDecl(type);
+
+    if (!recordDecl || !recordDecl->isStruct())
+        return false;
+
+    if (expectedName && !expectedName->empty())
+        return recordDecl->getNameAsString() == *expectedName;
+
+    return true;
+}
+
+bool StructDatabaseRule::isPointerToStructType(
+    QualType type,
+    const std::string *expectedName) const
+{
+    const QualType unqualified =
+        type.getUnqualifiedType();
+
+    const auto *ptrType =
+        unqualified->getAs<PointerType>();
+
+    if (!ptrType)
+        return false;
+
+    return isStructType(ptrType->getPointeeType(), expectedName);
+}
+
+bool StructDatabaseRule::isConstPointerToStructType(
+    QualType type,
+    const std::string *expectedName) const
+{
+    const QualType unqualified =
+        type.getUnqualifiedType();
+
+    const auto *ptrType =
+        unqualified->getAs<PointerType>();
+
+    if (!ptrType)
+        return false;
+
+    const QualType pointee = ptrType->getPointeeType();
+
+    return pointee.isConstQualified() &&
+        isStructType(pointee, expectedName);
+}
+
+bool StructDatabaseRule::matchesFreeCreator(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    if (FD->getNumParams() < 1)
+        return false;
+
+    const auto *selfParam = FD->getParamDecl(0);
+
+    if (!selfParam)
+        return false;
+
+    if (selfParam->getNameAsString() != "self")
+        return false;
+
+    return isPointerToStructType(selfParam->getType(), &structName);
+}
+
+bool StructDatabaseRule::matchesPodCreator(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    return isStructType(FD->getReturnType(), &structName);
+}
+
+bool StructDatabaseRule::matchesRaiiCreator(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    return isStructType(FD->getReturnType(), &structName);
+}
+
+bool StructDatabaseRule::matchesCopyCreator(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    if (FD->getNumParams() != 1)
+        return false;
+
+    const auto *selfParam = FD->getParamDecl(0);
+
+    if (!selfParam)
+        return false;
+
+    if (selfParam->getNameAsString() != "self")
+        return false;
+
+    return isConstPointerToStructType(selfParam->getType(), &structName) &&
+        isStructType(FD->getReturnType(), &structName);
+}
+
+bool StructDatabaseRule::matchesMoveCreator(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    if (FD->getNumParams() != 1)
+        return false;
+
+    const auto *selfParam = FD->getParamDecl(0);
+
+    if (!selfParam)
+        return false;
+
+    if (selfParam->getNameAsString() != "self")
+        return false;
+
+    return isPointerToStructType(selfParam->getType(), &structName) &&
+        isStructType(FD->getReturnType(), &structName);
+}
+
+bool StructDatabaseRule::matchesReturn(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    if (FD->getNumParams() != 1)
+        return false;
+
+    const auto *selfParam = FD->getParamDecl(0);
+
+    if (!selfParam)
+        return false;
+
+    if (selfParam->getNameAsString() != "self")
+        return false;
+
+    return isPointerToStructType(
+            selfParam->getType(),
+            &structName) &&
+        isStructType(
+            FD->getReturnType(),
+            &structName);
+}
+
+bool StructDatabaseRule::matchesDestroy(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    if (FD->getNumParams() != 1)
+        return false;
+
+    const auto *selfParam = FD->getParamDecl(0);
+
+    if (!selfParam)
+        return false;
+
+    if (selfParam->getNameAsString() != "self")
+        return false;
+
+    return FD->getReturnType()
+            .getCanonicalType()
+            ->isVoidType() &&
+        isPointerToStructType(selfParam->getType(), &structName);
+}
+
+bool StructDatabaseRule::matchesValid(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    if (FD->getNumParams() != 1)
+        return false;
+
+    const auto *selfParam = FD->getParamDecl(0);
+
+    if (!selfParam)
+        return false;
+
+    if (selfParam->getNameAsString() != "self")
+        return false;
+
+    const QualType returnType =
+        FD->getReturnType().getCanonicalType();
+
+    return (returnType->isBooleanType() ||
+            returnType->isSpecificBuiltinType(BuiltinType::Bool) ||
+            returnType->isSpecificBuiltinType(BuiltinType::Int)) &&
+        isConstPointerToStructType(selfParam->getType(), &structName);
+}
+
+void StructDatabaseRule::reportInvalidStruct(
+    const std::string &structName,
+    const StructDatabase::StructInfo &info) const
+{
+    if (!sourceManager || !info.decl)
+        return;
+
+    std::string podSignature = structName + " " + structName + podSuffix + "(...)";
+    std::string raiiSignature = structName + " " + structName + raiiSuffix + "(...)";
+    std::string freeSignature = "<any> " + structName + freeSuffix + "(" + structName + "* self, ...)";
+
+    std::string message =
+        "struct '" + structName + "' is invalid: it requires exactly one of the following constructor functions: '" +
+        podSignature + "', '" + raiiSignature + "', or '" +
+        freeSignature + "'";
+
+    diagnostics.report(
+        config.structResourceManagementRule.level,
+        *sourceManager,
+        info.decl->getLocation(),
+        message);
+}
+
+void StructDatabaseRule::reportMissingRaiiHelpers(
+    const std::string &structName,
+    const StructDatabase::StructInfo &info) const
+{
+    if (!sourceManager || !info.decl)
+        return;
+
+    if (!info.hasDestroy) {
+        std::string message =
+            "struct '" + structName + "' is missing required destructor function 'void " +
+            structName + destroySuffix + "(" + structName + "* self)'";
+
+        diagnostics.report(
+            config.structResourceManagementRule.level,
+            *sourceManager,
+            info.decl->getLocation(),
+            message);
+    }
+
+    if (!info.hasCopy) {
+        std::string message =
+            "struct '" + structName + "' is missing required copy function '" +
+            structName + " " + structName + copySuffix + "(const " +
+            structName + "* self, ...)'";
+
+        diagnostics.report(
+            config.structResourceManagementRule.level,
+            *sourceManager,
+            info.decl->getLocation(),
+            message);
+    }
+
+    if (!info.hasMove) {
+        std::string message =
+            "struct '" + structName + "' is missing required move function '" +
+            structName + " " + structName + moveSuffix + "(" +
+            structName + "* self, ...)'";
+
+        diagnostics.report(
+            config.structResourceManagementRule.level,
+            *sourceManager,
+            info.decl->getLocation(),
+            message);
+    }
+
+    if (!info.hasReturn) {
+        std::string message =
+            "struct '" + structName + "' is missing required return function '" +
+            structName + " " + structName + returnSuffix + "(" +
+            structName + "* self)'";
+
+        diagnostics.report(
+            config.structResourceManagementRule.level,
+            *sourceManager,
+            info.decl->getLocation(),
+            message);
+    }
+
+    if (!info.hasValid) {
+        std::string message =
+            "struct '" + structName + "' is missing required valididation function '_Bool / bool " +
+            structName + validSuffix + "(const " + structName + "* self)'";
+
+        diagnostics.report(
+            config.structResourceManagementRule.level,
+            *sourceManager,
+            info.decl->getLocation(),
+            message);
+    }
+}
+
+void StructDatabaseRule::registerFunction(
+    const FunctionDecl *FD)
+{
+    if (!FD->getIdentifier())
+        return;
+
+    std::string name =
+        FD->getNameAsString();
+
+    auto matchSuffix =
+        [&](const std::string &suffix,
+            StructDatabase::FunctionKind kind,
+            auto matcher)
+    {
+        if (!endsWith(name, suffix))
+            return false;
+
+        std::string structName =
+            name.substr(
+                0,
+                name.size() - suffix.size());
+
+        if (structName.empty())
+            return true;
+
+        if (!matcher(FD, structName))
+            return false;
+
+        database.registerFunction(
+            structName,
+            kind);
+
+        return true;
+    };
+
+    if (matchSuffix(
+            freeSuffix,
+            StructDatabase::FunctionKind::FreeCreator,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesFreeCreator(fn, structName);
+            }))
+        return;
+
+    if (matchSuffix(
+            podSuffix,
+            StructDatabase::FunctionKind::PodCreator,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesPodCreator(fn, structName);
+            }))
+        return;
+
+    if (matchSuffix(
+            raiiSuffix,
+            StructDatabase::FunctionKind::RaiiCreator,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesRaiiCreator(fn, structName);
+            }))
+        return;
+
+    if (matchSuffix(
+            destroySuffix,
+            StructDatabase::FunctionKind::Destroy,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesDestroy(fn, structName);
+            }))
+        return;
+
+    if (matchSuffix(
+            copySuffix,
+            StructDatabase::FunctionKind::Copy,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesCopyCreator(fn, structName);
+            }))
+        return;
+
+    if (matchSuffix(
+            moveSuffix,
+            StructDatabase::FunctionKind::Move,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesMoveCreator(fn, structName);
+            }))
+        return;
+
+    if (matchSuffix(
+            returnSuffix,
+            StructDatabase::FunctionKind::Return,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesReturn(fn, structName);
+            }))
+        return;
+
+    matchSuffix(
+        validSuffix,
+        StructDatabase::FunctionKind::Valid,
+        [this](const FunctionDecl *fn, const std::string &structName) {
+            return matchesValid(fn, structName);
+        });
+}
+
+StructDatabaseRule::StructDatabaseRule(
+    const Config &cfg,
+    SuppressionManager &sup,
+    Diagnostics &diag,
+    StructDatabase &db)
+    :
+    config(cfg),
+    suppressions(sup),
+    diagnostics(diag),
+    database(db),
+
+    freeSuffix(cfg.structResourceManagementRule.freeStructCreatorSuffix),
+    podSuffix(cfg.structResourceManagementRule.podStructCreatorSuffix),
+    raiiSuffix(cfg.structResourceManagementRule.raiiStructCreatorSuffix),
+    destroySuffix(cfg.structResourceManagementRule.raiiStructDestroyerSuffix),
+    copySuffix(cfg.structResourceManagementRule.raiiStructCopySuffix),
+    moveSuffix(cfg.structResourceManagementRule.raiiStructMoveSuffix),
+    returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
+    validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix)
+{
+}
+
+void StructDatabaseRule::bindFinder(MatchFinder &finder) {
+    finder.addMatcher(
+        recordDecl(
+            isStruct(),
+            unless(isExpansionInSystemHeader())
+        ).bind("struct"),
+        this);
+
+    finder.addMatcher(
+        functionDecl(
+            unless(isExpansionInSystemHeader())
+        ).bind("function"),
+        this);
+}
+
+void StructDatabaseRule::run(
+    const MatchFinder::MatchResult &result)
+{
+    const auto &sm =
+        *result.SourceManager;
+
+    sourceManager = result.SourceManager;
+
+    const auto *RD =
+        result.Nodes.getNodeAs<RecordDecl>("struct");
+
+    if (!RD)
+        RD = result.Nodes.getNodeAs<RecordDecl>("record");
+
+    if (RD) {
+        if (!shouldIgnore(
+                sm,
+                RD->getLocation()))
+            registerStruct(RD);
+
+        return;
+    }
+
+    if (const auto *FD =
+        result.Nodes.getNodeAs<FunctionDecl>(
+            "function")) {
+
+        if (!shouldIgnore(
+                sm,
+                FD->getLocation()))
+            registerFunction(FD);
+
+        return;
+    }
+}
+
+void StructDatabaseRule::finalize()
+{
+    for (const auto &[name, info] : database.allStructs()) {
+
+        if (info.kind == StructDatabase::Kind::Invalid) {
+            reportInvalidStruct(name, info);
+        }
+        else if (info.kind == StructDatabase::Kind::Raii) {
+            reportMissingRaiiHelpers(name, info);
+        }
+    }
+}

@@ -25,144 +25,24 @@ private:
     std::unordered_set<const TagDecl*> seen;
 
 private:
-    bool isThirdParty(const std::string &file) const {
-        for (const auto &p : config.thirdPartyIncludes) {
-            if (!p.empty() && file.find(p) != std::string::npos)
-                return true;
-        }
-        return false;
-    }
+    bool isThirdParty(const std::string &file) const;
 
     bool isExternalMacroExpansion(const SourceManager &sm,
-                                  const RecordDecl *RD) const
-    {
-        SourceLocation loc = RD->getLocation();
+                                  const RecordDecl *RD) const;
 
-        if (!loc.isMacroID())
-            return false;
+    bool shouldIgnore(const SourceManager &sm, SourceLocation loc) const;
 
-        SourceLocation expansion = sm.getExpansionLoc(loc);
-        std::string file = sm.getFilename(expansion).str();
-
-        return isThirdParty(file);
-    }
-
-    bool shouldIgnore(const SourceManager &sm, SourceLocation loc) const {
-        if (loc.isInvalid())
-            return true;
-
-        if (suppressions.isSuppressed(sm, loc))
-            return true;
-
-        // IMPORTANT: use spelling location for correctness
-        SourceLocation spell = sm.getSpellingLoc(loc);
-
-        if (sm.isInSystemHeader(spell))
-            return true;
-
-        std::string file = sm.getFilename(spell).str();
-        if (file.empty())
-            return true;
-
-        return isThirdParty(file);
-    }
-
-    void report(const RecordDecl *RD, const SourceManager &sm) {
-        diagnostics.report(
-            config.typedefStructRule.level,
-            sm,
-            RD->getLocation(),
-            "struct '" + RD->getNameAsString() + "' must have a typedef"
-        );
-    }
+    void report(const RecordDecl *RD, const SourceManager &sm);
 
     bool hasTypedefFor(const TagDecl *TD,
-                       const MatchFinder::MatchResult &result) const
-    {
-        const auto &ctx = *result.Context;
-
-        for (const auto *D : ctx.getTranslationUnitDecl()->decls()) {
-            const auto *TDN = dyn_cast<TypedefNameDecl>(D);
-            if (!TDN)
-                continue;
-
-            QualType QT = TDN->getUnderlyingType();
-            const auto *RT = QT->getAs<RecordType>();
-            if (!RT)
-                continue;
-
-            const TagDecl *target = RT->getDecl();
-            if (!target)
-                continue;
-
-            if (target->getCanonicalDecl() == TD->getCanonicalDecl())
-                return true;
-        }
-
-        return false;
-    }
+                       const MatchFinder::MatchResult &result) const;
 
 public:
     TypedefStructRule(const Config &cfg,
                       SuppressionManager &sup,
-                      Diagnostics &diag)
-        : config(cfg),
-          suppressions(sup),
-          diagnostics(diag) {}
+                      Diagnostics &diag);
 
-    void bindFinder(MatchFinder &finder) {
-        finder.addMatcher(
-            recordDecl(
-                isStruct(),
-                unless(isExpansionInSystemHeader())
-            ).bind("struct"),
-            this
-        );
+    void bindFinder(MatchFinder &finder);
 
-        finder.addMatcher(
-            typedefDecl(
-                unless(isExpansionInSystemHeader())
-            ).bind("typedef"),
-            this
-        );
-    }
-
-    void run(const MatchFinder::MatchResult &result) override {
-        const auto &sm = *result.SourceManager;
-
-        const auto *RD =
-            result.Nodes.getNodeAs<RecordDecl>("struct");
-
-        if (!RD)
-            return;
-
-        if (!RD->isStruct())
-            return;
-
-        if (!RD->isThisDeclarationADefinition())
-            return;
-
-        if (!RD->getIdentifier())
-            return; // ignore anonymous structs
-
-        if (shouldIgnore(sm, RD->getLocation()))
-            return;
-
-        const TagDecl *canon = RD->getCanonicalDecl();
-        if (!canon)
-            return;
-
-        if (seen.count(canon))
-            return;
-
-        seen.insert(canon);
-
-        // NEW: ignore structs originating from external macro expansions
-        if (isExternalMacroExpansion(sm, RD))
-            return;
-
-        if (!hasTypedefFor(canon, result)) {
-            report(RD, sm);
-        }
-    }
+    void run(const MatchFinder::MatchResult &result) override;
 };
