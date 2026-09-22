@@ -15,15 +15,14 @@ using namespace clang::ast_matchers;
 
 class EnumRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
 
 private:
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -32,12 +31,10 @@ private:
     }
 
 public:
-    EnumRule(const RuleConfig &cfg,
-             const Config &gc,
+    EnumRule(const Config &cfg,
              SuppressionManager &sup,
              Diagnostics &diag)
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag) {}
 
@@ -55,7 +52,7 @@ public:
         if (!e)
             return;
 
-        if (config.level == RuleLevel::Off)
+        if (config.enumRule.level == RuleLevel::Off)
             return;
 
         auto &sm = *result.SourceManager;
@@ -131,7 +128,7 @@ public:
         // -------------------------
 
         diagnostics.report(
-            config.level,
+            config.enumRule.level,
             sm,
             expansionLoc,
             msg

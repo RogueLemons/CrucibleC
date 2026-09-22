@@ -17,8 +17,7 @@ using namespace clang::ast_matchers;
 
 class NullCheckRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
@@ -30,7 +29,7 @@ private:
 
 private:
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -106,20 +105,6 @@ private:
         return false;
     }
 
-    bool getBoolOption(const std::string &key,
-                       bool defaultValue) const {
-        auto it = config.options.find(key);
-        if (it == config.options.end())
-            return defaultValue;
-
-        const std::string &v = it->second;
-
-        return (v == "true" ||
-                v == "True" ||
-                v == "1" ||
-                v == "yes");
-    }
-
     bool isAllowedBooleanUse(const Expr *expr,
                              const ParmVarDecl *param,
                              bool allowBool) const {
@@ -192,12 +177,10 @@ private:
     }
 
 public:
-    NullCheckRule(const RuleConfig &cfg,
-                  const Config &gc,
+    NullCheckRule(const Config &cfg,
                   SuppressionManager &sup,
                   Diagnostics &diag)
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag) {}
 
@@ -231,7 +214,7 @@ public:
             return;
 
         const bool allowBool =
-            getBoolOption("allow_direct_ptr_in_if_statement", false);
+            config.nullCheckRule.allowDirectPtrInIfStatement;
 
         std::unordered_map<const ParmVarDecl*, ParamState> states;
 
@@ -296,7 +279,7 @@ public:
                 name = "<unnamed>";
 
             diagnostics.report(
-                config.level,
+                config.nullCheckRule.level,
                 sm,
                 st.violation->getBeginLoc(),
                 "pointer parameter '" + name +

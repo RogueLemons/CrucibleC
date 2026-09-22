@@ -17,8 +17,7 @@ using namespace clang::ast_matchers;
 
 class TypedefStructRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
@@ -27,7 +26,7 @@ private:
 
 private:
     bool isThirdParty(const std::string &file) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (!p.empty() && file.find(p) != std::string::npos)
                 return true;
         }
@@ -70,7 +69,7 @@ private:
 
     void report(const RecordDecl *RD, const SourceManager &sm) {
         diagnostics.report(
-            config.level,
+            config.typedefStructRule.level,
             sm,
             RD->getLocation(),
             "struct '" + RD->getNameAsString() + "' must have a typedef"
@@ -104,12 +103,10 @@ private:
     }
 
 public:
-    TypedefStructRule(const RuleConfig &cfg,
-                      const Config &gc,
+    TypedefStructRule(const Config &cfg,
                       SuppressionManager &sup,
                       Diagnostics &diag)
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag) {}
 

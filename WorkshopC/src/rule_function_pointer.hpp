@@ -18,8 +18,7 @@ using namespace clang::ast_matchers;
 
 class FunctionPointerRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
@@ -29,7 +28,7 @@ private:
 
 private:
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -106,12 +105,10 @@ private:
     }
 
 public:
-    FunctionPointerRule(const RuleConfig &cfg,
-                        const Config &gc,
+    FunctionPointerRule(const Config &cfg,
                         SuppressionManager &sup,
                         Diagnostics &diag)
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag) {}
 
@@ -137,7 +134,7 @@ public:
         if (!vd && !pd)
             return;
 
-        if (config.level == RuleLevel::Off)
+        if (config.functionPointerRule.level == RuleLevel::Off)
             return;
 
         auto &sm = *result.SourceManager;
@@ -217,7 +214,7 @@ public:
             msg += " (macro expansion)";
 
         diagnostics.report(
-            config.level,
+            config.functionPointerRule.level,
             sm,
             expansionLoc,
             msg

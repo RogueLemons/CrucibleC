@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <string>
 #include <vector>
 
@@ -10,43 +9,88 @@ enum class RuleLevel {
     Error
 };
 
-struct RuleConfig {
+struct EnumRuleConfig {
     RuleLevel level = RuleLevel::Off;
-    std::map<std::string, std::string> options;
 };
 
-class Config {
-public:
-    std::map<std::string, RuleConfig> rules;
+struct PrivateRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    std::string privateField = "_private";
+    std::string getterContains = "pget";
+    std::string setterContains = "pset";
+};
+
+struct FunctionPointerRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
+struct TypedefStructRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
+struct AssignmentRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool forbidZeroInitForObjectsWithPointers = false;
+    bool forbidNullAssign = false;
+    bool forbidMutArgPointer = false;
+    bool forbidArgReassign = false;
+    bool forbidNullAsArg = false;
+};
+
+struct PrefixNamespaceRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    std::string topDir = "src";
+    bool workFromTop = false;
+    int stopAtCount = 10;
+    bool useSeparator = false;
+    std::string separator = "_";
+    bool requireIfndefForFilepath = false;
+    bool applyToFunctions = false;
+    bool applyToStructs = false;
+    bool applyToTypedefs = false;
+};
+
+struct NullCheckRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool allowDirectPtrInIfStatement = false;
+};
+
+struct ArgumentPointerMovementRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool requireOperatorForMoveCallsite = false;
+    bool requireOperatorForOutCallsite = false;
+    bool requireOperatorForModifyCallsite = false;
+};
+
+struct StructResourceManagementRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    std::string podStructCreatorSuffix;
+    std::string raiiStructCreatorSuffix;
+    std::string raiiStructDestroyerSuffix;
+    std::string raiiStructCopySuffix;
+    std::string raiiStructMoveSuffix;
+    std::string raiiStructReturnSuffix;
+    std::string raiiStructValidSuffix;
+    std::string freeStructCreatorSuffix;
+};
+
+struct Config {
+    EnumRuleConfig enumRule;
+    PrivateRuleConfig privateRule;
+    FunctionPointerRuleConfig functionPointerRule;
+    TypedefStructRuleConfig typedefStructRule;
+    AssignmentRuleConfig assignmentRule;
+    PrefixNamespaceRuleConfig prefixNamespaceRule;
+    NullCheckRuleConfig nullCheckRule;
+    ArgumentPointerMovementRuleConfig argumentPointerMovementRule;
+    StructResourceManagementRuleConfig structResourceManagementRule;
 
     std::vector<std::string> projectIncludes;
     std::vector<std::string> thirdPartyIncludes;
-
-    RuleConfig getRuleConfig(const std::string &ruleName) const {
-        auto it = rules.find(ruleName);
-
-        if (it != rules.end()) {
-            return it->second;
-        }
-
-        return RuleConfig();
-    }
-
-    bool hasRule(const std::string &ruleName) const {
-        auto it = rules.find(ruleName);
-
-        if (it == rules.end()) {
-            return false;
-        }
-
-        return it->second.level != RuleLevel::Off;
-    }
-
-    const std::vector<std::string>& getProjectIncludes() const {
-        return projectIncludes;
-    }
-
-    const std::vector<std::string>& getThirdPartyIncludes() const {
-        return thirdPartyIncludes;
-    }
 };

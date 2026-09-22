@@ -17,25 +17,19 @@ using namespace clang::ast_matchers;
 
 class AssignmentRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
 
 private:
-    bool opt(const std::string &key) const {
-        auto it = config.options.find(key);
-        return it != config.options.end() && it->second == "true";
-    }
-
     const Expr* norm(const Expr *e) const {
         if (!e) return nullptr;
         return e->IgnoreParenCasts()->IgnoreImpCasts();
     }
 
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -150,13 +144,11 @@ private:
 
 public:
     AssignmentRule(
-        const RuleConfig &cfg,
-        const Config &gc,
+        const Config &cfg,
         SuppressionManager &sup,
         Diagnostics &diag
     )
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag)
     {}
@@ -206,7 +198,7 @@ public:
             if ((qt->isBuiltinType() || qt->isPointerType()) && !vd->hasInit()) {
 
                 diagnostics.report(
-                    config.level,
+                    config.assignmentRule.level,
                     sm,
                     loc,
                     "variable '" + nameOf(vd) +
@@ -214,7 +206,7 @@ public:
                 );
             }
 
-            if (opt("forbid_zero_init_for_objects_with_pointers")) {
+            if (config.assignmentRule.forbidZeroInitForObjectsWithPointers) {
 
                 const Expr *init = vd->getInit();
 
@@ -223,7 +215,7 @@ public:
                     isLiteralZeroInit(init, sm))
                 {
                     diagnostics.report(
-                        config.level,
+                        config.assignmentRule.level,
                         sm,
                         vd->getLocation(),
                         "object '" + nameOf(vd) +
@@ -232,7 +224,7 @@ public:
                 }
             }
 
-            if (opt("forbid_null_assign")) {
+            if (config.assignmentRule.forbidNullAssign) {
 
                 const Expr *init = vd->getInit();
                 if (!init)
@@ -273,7 +265,7 @@ public:
                             if (isNullExpr(child)) {
 
                                 diagnostics.report(
-                                    config.level,
+                                    config.assignmentRule.level,
                                     sm,
                                     child->getExprLoc(),
                                     "NULL used in pointer field initializer for '" +
@@ -287,7 +279,7 @@ public:
             }
 
             // FIXED: forbid_mut_arg_pointer (now handles all Clang wrapping)
-            if (opt("forbid_mut_arg_pointer")) {
+            if (config.assignmentRule.forbidMutArgPointer) {
 
                 const Expr *init = vd->getInit();
                 if (!init)
@@ -311,7 +303,7 @@ public:
                         if (!pd->getType().isConstQualified()) {
 
                             diagnostics.report(
-                                config.level,
+                                config.assignmentRule.level,
                                 sm,
                                 vd->getLocation(),
                                 "taking address of non-const argument '" +
@@ -339,7 +331,7 @@ public:
             const Expr *lhs = norm(op->getLHS());
             const Expr *rhs = norm(op->getRHS());
 
-            if (opt("forbid_null_assign")) {
+            if (config.assignmentRule.forbidNullAssign) {
 
                 if (lhs &&
                     lhs->getType()->isPointerType() &&
@@ -348,7 +340,7 @@ public:
                     if (const auto *dre = dyn_cast<DeclRefExpr>(lhs)) {
 
                         diagnostics.report(
-                            config.level,
+                            config.assignmentRule.level,
                             sm,
                             loc,
                             "pointer '" +
@@ -359,7 +351,7 @@ public:
                     else if (const auto *me = dyn_cast<MemberExpr>(lhs)) {
 
                         diagnostics.report(
-                            config.level,
+                            config.assignmentRule.level,
                             sm,
                             loc,
                             "pointer field '" +
@@ -370,7 +362,7 @@ public:
                 }
             }
 
-            if (opt("forbid_arg_reassign")) {
+            if (config.assignmentRule.forbidArgReassign) {
 
                 const Expr *nLHS = norm(lhs);
 
@@ -380,7 +372,7 @@ public:
                             dyn_cast<ParmVarDecl>(dre->getDecl()))
                     {
                         diagnostics.report(
-                            config.level,
+                            config.assignmentRule.level,
                             sm,
                             loc,
                             "function argument '" +
@@ -406,7 +398,7 @@ public:
                             if (!qt->isPointerType()) {
 
                                 diagnostics.report(
-                                    config.level,
+                                    config.assignmentRule.level,
                                     sm,
                                     loc,
                                     "fields of by-value argument '" +
@@ -442,12 +434,12 @@ public:
                 if (!arg)
                     continue;
 
-                if (opt("forbid_null_as_arg")) {
+                if (config.assignmentRule.forbidNullAsArg) {
 
                     if (isNullExpr(arg)) {
 
                         diagnostics.report(
-                            config.level,
+                            config.assignmentRule.level,
                             sm,
                             arg->getExprLoc(),
                             "NULL passed as argument to function '" +

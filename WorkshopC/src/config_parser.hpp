@@ -45,6 +45,240 @@ private:
         return RuleLevel::Warning;
     }
 
+    static bool parseBool(const std::string &str) {
+        std::string lower = str;
+
+        std::transform(
+            lower.begin(),
+            lower.end(),
+            lower.begin(),
+            ::tolower
+        );
+
+        return lower == "true" || lower == "1" || lower == "yes";
+    }
+
+    static int parseInt(const std::string &str, int fallback) {
+        try {
+            return std::stoi(str);
+        }
+        catch (...) {
+            return fallback;
+        }
+    }
+
+    static void applySetting(
+        EnumRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+    }
+
+    static void applySetting(
+        PrivateRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+        else if (key == "private_field") {
+            cfg.privateField = value;
+        }
+        else if (key == "getter_contains") {
+            cfg.getterContains = value;
+        }
+        else if (key == "setter_contains") {
+            cfg.setterContains = value;
+        }
+    }
+
+    static void applySetting(
+        FunctionPointerRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+    }
+
+    static void applySetting(
+        TypedefStructRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+    }
+
+    static void applySetting(
+        AssignmentRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+        else if (key == "forbid_zero_init_for_objects_with_pointers") {
+            cfg.forbidZeroInitForObjectsWithPointers = parseBool(value);
+        }
+        else if (key == "forbid_null_assign") {
+            cfg.forbidNullAssign = parseBool(value);
+        }
+        else if (key == "forbid_mut_arg_pointer") {
+            cfg.forbidMutArgPointer = parseBool(value);
+        }
+        else if (key == "forbid_arg_reassign") {
+            cfg.forbidArgReassign = parseBool(value);
+        }
+        else if (key == "forbid_null_as_arg") {
+            cfg.forbidNullAsArg = parseBool(value);
+        }
+    }
+
+    static void applySetting(
+        PrefixNamespaceRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+        else if (key == "top_dir") {
+            cfg.topDir = value;
+        }
+        else if (key == "work_from_top") {
+            cfg.workFromTop = parseBool(value);
+        }
+        else if (key == "stop_at_count") {
+            cfg.stopAtCount = parseInt(value, cfg.stopAtCount);
+        }
+        else if (key == "use_seperator") {
+            cfg.useSeparator = parseBool(value);
+        }
+        else if (key == "seperator") {
+            cfg.separator = value;
+        }
+        else if (key == "require_ifndef_for_filepath") {
+            cfg.requireIfndefForFilepath = parseBool(value);
+        }
+        else if (key == "apply_to_functions") {
+            cfg.applyToFunctions = parseBool(value);
+        }
+        else if (key == "apply_to_structs") {
+            cfg.applyToStructs = parseBool(value);
+        }
+        else if (key == "apply_to_typedefs") {
+            cfg.applyToTypedefs = parseBool(value);
+        }
+    }
+
+    static void applySetting(
+        NullCheckRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+        else if (key == "allow_direct_ptr_in_if_statement") {
+            cfg.allowDirectPtrInIfStatement = parseBool(value);
+        }
+    }
+
+    static void applySetting(
+        ArgumentPointerMovementRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+        else if (key == "require_operator_for_move_callsite") {
+            cfg.requireOperatorForMoveCallsite = parseBool(value);
+        }
+        else if (key == "require_operator_for_out_callsite") {
+            cfg.requireOperatorForOutCallsite = parseBool(value);
+        }
+        else if (key == "require_operator_for_modify_callsite") {
+            cfg.requireOperatorForModifyCallsite = parseBool(value);
+        }
+    }
+
+    static void applySetting(
+        StructResourceManagementRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (key == "level") {
+            cfg.level = parseLevel(value);
+        }
+        else if (key == "pod_struct_creator_suffix") {
+            cfg.podStructCreatorSuffix = value;
+        }
+        else if (key == "raii_struct_creator_suffix") {
+            cfg.raiiStructCreatorSuffix = value;
+        }
+        else if (key == "raii_struct_destroyer_suffix") {
+            cfg.raiiStructDestroyerSuffix = value;
+        }
+        else if (key == "raii_struct_copy_suffix") {
+            cfg.raiiStructCopySuffix = value;
+        }
+        else if (key == "raii_struct_move_suffix") {
+            cfg.raiiStructMoveSuffix = value;
+        }
+        else if (key == "raii_struct_return_suffix") {
+            cfg.raiiStructReturnSuffix = value;
+        }
+        else if (key == "raii_struct_valid_suffix") {
+            cfg.raiiStructValidSuffix = value;
+        }
+        else if (key == "free_struct_creator_suffix") {
+            cfg.freeStructCreatorSuffix = value;
+        }
+    }
+
+    static void applyRuleSetting(
+        Config &config,
+        const std::string &currentRule,
+        const std::string &key,
+        const std::string &value
+    ) {
+        if (currentRule == "enum") {
+            applySetting(config.enumRule, key, value);
+        }
+        else if (currentRule == "private") {
+            applySetting(config.privateRule, key, value);
+        }
+        else if (currentRule == "function_pointer") {
+            applySetting(config.functionPointerRule, key, value);
+        }
+        else if (currentRule == "typedef_struct") {
+            applySetting(config.typedefStructRule, key, value);
+        }
+        else if (currentRule == "assignment") {
+            applySetting(config.assignmentRule, key, value);
+        }
+        else if (currentRule == "prefix_namespace") {
+            applySetting(config.prefixNamespaceRule, key, value);
+        }
+        else if (currentRule == "null_check") {
+            applySetting(config.nullCheckRule, key, value);
+        }
+        else if (currentRule == "argument_pointer_movement") {
+            applySetting(config.argumentPointerMovementRule, key, value);
+        }
+        else if (currentRule == "struct_resource_management") {
+            applySetting(config.structResourceManagementRule, key, value);
+        }
+    }
+
 public:
     static bool loadFromFile(
         const std::string &filepath,
@@ -115,8 +349,6 @@ public:
                     line.substr(0, line.size() - 1)
                 );
 
-                config.rules[currentRule] = RuleConfig();
-
                 continue;
             }
 
@@ -130,14 +362,7 @@ public:
                 std::string value =
                     trim(line.substr(colon + 1));
 
-                if (key == "level") {
-                    config.rules[currentRule].level =
-                        parseLevel(value);
-                }
-                else {
-                    config.rules[currentRule]
-                        .options[key] = value;
-                }
+                applyRuleSetting(config, currentRule, key, value);
             }
         }
 

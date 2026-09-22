@@ -20,8 +20,7 @@ using namespace clang::ast_matchers;
 
 class ArgumentPointerCallsiteRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
@@ -34,7 +33,7 @@ private:
 private:
 
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -165,7 +164,7 @@ private:
                 SourceLocation loc)
     {
         diagnostics.report(
-            config.level,
+            config.argumentPointerMovementRule.level,
             sm,
             loc,
             msg
@@ -174,12 +173,10 @@ private:
 
 public:
     ArgumentPointerCallsiteRule(
-        const RuleConfig &cfg,
-        const Config &gc,
+        const Config &cfg,
         SuppressionManager &sup,
         Diagnostics &diag)
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag)
     {}
@@ -307,15 +304,9 @@ public:
 
             if (tag == kModTag) {
 
-                auto it =
-                    config.options.find(
-                        "require_operator_for_modify_callsite"
-                    );
-                
                 bool enabled =
-                    (it != config.options.end() &&
-                     it->second == "true");
-            
+                    config.argumentPointerMovementRule.requireOperatorForModifyCallsite;
+
                 if (!enabled) {
 
                     if (hasWrapper) {
@@ -337,16 +328,10 @@ public:
                 expected = "workshopc_modify";
             }
             else if (tag == kMoveTag) {
-            
-                auto it =
-                    config.options.find(
-                        "require_operator_for_move_callsite"
-                    );
-                
+
                 bool enabled =
-                    (it != config.options.end() &&
-                     it->second == "true");
-            
+                    config.argumentPointerMovementRule.requireOperatorForMoveCallsite;
+
                 if (!enabled) {
 
                     if (hasWrapper) {
@@ -368,16 +353,10 @@ public:
                 expected = "workshopc_move";
             }
             else if (tag == kOutTag) {
-            
-                auto it =
-                    config.options.find(
-                        "require_operator_for_out_callsite"
-                    );
-                
+
                 bool enabled =
-                    (it != config.options.end() &&
-                     it->second == "true");
-            
+                    config.argumentPointerMovementRule.requireOperatorForOutCallsite;
+
                 if (!enabled) {
 
                     if (hasWrapper) {

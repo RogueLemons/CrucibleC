@@ -16,15 +16,14 @@ using namespace clang::ast_matchers;
 
 class PrivateRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
 
 private:
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -44,12 +43,10 @@ private:
     }
 
 public:
-    PrivateRule(const RuleConfig &cfg,
-                const Config &gc,
+    PrivateRule(const Config &cfg,
                 SuppressionManager &sup,
                 Diagnostics &diag)
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag) {}
 
@@ -69,7 +66,7 @@ public:
         if (!memberExpr)
             return;
 
-        if (config.level == RuleLevel::Off)
+        if (config.privateRule.level == RuleLevel::Off)
             return;
 
         auto &sm = *result.SourceManager;
@@ -129,15 +126,8 @@ public:
         std::string fieldName =
             memberDecl->getNameAsString();
 
-        std::string privateField =
-            "_private";
-
-        auto it =
-            config.options.find("private_field");
-
-        if (it != config.options.end()) {
-            privateField = it->second;
-        }
+        const std::string &privateField =
+            config.privateRule.privateField;
 
         if (fieldName != privateField)
             return;
@@ -153,7 +143,7 @@ public:
 
         if (!func) {
             diagnostics.report(
-                config.level,
+                config.privateRule.level,
                 sm,
                 expansionLoc,
                 "direct access to private field '" +
@@ -171,22 +161,8 @@ public:
         std::string functionName =
             func->getNameAsString();
 
-        std::string getterContains = "pget";
-        std::string setterContains = "pset";
-
-        auto getterIt =
-            config.options.find("getter_contains");
-
-        if (getterIt != config.options.end()) {
-            getterContains = getterIt->second;
-        }
-
-        auto setterIt =
-            config.options.find("setter_contains");
-
-        if (setterIt != config.options.end()) {
-            setterContains = setterIt->second;
-        }
+        const std::string &getterContains = config.privateRule.getterContains;
+        const std::string &setterContains = config.privateRule.setterContains;
 
         bool validName =
             contains(functionName, getterContains) ||
@@ -220,7 +196,7 @@ public:
             "'";
 
         diagnostics.report(
-            config.level,
+            config.privateRule.level,
             sm,
             expansionLoc,
             msg

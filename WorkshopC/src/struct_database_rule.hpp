@@ -18,8 +18,7 @@ using namespace clang::ast_matchers;
 
 class StructDatabaseRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
@@ -40,18 +39,6 @@ private:
     const std::string validSuffix;
 
 private:
-    static std::string getOption(
-        const RuleConfig &cfg,
-        const std::string &name)
-    {
-        auto it = cfg.options.find(name);
-
-        if (it == cfg.options.end())
-            return "";
-
-        return it->second;
-    }
-
     bool endsWith(
         const std::string &str,
         const std::string &suffix) const
@@ -70,7 +57,7 @@ private:
 
     bool isThirdParty(const std::string &file) const
     {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (!p.empty() &&
                 file.find(p) != std::string::npos)
                 return true;
@@ -370,7 +357,7 @@ private:
             freeSignature + "'";
 
         diagnostics.report(
-            config.level,
+            config.structResourceManagementRule.level,
             *sourceManager,
             info.decl->getLocation(),
             message);
@@ -389,7 +376,7 @@ private:
                 structName + destroySuffix + "(" + structName + "* self)'";
 
             diagnostics.report(
-                config.level,
+                config.structResourceManagementRule.level,
                 *sourceManager,
                 info.decl->getLocation(),
                 message);
@@ -402,7 +389,7 @@ private:
                 structName + "* self, ...)'";
 
             diagnostics.report(
-                config.level,
+                config.structResourceManagementRule.level,
                 *sourceManager,
                 info.decl->getLocation(),
                 message);
@@ -415,7 +402,7 @@ private:
                 structName + "* self, ...)'";
 
             diagnostics.report(
-                config.level,
+                config.structResourceManagementRule.level,
                 *sourceManager,
                 info.decl->getLocation(),
                 message);
@@ -428,7 +415,7 @@ private:
                 structName + "* self)'";
 
             diagnostics.report(
-                config.level,
+                config.structResourceManagementRule.level,
                 *sourceManager,
                 info.decl->getLocation(),
                 message);
@@ -440,7 +427,7 @@ private:
                 structName + validSuffix + "(const " + structName + "* self)'";
 
             diagnostics.report(
-                config.level,
+                config.structResourceManagementRule.level,
                 *sourceManager,
                 info.decl->getLocation(),
                 message);
@@ -548,49 +535,24 @@ private:
 
 public:
     StructDatabaseRule(
-        const RuleConfig &cfg,
-        const Config &gc,
+        const Config &cfg,
         SuppressionManager &sup,
         Diagnostics &diag,
         StructDatabase &db)
         :
         config(cfg),
-        globalConfig(gc),
         suppressions(sup),
         diagnostics(diag),
         database(db),
 
-        freeSuffix(getOption(
-            cfg,
-            "free_struct_creator_suffix")),
-
-        podSuffix(getOption(
-            cfg,
-            "pod_struct_creator_suffix")),
-
-        raiiSuffix(getOption(
-            cfg,
-            "raii_struct_creator_suffix")),
-
-        destroySuffix(getOption(
-            cfg,
-            "raii_struct_destroyer_suffix")),
-
-        copySuffix(getOption(
-            cfg,
-            "raii_struct_copy_suffix")),
-
-        moveSuffix(getOption(
-            cfg,
-            "raii_struct_move_suffix")),
-
-        returnSuffix(getOption(
-            cfg,
-            "raii_struct_return_suffix")),
-
-        validSuffix(getOption(
-            cfg,
-            "raii_struct_valid_suffix"))
+        freeSuffix(cfg.structResourceManagementRule.freeStructCreatorSuffix),
+        podSuffix(cfg.structResourceManagementRule.podStructCreatorSuffix),
+        raiiSuffix(cfg.structResourceManagementRule.raiiStructCreatorSuffix),
+        destroySuffix(cfg.structResourceManagementRule.raiiStructDestroyerSuffix),
+        copySuffix(cfg.structResourceManagementRule.raiiStructCopySuffix),
+        moveSuffix(cfg.structResourceManagementRule.raiiStructMoveSuffix),
+        returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
+        validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix)
     {
     }
 

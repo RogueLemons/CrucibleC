@@ -22,46 +22,14 @@ using namespace clang::ast_matchers;
 
 class PrefixNamespaceRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
 
 private:
-    bool opt(const std::string &key) const {
-        auto it = config.options.find(key);
-
-        return it != config.options.end() &&
-               it->second == "true";
-    }
-
-    std::string strOpt(const std::string &key,
-                       const std::string &fallback = "") const {
-        auto it = config.options.find(key);
-
-        return it == config.options.end()
-            ? fallback
-            : it->second;
-    }
-
-    int intOpt(const std::string &key,
-               int fallback) const {
-        auto it = config.options.find(key);
-
-        if (it == config.options.end())
-            return fallback;
-
-        try {
-            return std::stoi(it->second);
-        }
-        catch (...) {
-            return fallback;
-        }
-    }
-
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -142,7 +110,7 @@ private:
         const std::string &path) const {
 
         const std::string topDir =
-            sanitize(strOpt("top_dir", "src"));
+            sanitize(config.prefixNamespaceRule.topDir);
 
         std::vector<std::string> parts =
             splitPath(path);
@@ -189,17 +157,17 @@ private:
         const std::string &path) const {
 
         const bool workFromTop =
-            opt("work_from_top");
+            config.prefixNamespaceRule.workFromTop;
 
         const int stopAtCount =
-            intOpt("stop_at_count", 10);
+            config.prefixNamespaceRule.stopAtCount;
 
         const bool useSeparator =
-            opt("use_seperator");
+            config.prefixNamespaceRule.useSeparator;
 
         const std::string separator =
             useSeparator
-                ? strOpt("seperator", "_")
+                ? config.prefixNamespaceRule.separator
                 : "";
 
         std::vector<std::string> dirs =
@@ -270,7 +238,7 @@ private:
         const std::string &path) const {
 
         const std::string topDir =
-            sanitize(strOpt("top_dir", "src"));
+            sanitize(config.prefixNamespaceRule.topDir);
 
         std::vector<std::string> parts =
             splitPath(path);
@@ -348,7 +316,7 @@ private:
             return;
 
         diagnostics.report(
-            config.level,
+            config.prefixNamespaceRule.level,
             sm,
             loc,
             kind + " '" + name +
@@ -361,7 +329,7 @@ private:
                            SourceLocation loc,
                            const std::string &path) {
 
-        if (!opt("require_ifndef_for_filepath"))
+        if (!config.prefixNamespaceRule.requireIfndefForFilepath)
             return;
 
         std::ifstream file(path);
@@ -418,7 +386,7 @@ private:
             if (actual != expected) {
 
                 diagnostics.report(
-                    config.level,
+                    config.prefixNamespaceRule.level,
                     sm,
                     loc,
                     "missing include guard '" +
@@ -430,7 +398,7 @@ private:
         }
 
         diagnostics.report(
-            config.level,
+            config.prefixNamespaceRule.level,
             sm,
             loc,
             "missing include guard '" +
@@ -452,13 +420,11 @@ private:
 
 public:
     PrefixNamespaceRule(
-        const RuleConfig &cfg,
-        const Config &gc,
+        const Config &cfg,
         SuppressionManager &sup,
         Diagnostics &diag
     )
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag)
     {}
@@ -489,7 +455,7 @@ public:
     void run(
         const MatchFinder::MatchResult &result) override {
 
-        if (config.level == RuleLevel::Off)
+        if (config.prefixNamespaceRule.level == RuleLevel::Off)
             return;
 
         SourceManager &sm =
@@ -499,7 +465,7 @@ public:
         // FUNCTIONS
         // =====================================================
 
-        if (opt("apply_to_functions")) {
+        if (config.prefixNamespaceRule.applyToFunctions) {
 
             if (const auto *fd =
                     result.Nodes.getNodeAs<FunctionDecl>(
@@ -546,7 +512,7 @@ public:
         // STRUCTS
         // =====================================================
 
-        if (opt("apply_to_structs")) {
+        if (config.prefixNamespaceRule.applyToStructs) {
 
             if (const auto *rd =
                     result.Nodes.getNodeAs<RecordDecl>(
@@ -593,7 +559,7 @@ public:
         // TYPEDEFS
         // =====================================================
 
-        if (opt("apply_to_typedefs")) {
+        if (config.prefixNamespaceRule.applyToTypedefs) {
 
             if (const auto *td =
                     result.Nodes.getNodeAs<TypedefDecl>(

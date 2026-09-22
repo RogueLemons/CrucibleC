@@ -19,8 +19,7 @@ using namespace clang::ast_matchers;
 
 class ArgumentPointerMovementRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
@@ -47,7 +46,7 @@ private:
     }
 
     bool isThirdParty(const std::string &path) const {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (path.find(p) != std::string::npos)
                 return true;
         }
@@ -87,7 +86,7 @@ private:
                 SourceLocation loc)
     {
         diagnostics.report(
-            config.level,
+            config.argumentPointerMovementRule.level,
             sm,
             loc,
             msg
@@ -109,12 +108,10 @@ private:
 
 public:
     ArgumentPointerMovementRule(
-        const RuleConfig &cfg,
-        const Config &gc,
+        const Config &cfg,
         SuppressionManager &sup,
         Diagnostics &diag)
         : config(cfg),
-          globalConfig(gc),
           suppressions(sup),
           diagnostics(diag)
     {}

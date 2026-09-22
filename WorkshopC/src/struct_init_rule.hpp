@@ -19,8 +19,7 @@ using namespace clang::ast_matchers;
 
 class StructInitRule : public MatchFinder::MatchCallback {
 private:
-    RuleConfig config;
-    const Config &globalConfig;
+    const Config &config;
 
     const std::string freeSuffix;
     const std::string podSuffix;
@@ -50,21 +49,9 @@ private:
     std::vector<const RecordDecl *> pendingRecords;
 
 private:
-    static std::string getOption(
-        const RuleConfig &cfg,
-        const std::string &name)
-    {
-        auto it = cfg.options.find(name);
-
-        if (it == cfg.options.end())
-            return "";
-
-        return it->second;
-    }
-
     bool isThirdParty(const std::string &file) const
     {
-        for (const auto &p : globalConfig.getThirdPartyIncludes()) {
+        for (const auto &p : config.thirdPartyIncludes) {
             if (!p.empty() && file.find(p) != std::string::npos)
                 return true;
         }
@@ -569,7 +556,7 @@ private:
             return;
 
         diagnostics.report(
-            config.level,
+            config.structResourceManagementRule.level,
             *sourceManager,
             loc,
             message);
@@ -1071,21 +1058,19 @@ private:
 
 public:
     StructInitRule(
-        const RuleConfig &cfg,
-        const Config &gc,
+        const Config &cfg,
         SuppressionManager &sup,
         Diagnostics &diag,
         StructDatabase &db)
         : config(cfg),
-          globalConfig(gc),
-          freeSuffix(getOption(cfg, "free_struct_creator_suffix")),
-          podSuffix(getOption(cfg, "pod_struct_creator_suffix")),
-          raiiSuffix(getOption(cfg, "raii_struct_creator_suffix")),
-          destroySuffix(getOption(cfg, "raii_struct_destroyer_suffix")),
-          copySuffix(getOption(cfg, "raii_struct_copy_suffix")),
-          moveSuffix(getOption(cfg, "raii_struct_move_suffix")),
-          returnSuffix(getOption(cfg, "raii_struct_return_suffix")),
-          validSuffix(getOption(cfg, "raii_struct_valid_suffix")),
+          freeSuffix(cfg.structResourceManagementRule.freeStructCreatorSuffix),
+          podSuffix(cfg.structResourceManagementRule.podStructCreatorSuffix),
+          raiiSuffix(cfg.structResourceManagementRule.raiiStructCreatorSuffix),
+          destroySuffix(cfg.structResourceManagementRule.raiiStructDestroyerSuffix),
+          copySuffix(cfg.structResourceManagementRule.raiiStructCopySuffix),
+          moveSuffix(cfg.structResourceManagementRule.raiiStructMoveSuffix),
+          returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
+          validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix),
           suppressions(sup),
           diagnostics(diag),
           database(db)

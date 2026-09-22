@@ -73,9 +73,8 @@ public:
         );
 
         // Enum rule
-        if (config.hasRule("enum")) {
+        if (config.enumRule.level != RuleLevel::Off) {
             enumRule = std::make_unique<EnumRule>(
-                config.getRuleConfig("enum"),
                 config,
                 suppressions,
                 *diagnostics
@@ -85,9 +84,8 @@ public:
         }
 
         // Private rule
-        if (config.hasRule("private")) {
+        if (config.privateRule.level != RuleLevel::Off) {
             privateRule = std::make_unique<PrivateRule>(
-                config.getRuleConfig("private"),
                 config,
                 suppressions,
                 *diagnostics
@@ -97,9 +95,8 @@ public:
         }
 
         // Function pointer rule
-        if (config.hasRule("function_pointer")) {
+        if (config.functionPointerRule.level != RuleLevel::Off) {
             functionPointerRule = std::make_unique<FunctionPointerRule>(
-                config.getRuleConfig("function_pointer"),
                 config,
                 suppressions,
                 *diagnostics
@@ -109,11 +106,10 @@ public:
         }
 
         // Typedef struct rule
-        if (config.hasRule("typedef_struct")) {
-        
+        if (config.typedefStructRule.level != RuleLevel::Off) {
+
             typedefStructRule =
                 std::make_unique<TypedefStructRule>(
-                    config.getRuleConfig("typedef_struct"),
                     config,
                     suppressions,
                     *diagnostics
@@ -123,9 +119,8 @@ public:
         }
 
         // Assignment rule
-        if (config.hasRule("assignment")) {
+        if (config.assignmentRule.level != RuleLevel::Off) {
             assignmentRule = std::make_unique<AssignmentRule>(
-                config.getRuleConfig("assignment"),
                 config,
                 suppressions,
                 *diagnostics
@@ -135,13 +130,10 @@ public:
         }
 
         // Prefix namespace rule
-        if (config.hasRule("prefix_namespace")) {
+        if (config.prefixNamespaceRule.level != RuleLevel::Off) {
 
             prefixNamespaceRule =
                 std::make_unique<PrefixNamespaceRule>(
-                    config.getRuleConfig(
-                        "prefix_namespace"
-                    ),
                     config,
                     suppressions,
                     *diagnostics
@@ -151,11 +143,10 @@ public:
         }
 
         // Null check rule
-        if (config.hasRule("null_check")) {
-        
+        if (config.nullCheckRule.level != RuleLevel::Off) {
+
             nullCheckRule =
                 std::make_unique<NullCheckRule>(
-                    config.getRuleConfig("null_check"),
                     config,
                     suppressions,
                     *diagnostics
@@ -165,14 +156,11 @@ public:
         }
 
         // Argument pointer movement rule
-        if (config.hasRule("argument_pointer_movement")) {
-        
+        if (config.argumentPointerMovementRule.level != RuleLevel::Off) {
+
             argumentPointerMovementRule =
                 std::make_unique<
                     ArgumentPointerMovementRule>(
-                        config.getRuleConfig(
-                            "argument_pointer_movement"
-                        ),
                         config,
                         suppressions,
                         *diagnostics
@@ -182,11 +170,10 @@ public:
         }
 
         // Argument pointer movement rule for callsite
-        if (config.hasRule("argument_pointer_movement")) {
+        if (config.argumentPointerMovementRule.level != RuleLevel::Off) {
 
             argumentPointerCallsiteRule =
                 std::make_unique<ArgumentPointerCallsiteRule>(
-                    config.getRuleConfig("argument_pointer_movement"),
                     config,
                     suppressions,
                     *diagnostics
@@ -196,12 +183,11 @@ public:
         }
 
         // struct resource management rule
-        if (config.hasRule("struct_resource_management")) {
-            
+        if (config.structResourceManagementRule.level != RuleLevel::Off) {
+
             // Struct kind database rule
             structDatabaseRule =
                 std::make_unique<StructDatabaseRule>(
-                    config.getRuleConfig("struct_resource_management"),
                     config,
                     suppressions,
                     *diagnostics,
@@ -213,7 +199,6 @@ public:
             // Struct initialization and assignment rule
             structInitRule =
                 std::make_unique<StructInitRule>(
-                    config.getRuleConfig("struct_resource_management"),
                     config,
                     suppressions,
                     *diagnostics,
@@ -225,7 +210,6 @@ public:
             // Struct cleanup rule
             structCleanupRule =
                 std::make_unique<StructCleanupRule>(
-                    config.getRuleConfig("struct_resource_management"),
                     config,
                     suppressions,
                     *diagnostics,
