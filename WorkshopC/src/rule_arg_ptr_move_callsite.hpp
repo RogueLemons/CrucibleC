@@ -184,6 +184,14 @@ public:
           diagnostics(diag)
     {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            callExpr(unless(isExpansionInSystemHeader()))
+                .bind("call"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
 
         const auto *CE =

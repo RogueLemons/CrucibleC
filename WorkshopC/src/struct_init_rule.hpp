@@ -1092,6 +1092,39 @@ public:
     {
     }
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            varDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("varDecl"),
+            this);
+
+        finder.addMatcher(
+            binaryOperator(
+                isAssignmentOperator()
+            ).bind("assignment"),
+            this);
+
+        finder.addMatcher(
+            callExpr(
+                unless(isExpansionInSystemHeader())
+            ).bind("call"),
+            this);
+
+        finder.addMatcher(
+            returnStmt(
+                unless(isExpansionInSystemHeader())
+            ).bind("returnStmt"),
+            this);
+
+        finder.addMatcher(
+            recordDecl(
+                isStruct(),
+                unless(isExpansionInSystemHeader())
+            ).bind("record"),
+            this);
+    }
+
     void run(const MatchFinder::MatchResult &result) override
     {
         sourceManager = result.SourceManager;

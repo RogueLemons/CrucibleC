@@ -594,6 +594,21 @@ public:
     {
     }
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            recordDecl(
+                isStruct(),
+                unless(isExpansionInSystemHeader())
+            ).bind("struct"),
+            this);
+
+        finder.addMatcher(
+            functionDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("function"),
+            this);
+    }
+
     void run(
         const MatchFinder::MatchResult &result)
         override

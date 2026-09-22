@@ -80,11 +80,8 @@ public:
                 suppressions,
                 *diagnostics
             );
-        
-            finder.addMatcher(
-                enumDecl().bind("enum"),
-                enumRule.get()
-            );
+
+            enumRule->bindFinder(finder);
         }
 
         // Private rule
@@ -95,13 +92,8 @@ public:
                 suppressions,
                 *diagnostics
             );
-        
-            finder.addMatcher(
-                memberExpr(
-                    hasAncestor(functionDecl().bind("parentFunction"))
-                ).bind("privateAccess"),
-                privateRule.get()
-            );
+
+            privateRule->bindFinder(finder);
         }
 
         // Function pointer rule
@@ -112,16 +104,8 @@ public:
                 suppressions,
                 *diagnostics
             );
-        
-            finder.addMatcher(
-                parmVarDecl().bind("funcptr"),
-                functionPointerRule.get()
-            );
-            
-            finder.addMatcher(
-                varDecl().bind("funcptr"),
-                functionPointerRule.get()
-            );
+
+            functionPointerRule->bindFinder(finder);
         }
 
         // Typedef struct rule
@@ -134,21 +118,8 @@ public:
                     suppressions,
                     *diagnostics
                 );
-            
-            finder.addMatcher(
-                recordDecl(
-                    isStruct(),
-                    unless(isExpansionInSystemHeader())
-                ).bind("struct"),
-                typedefStructRule.get()
-            );
-        
-            finder.addMatcher(
-                typedefDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("typedef"),
-                typedefStructRule.get()
-            );
+
+            typedefStructRule->bindFinder(finder);
         }
 
         // Assignment rule
@@ -159,27 +130,8 @@ public:
                 suppressions,
                 *diagnostics
             );
-        
-            finder.addMatcher(
-                varDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("varDecl"),
-                assignmentRule.get()
-            );
-        
-            finder.addMatcher(
-                binaryOperator(
-                    isAssignmentOperator()
-                ).bind("assignmentOp"),
-                assignmentRule.get()
-            );
 
-            finder.addMatcher(
-                callExpr(
-                    unless(isExpansionInSystemHeader())
-                ).bind("callExpr"),
-                assignmentRule.get()
-            );
+            assignmentRule->bindFinder(finder);
         }
 
         // Prefix namespace rule
@@ -195,26 +147,7 @@ public:
                     *diagnostics
                 );
 
-            finder.addMatcher(
-                functionDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("function"),
-                prefixNamespaceRule.get()
-            );
-
-            finder.addMatcher(
-                recordDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("record"),
-                prefixNamespaceRule.get()
-            );
-
-            finder.addMatcher(
-                typedefDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("typedef"),
-                prefixNamespaceRule.get()
-            );
+            prefixNamespaceRule->bindFinder(finder);
         }
 
         // Null check rule
@@ -227,14 +160,8 @@ public:
                     suppressions,
                     *diagnostics
                 );
-            
-            finder.addMatcher(
-                functionDecl(
-                    isDefinition(),
-                    unless(isExpansionInSystemHeader())
-                ).bind("function"),
-                nullCheckRule.get()
-            );
+
+            nullCheckRule->bindFinder(finder);
         }
 
         // Argument pointer movement rule
@@ -250,20 +177,8 @@ public:
                         suppressions,
                         *diagnostics
                     );
-                
-            finder.addMatcher(
-                functionDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("func"),
-                argumentPointerMovementRule.get()
-            );
 
-            finder.addMatcher(
-                callExpr(
-                    unless(isExpansionInSystemHeader())
-                ).bind("call"),
-                argumentPointerMovementRule.get()
-            );
+            argumentPointerMovementRule->bindFinder(finder);
         }
 
         // Argument pointer movement rule for callsite
@@ -276,12 +191,8 @@ public:
                     suppressions,
                     *diagnostics
                 );
-            
-            finder.addMatcher(
-                callExpr(unless(isExpansionInSystemHeader()))
-                    .bind("call"),
-                argumentPointerCallsiteRule.get()
-            );
+
+            argumentPointerCallsiteRule->bindFinder(finder);
         }
 
         // struct resource management rule
@@ -297,18 +208,7 @@ public:
                     structDatabase
                 );
 
-            finder.addMatcher(
-                recordDecl(
-                    isStruct(),
-                    unless(isExpansionInSystemHeader())
-                ).bind("struct"),
-                structDatabaseRule.get());
-            
-            finder.addMatcher(
-                functionDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("function"),
-                structDatabaseRule.get());
+            structDatabaseRule->bindFinder(finder);
 
             // Struct initialization and assignment rule
             structInitRule =
@@ -320,36 +220,7 @@ public:
                     structDatabase
                 );
 
-            finder.addMatcher(
-                varDecl(
-                    unless(isExpansionInSystemHeader())
-                ).bind("varDecl"),
-                structInitRule.get());
-
-            finder.addMatcher(
-                binaryOperator(
-                    isAssignmentOperator()
-                ).bind("assignment"),
-                structInitRule.get());
-
-            finder.addMatcher(
-                callExpr(
-                    unless(isExpansionInSystemHeader())
-                ).bind("call"),
-                structInitRule.get());
-
-            finder.addMatcher( 
-                returnStmt( 
-                    unless(isExpansionInSystemHeader()) 
-                ).bind("returnStmt"), 
-                structInitRule.get());
-
-            finder.addMatcher(
-                recordDecl(
-                    isStruct(),
-                    unless(isExpansionInSystemHeader())
-                ).bind("record"),
-                structInitRule.get());
+            structInitRule->bindFinder(finder);
 
             // Struct cleanup rule
             structCleanupRule =
@@ -361,12 +232,7 @@ public:
                     structDatabase
                 );
 
-            finder.addMatcher(
-                functionDecl(
-                    isDefinition(),
-                    unless(isExpansionInSystemHeader())
-                ).bind("function"),
-                structCleanupRule.get());
+            structCleanupRule->bindFinder(finder);
         }
 
         return std::make_unique<FinderAndFinalizerConsumer>(

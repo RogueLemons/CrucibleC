@@ -115,6 +115,18 @@ public:
           suppressions(sup),
           diagnostics(diag) {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            parmVarDecl().bind("funcptr"),
+            this
+        );
+
+        finder.addMatcher(
+            varDecl().bind("funcptr"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
         const auto *vd =
             result.Nodes.getNodeAs<VarDecl>("funcptr");

@@ -53,6 +53,15 @@ public:
           suppressions(sup),
           diagnostics(diag) {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            ast_matchers::memberExpr(
+                hasAncestor(functionDecl().bind("parentFunction"))
+            ).bind("privateAccess"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
         const auto *memberExpr =
             result.Nodes.getNodeAs<MemberExpr>("privateAccess");

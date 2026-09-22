@@ -161,6 +161,29 @@ public:
           diagnostics(diag)
     {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            varDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("varDecl"),
+            this
+        );
+
+        finder.addMatcher(
+            binaryOperator(
+                isAssignmentOperator()
+            ).bind("assignmentOp"),
+            this
+        );
+
+        finder.addMatcher(
+            callExpr(
+                unless(isExpansionInSystemHeader())
+            ).bind("callExpr"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
         SourceManager &sm = *result.SourceManager;
 

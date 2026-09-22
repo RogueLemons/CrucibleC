@@ -113,6 +113,23 @@ public:
           suppressions(sup),
           diagnostics(diag) {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            recordDecl(
+                isStruct(),
+                unless(isExpansionInSystemHeader())
+            ).bind("struct"),
+            this
+        );
+
+        finder.addMatcher(
+            typedefDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("typedef"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
         const auto &sm = *result.SourceManager;
 

@@ -41,6 +41,13 @@ public:
           suppressions(sup),
           diagnostics(diag) {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            enumDecl().bind("enum"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
         const auto *e =
             result.Nodes.getNodeAs<EnumDecl>("enum");

@@ -201,6 +201,16 @@ public:
           suppressions(sup),
           diagnostics(diag) {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            functionDecl(
+                isDefinition(),
+                unless(isExpansionInSystemHeader())
+            ).bind("function"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
         const auto *fn =
             result.Nodes.getNodeAs<FunctionDecl>("function");

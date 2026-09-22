@@ -1704,6 +1704,15 @@ public:
     {
     }
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            functionDecl(
+                isDefinition(),
+                unless(isExpansionInSystemHeader())
+            ).bind("function"),
+            this);
+    }
+
     void run(
         const MatchFinder::MatchResult &result)
         override

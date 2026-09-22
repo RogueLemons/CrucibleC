@@ -119,6 +119,22 @@ public:
           diagnostics(diag)
     {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            functionDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("func"),
+            this
+        );
+
+        finder.addMatcher(
+            callExpr(
+                unless(isExpansionInSystemHeader())
+            ).bind("call"),
+            this
+        );
+    }
+
     void run(const MatchFinder::MatchResult &result) override {
 
         const auto *FD =

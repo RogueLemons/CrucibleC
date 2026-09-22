@@ -463,6 +463,29 @@ public:
           diagnostics(diag)
     {}
 
+    void bindFinder(MatchFinder &finder) {
+        finder.addMatcher(
+            functionDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("function"),
+            this
+        );
+
+        finder.addMatcher(
+            recordDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("record"),
+            this
+        );
+
+        finder.addMatcher(
+            typedefDecl(
+                unless(isExpansionInSystemHeader())
+            ).bind("typedef"),
+            this
+        );
+    }
+
     void run(
         const MatchFinder::MatchResult &result) override {
 
