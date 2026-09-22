@@ -482,3 +482,84 @@ void color_list_destroy(color_list_t* const self)
         color_destroy(&self->array[i].color);
     }
 }
+
+typedef struct color_wrapper
+{
+    color_t color;
+} color_wrapper_t;
+color_wrapper_t color_wrapper_make(int r, int g, int b, int a);
+color_wrapper_t color_wrapper_copy(const color_wrapper_t* const self);
+color_wrapper_t color_wrapper_move(color_wrapper_t* const self);
+void color_wrapper_destroy(color_wrapper_t* const self);
+color_wrapper_t color_wrapper_return(color_wrapper_t* self);
+_Bool color_wrapper_valid(const color_wrapper_t* const self);
+
+void bad_reassignment_of_raii_struct_field(color_wrapper_t* const self)
+{
+    if (!self || !color_wrapper_valid(self))
+        return;
+
+    self->color = color_make(255, 0, 0, 255); // bad
+
+    color_wrapper_t temp = color_wrapper_make(255, 0, 0, 255);
+    temp.color = color_make(0, 255, 0, 255); // bad
+    color_wrapper_destroy(&temp);
+}
+
+typedef struct color_wrapper_wrapper
+{
+    color_wrapper_t wrapper;
+    color_wrapper_t* wrapper_ptr;
+} color_wrapper_wrapper_t;
+color_wrapper_wrapper_t color_wrapper_wrapper_make(int r, int g, int b, int a);
+color_wrapper_wrapper_t color_wrapper_wrapper_copy(const color_wrapper_wrapper_t* const self);
+color_wrapper_wrapper_t color_wrapper_wrapper_move(color_wrapper_wrapper_t* const self);
+void color_wrapper_wrapper_destroy(color_wrapper_wrapper_t* const self);
+color_wrapper_wrapper_t color_wrapper_wrapper_return(color_wrapper_wrapper_t* self);
+_Bool color_wrapper_wrapper_valid(const color_wrapper_wrapper_t* const self);
+
+void bad_reassignment_of_raii_struct_field_of_field(color_wrapper_wrapper_t* const self)
+{
+    if (!self || !color_wrapper_wrapper_valid(self))
+        return;
+
+    self->wrapper_ptr->color = color_make(255, 0, 0, 255); // bad
+    
+    color_wrapper_wrapper_t temp = color_wrapper_wrapper_make(255, 0, 0, 255);
+    temp.wrapper.color = color_make(0, 255, 0, 255); // bad
+    color_wrapper_wrapper_destroy(&temp);
+}
+
+typedef struct ABC
+{
+    char a;
+    char b;
+    char c;
+} ABC_t;
+ABC_t ABC_pod();
+
+typedef struct ABC_pod_wrapper
+{
+    int i;
+    ABC_t abc;
+} ABC_pod_wrapper_t;
+ABC_pod_wrapper_t ABC_pod_wrapper_make(ABC_t abc);
+ABC_pod_wrapper_t ABC_pod_wrapper_copy(const ABC_pod_wrapper_t* const self);
+ABC_pod_wrapper_t ABC_pod_wrapper_move(ABC_pod_wrapper_t* const self);
+void ABC_pod_wrapper_destroy(ABC_pod_wrapper_t* const self);
+ABC_pod_wrapper_t ABC_pod_wrapper_return(ABC_pod_wrapper_t* self);
+_Bool ABC_pod_wrapper_valid(const ABC_pod_wrapper_t* const self);
+
+void legal_edits_of_pod_struct_field(ABC_pod_wrapper_t* const self)
+{
+    if (!self || !ABC_pod_wrapper_valid(self))
+        return;
+
+    self->abc = ABC_pod(); // good
+    self->i = 42; // good
+
+    ABC_pod_wrapper_t temp = ABC_pod_wrapper_make(ABC_pod());
+    temp.abc = ABC_pod(); // good
+    temp.i = 43; // good
+    ABC_pod_wrapper_destroy(&temp);
+}

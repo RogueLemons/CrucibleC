@@ -737,7 +737,6 @@ This ensures:
 
 For V0.9 it shall
 - give correct compile_commands.json for running tests
-- raii structs shall not allow reassignment when accessed from a struct (both . and ->)
 
 For V1 it shall
 - Verify build for Linux

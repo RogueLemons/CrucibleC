@@ -27,3 +27,7 @@ error: struct variable 'vec_not_init' of type 'int_vector' should be initialized
 error: struct variable 'vec_not_init' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
 error: struct variable 'vec_not_init' of type 'int_vector' should be initialized from a function return value
 error: struct variable 'vec_not_init' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
+error: struct field 'self->color' of type 'color' cannot be reassigned with another struct value (raii)
+error: struct field 'temp.color' of type 'color' cannot be reassigned with another struct value (raii)
+error: struct field 'self->wrapper_ptr->color' of type 'color' cannot be reassigned with another struct value (raii)
+error: struct field 'temp.wrapper.color' of type 'color' cannot be reassigned with another struct value (raii)

@@ -641,7 +641,10 @@ std::string StructInitRule::getAssignmentTargetName(const Expr *expr) const
         if (baseName.empty())
             return memberName;
 
-        return baseName + "." + memberName;
+        const std::string separator =
+            memberExpr->isArrow() ? "->" : ".";
+
+        return baseName + separator + memberName;
     }
 
     if (const auto *arraySubscript =
@@ -697,15 +700,6 @@ void StructInitRule::checkAssignment(
 
     lhs = unwrapExpr(lhs);
 
-    // Direct member assignments such as:
-    //
-    //     obj.field = value;
-    //
-    // are intentionally allowed unless the member itself is
-    // a RAII struct. Array elements are checked separately.
-    if (isa<MemberExpr>(lhs))
-        return;
-
     std::string structName;
     if (!isStructType(lhs->getType(), &structName))
         return;
@@ -751,6 +745,13 @@ void StructInitRule::checkAssignment(
             assignment->getOperatorLoc(),
             "struct '" + structName +
                 "' array element '" + targetName +
+                "' cannot be reassigned with another struct value (raii)");
+    }
+    else if (isa<MemberExpr>(lhs)) {
+        reportUsageIssue(
+            assignment->getOperatorLoc(),
+            "struct field '" + targetName +
+                "' of type '" + structName +
                 "' cannot be reassigned with another struct value (raii)");
     }
     else {
