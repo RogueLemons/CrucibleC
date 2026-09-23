@@ -651,7 +651,30 @@ StructCleanupRule::CleanupAnalyzer::Flow StructCleanupRule::CleanupAnalyzer::sca
     if (const auto *call =
             dyn_cast<CallExpr>(stmt)) {
 
+        /*
+         * Check for use-after-destroy BEFORE marking this call's
+         * own target as destroyed, so that:
+         *
+         *   - the call that legitimately performs the first
+         *     destroy/return is never flagged for its own target, and
+         *   - a second destroy/return call on the same variable
+         *     (a double free) IS flagged, since 'destroyed' is
+         *     already true by the time this second call is seen.
+         */
+        checkUseAfterDestroy(call);
+
         markDestroyedIfNeeded(call);
+    }
+
+    /*
+     * A direct field access (dot or arrow) made through an
+     * already-destroyed struct variable, e.g. 'vec.size' or
+     * '(&vec)->size'.
+     */
+    if (const auto *memberExpr =
+            dyn_cast<MemberExpr>(stmt)) {
+
+        checkUseAfterDestroy(memberExpr);
     }
 
     /*
@@ -792,6 +815,92 @@ void StructCleanupRule::CleanupAnalyzer::markDestroyedIfNeeded(const CallExpr *c
                 true;
         }
     }
+}
+
+void StructCleanupRule::CleanupAnalyzer::checkUseAfterDestroy(const CallExpr *call)
+{
+    if (!call)
+        return;
+
+    for (const Expr *arg : call->arguments()) {
+
+        if (!arg)
+            continue;
+
+        checkUseAfterDestroy(arg);
+    }
+}
+
+void StructCleanupRule::CleanupAnalyzer::checkUseAfterDestroy(const MemberExpr *memberExpr)
+{
+    checkUseAfterDestroy(
+        static_cast<const Expr *>(memberExpr));
+}
+
+void StructCleanupRule::CleanupAnalyzer::checkUseAfterDestroy(const Expr *expr)
+{
+    if (!expr)
+        return;
+
+    if (owner.config.structResourceManagementRule.raiiUseAfterDestroy)
+        return;
+
+    const auto *target =
+        owner.getReferencedVarDecl(expr);
+
+    if (!target)
+        return;
+
+    std::string structName;
+
+    if (!owner.isStructType(
+            target->getType(),
+            &structName))
+        return;
+
+    if (!isAlreadyDestroyed(target))
+        return;
+
+    const ReportKey key{
+        target,
+        expr->getExprLoc().getRawEncoding()
+    };
+
+    if (reportedUseAfterDestroy.count(key))
+        return;
+
+    reportedUseAfterDestroy.insert(key);
+
+    owner.reportUseAfterDestroy(
+        expr->getExprLoc(),
+        target,
+        structName);
+}
+
+bool StructCleanupRule::CleanupAnalyzer::isAlreadyDestroyed(const VarDecl *target) const
+{
+    if (!target)
+        return false;
+
+    for (const auto &scope :
+         scopes) {
+
+        for (const auto &tracked :
+             scope.vars) {
+
+            if (tracked.decl == target)
+                return tracked.destroyed;
+        }
+    }
+
+    for (const auto &tracked :
+         params) {
+
+        if (tracked.decl == target)
+            return tracked.destroyed;
+    }
+
+    return false;
 }
 
 void StructCleanupRule::CleanupAnalyzer::addParameter(
@@ -1496,6 +1605,31 @@ void StructCleanupRule::reportPendingParams(
             destroySuffix +
             "' before scope exit (raii)");
     }
+}
+
+void StructCleanupRule::reportUseAfterDestroy(
+    SourceLocation loc,
+    const VarDecl *target,
+    const std::string &structName) const
+{
+    if (!target)
+        return;
+
+    const char *kind =
+        isa<ParmVarDecl>(target) ? "parameter" : "variable";
+
+    reportUsageIssue(
+        loc,
+        std::string("struct ") +
+        kind +
+        " '" +
+        target->getNameAsString() +
+        "' of type '" +
+        structName +
+        "' must not be used after being destroyed with '" +
+        structName +
+        destroySuffix +
+        "' (raii)");
 }
 
 StructCleanupRule::StructCleanupRule(

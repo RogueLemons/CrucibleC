@@ -803,5 +803,5 @@ For V1.1 it shall
 - Enforce no use of _move functions on pointer arguments (only local scope variables)
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
-- Optionally disallow multiple raii struct destroy calls and optionally forbid use after destroy
 - Add ref tag to nullcheck rule (similar to mutability tag) that forbids null/0 arg to the function
+- Optionally allow free struct create/init functions to disregard all raii and pod struct rules

@@ -119,6 +119,21 @@ private:
 
         void markDestroyedIfNeeded(const CallExpr *call);
 
+        /*
+         * Reports every argument of 'call' that references a
+         * tracked variable which has already been destroyed or
+         * returned, when the struct_resource_management rule's
+         * raii_use_after_destroy option is set to false.
+         */
+        void checkUseAfterDestroy(const CallExpr *call);
+
+        /*
+         * Reports a direct field access (dot or arrow notation)
+         * made through a tracked variable which has already been
+         * destroyed or returned.
+         */
+        void checkUseAfterDestroy(const MemberExpr *memberExpr);
+
         void addParameter(
             const VarDecl *param);
 
@@ -156,6 +171,27 @@ private:
         StateSnapshot mergeStates(
             const StateSnapshot &a,
             const StateSnapshot &b) const;
+
+        /*
+         * True if 'target' is currently tracked (in an active
+         * scope or as a parameter) and has already been marked
+         * destroyed.
+         */
+        bool isAlreadyDestroyed(const VarDecl *target) const;
+
+        /*
+         * Shared implementation for the two checkUseAfterDestroy
+         * overloads. Reports 'expr' at its own location if it
+         * refers to an already-destroyed tracked struct variable,
+         * deduplicating by (variable, location) so that the same
+         * AST node is never reported twice, since a member access
+         * that is also a call argument is visited by both the
+         * call-argument check and the generic traversal.
+         */
+        void checkUseAfterDestroy(const Expr *expr);
+
+        std::unordered_set<ReportKey, ReportKeyHash>
+            reportedUseAfterDestroy;
     };
 
     const Config &config;
@@ -242,6 +278,11 @@ private:
         std::unordered_set<
             ReportKey,
             ReportKeyHash> &reportedVars) const;
+
+    void reportUseAfterDestroy(
+        SourceLocation loc,
+        const VarDecl *target,
+        const std::string &structName) const;
 
 public:
     StructCleanupRule(

@@ -500,3 +500,47 @@ int_vector_t return_call_with_bad_return()
     int_vector_t vec_with_wrong_return = int_vector_make(5);
     return random_return(&vec_with_wrong_return);
 }
+
+void use_after_destroy(int_vector_t vec)
+{
+    int_vector_destroy(&vec);
+    int_vector_foo(&vec); // bad: vec was already destroyed
+}
+
+void local_double_destroy(void)
+{
+    int_vector_t local_double_destroyed_vec = int_vector_make(6);
+
+    int_vector_destroy(&local_double_destroyed_vec);
+    int_vector_destroy(&local_double_destroyed_vec); // bad: already destroyed
+}
+
+int_vector_t destroy_then_return(void)
+{
+    int_vector_t vec = int_vector_make(3);
+
+    int_vector_destroy(&vec);
+
+    return int_vector_return(&vec); // bad: vec was already destroyed
+}
+
+void field_access_after_destroy(void)
+{
+    int_vector_t vec = int_vector_make(9);
+
+    int_vector_destroy(&vec);
+
+    int dot_size = vec.size;        // bad: vec was already destroyed
+    int arrow_size = (&vec)->size;  // bad: vec was already destroyed
+}
+
+void destroy_in_one_branch_use_in_other(int_vector_t vec, int cond)
+{
+    if (cond) {
+        int_vector_destroy(&vec);
+    }
+    else {
+        int_vector_foo(&vec); // fine: this branch never destroyed vec
+        int_vector_destroy(&vec);
+    }
+}
