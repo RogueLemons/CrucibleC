@@ -57,6 +57,7 @@ set(SOURCES
     src/finder_and_finalizer_consumer.cpp
     src/rule_enum.cpp
     src/rule_private.cpp
+    src/rule_private_alternative.cpp
     src/rule_function_pointer.cpp
     src/rule_typedef_struct.cpp
     src/rule_assignment.cpp
@@ -133,6 +134,9 @@ add_custom_command(TARGET workshopc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/default/move_tags.h
         ${RELEASE_DIR}/move_tags.h
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/default/private_tag.h
+        ${RELEASE_DIR}/private_tag.h
 )
 
 # Copy licenses

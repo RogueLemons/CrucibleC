@@ -16,12 +16,16 @@ rules:
   enum:
     level: Warning
 
-  # Private rule - forbids access of private struct fields
+  # Private rule - forbids access of a private struct field
   private:
-    level: Error
+    level: Warning
     private_field: _private
     setter_contains: pset
     getter_contains: pget
+
+  # Private alternative rule - limits access of tagged struct fields
+  private_alternative:
+    level: Error
 
   # Function pointer rule - requires typedef for all function pointers
   function_pointer:

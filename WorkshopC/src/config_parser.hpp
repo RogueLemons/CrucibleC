@@ -27,6 +27,12 @@ private:
     );
 
     static void applySetting(
+        PrivateAlternativeRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    static void applySetting(
         FunctionPointerRuleConfig &cfg,
         const std::string &key,
         const std::string &value

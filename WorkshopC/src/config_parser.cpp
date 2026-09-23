@@ -93,6 +93,16 @@ void ConfigParser::applySetting(
 }
 
 void ConfigParser::applySetting(
+    PrivateAlternativeRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+}
+
+void ConfigParser::applySetting(
     FunctionPointerRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -251,6 +261,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "private") {
         applySetting(config.privateRule, key, value);
+    }
+    else if (currentRule == "private_alternative") {
+        applySetting(config.privateAlternativeRule, key, value);
     }
     else if (currentRule == "function_pointer") {
         applySetting(config.functionPointerRule, key, value);

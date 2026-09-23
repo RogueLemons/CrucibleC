@@ -3,6 +3,7 @@
 #include "suppression_manager.hpp"
 #include "rule_enum.hpp"
 #include "rule_private.hpp"
+#include "rule_private_alternative.hpp"
 #include "rule_function_pointer.hpp"
 #include "rule_typedef_struct.hpp"
 #include "rule_assignment.hpp"
@@ -45,6 +46,7 @@ private:
 
     std::unique_ptr<EnumRule> enumRule{};
     std::unique_ptr<PrivateRule> privateRule{};
+    std::unique_ptr<PrivateAlternativeRule> privateAlternativeRule{};
     std::unique_ptr<FunctionPointerRule> functionPointerRule{};
     std::unique_ptr<AssignmentRule> assignmentRule{};
     std::unique_ptr<PrefixNamespaceRule> prefixNamespaceRule{};
@@ -92,6 +94,17 @@ public:
             );
 
             privateRule->bindFinder(finder);
+        }
+
+        // Private alternative rule
+        if (config.privateAlternativeRule.level != RuleLevel::Off) {
+            privateAlternativeRule = std::make_unique<PrivateAlternativeRule>(
+                config,
+                suppressions,
+                *diagnostics
+            );
+
+            privateAlternativeRule->bindFinder(finder);
         }
 
         // Function pointer rule

@@ -21,6 +21,10 @@ struct PrivateRuleConfig {
     std::string setterContains = "pset";
 };
 
+struct PrivateAlternativeRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
 struct FunctionPointerRuleConfig {
     RuleLevel level = RuleLevel::Off;
 };
@@ -83,6 +87,7 @@ struct StructResourceManagementRuleConfig {
 struct Config {
     EnumRuleConfig enumRule;
     PrivateRuleConfig privateRule;
+    PrivateAlternativeRuleConfig privateAlternativeRule;
     FunctionPointerRuleConfig functionPointerRule;
     TypedefStructRuleConfig typedefStructRule;
     AssignmentRuleConfig assignmentRule;

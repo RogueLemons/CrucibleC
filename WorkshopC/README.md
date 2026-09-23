@@ -6,6 +6,7 @@ A project for parsing C code and generating tips for writing safer code or adher
 - [Config behavior](#config-behavior)
   - [Enum rule](#enum-rule)
   - [Private rule](#private-rule)
+  - [Private alternative rule](#private-alternative-rule)
   - [Function pointer rule](#function-pointer-rule)
   - [Typedef struct rule](#typedef-struct-rule)
   - [Assignment rule](#assignment-rule)
@@ -128,6 +129,60 @@ static const ColorPrivate* pget(const Color* const color)
 static ColorPrivate* pset(Color* const color)
 {
   return color->_private;
+}
+```
+
+### Private alternative rule
+This rule is an alternative to the [private rule](#private-rule) that, instead of matching a field by name, matches any field tagged with the privacy tag. [Here is a premade tag header](./default/private_tag.h) that can be used as is. A tagged field may only be accessed from a function that a) has a name starting with the owning struct's actual name (no typedef alias of it) and b) takes a pointer to the owning struct as its first parameter, named `self` (const or not, typedef or not).
+
+> *Note: This rule works really well with* [RAII and struct resource management](#raii-and-struct-resource-management)*, where the constructor functions can also access the private fields.*
+
+This example uses the macro `PRIVATE` for the privacy tag.
+
+```c
+#include "private_tag.h"
+
+struct Color
+{
+  int weight;
+  PRIVATE int r, g, b;
+};
+typedef struct Color Color_t;
+
+void access_color_members(Color_t* color)
+{
+  int weight = color->weight; // OK
+  int r = color->r;           // Triggers Error
+}
+```
+
+Instead the user must define accessor functions whose name starts with the struct's own name and whose first parameter is a pointer named `self`.
+
+```c
+int Color_get_r(const Color_t* self)
+{
+  return self->r;
+}
+
+void Color_set_r(Color_t* self, int value)
+{
+  self->r = value;
+}
+```
+
+Note that reaching into a *different* struct's tagged field through a field of the current struct still requires that other struct's own accessor, even from inside a function that is otherwise a valid accessor for the current struct.
+
+```c
+struct Wrapper
+{
+  PRIVATE Color_t color;
+};
+typedef struct Wrapper Wrapper_t;
+
+void Wrapper_bad(Wrapper_t* self)
+{
+  self->color.weight = 5; // OK: color is Wrapper's own field, and weight is not tagged
+  self->color.r = 5;      // Triggers Error: r belongs to Color, not Wrapper
 }
 ```
 
@@ -408,7 +463,7 @@ void print_big_greeting()
 }
 ```
 
-This rule works better when combined with the [private members rule](#private-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled. It is of course possible to also e.g. make all private fields in the struct just have their names start with the prefix `p_`, or even implement a tag system similar to the [argument pointer movement rule](#argument-pointer-movement-rule) where the end user can just write `private int i;` inside the struct.
+This rule works better when combined with the [private members rule](#private-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled. It is of course possible to also e.g. make all private fields in the struct just have their names start with the prefix `p_`, or use a tag system similar to the [argument pointer movement rule](#argument-pointer-movement-rule) where the end user can just write `PRIVATE int i;` inside the struct — this is exactly what the [private alternative rule](#private-alternative-rule) provides.
 
 #### Free struct
 Finally, there is also a free struct supported where no rules apply to how the struct is used. The pod struct and raii struct work on a safety-first rule and the assumption that the compilers can handle copy elision and `static inline` functions effectively. The free struct is instead about complete freedom for the programmer with no restrictions, other than needing a function called `<void or any> <struct name>_init(<struct name>* self, ...);`. This allows users to optimize without restriction when needed. Here is an example:
@@ -741,7 +796,6 @@ For V0.9 it shall
 For V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
-- Add PRIVATE tag system for struct members which can only be accessed in functions of correct name
 
 For V1.1 it shall
 - Add rules for vtables and interfaces
