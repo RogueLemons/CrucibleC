@@ -794,6 +794,7 @@ This ensures:
 
 For V0.9 it shall
 - give correct compile_commands.json for running tests
+- return 0 on success, 1 for errors, 2 for warnings, or 3 for errors plus warnings
 
 For V1 it shall
 - Verify build for Linux
@@ -801,9 +802,20 @@ For V1 it shall
 
 For V1.1 it shall
 - Add rules for vtables and interfaces
-- Enforce no use after move for pointer tags, and no move of mut or out variable
+- Enforce no use after move for pointer tags (unless reassigned), and no move of mut or out variable
 - Enforce no use of _move functions on pointer arguments (only local scope variables)
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
-- Add ref tag to nullcheck rule (similar to mutability tag) that forbids null/0 arg to the function
+- Add ref tag system where a function argument that takes a ref pointer must be either given another ref pointer or a direct dereference to a local object (this must be compatible with move/owenrship rule and the nullcheck rule shall then never require a ref pointer to be nullchecked)
+- Optionally enforce supression reason on line after (e.g. with comment "// Reason: I know what I am doing")
 - Optionally allow free struct create/init functions to disregard all raii and pod struct rules
+- Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
+
+For V1.2 it shall
+- Add .sarif file output support
+- Add LSP support
+- Improved exe arguments (writing e.g. workshopc --config conf.yaml)
+- Provide output to txt or json file if provided as argument
+- Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
+- Add new rule, or refine enum rule, to require enums to have typedef and then enforce that a typedef enum must ALWAYS be initialized from the available enum options
+
