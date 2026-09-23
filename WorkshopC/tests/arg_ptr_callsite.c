@@ -15,39 +15,30 @@ void foo(void)
 {
     // Mod test
     char c = 'c';
-    //Good
-    func_that_modifies(mod_cast(&c));
-    // Bad
-    func_that_modifies(out_cast(&c));
-    func_that_modifies(&c);
+    func_that_modifies(mod_cast(&c)); // good
+    func_that_modifies(out_cast(&c)); // bad
+    func_that_modifies(&c); // bad
 
     // Move test
     int* i_ptr = NULL;
-    // Good
-    func_that_takes_move(move_cast(i_ptr));
-    // Bad
-    func_that_takes_move(mod_cast(i_ptr));
-    func_that_takes_move(i_ptr);
+    func_that_takes_move(move_cast(i_ptr)); // good
+    func_that_takes_move(mod_cast(i_ptr)); // bad
+    func_that_takes_move(i_ptr); // bad
 
     // Out test
     float f;
-    // Good
-    func_that_gives_out(out_cast(&f));
-    // Bad
-    func_that_gives_out(move_cast(&f));
-    func_that_gives_out(&f);
+    func_that_gives_out(out_cast(&f)); // good
+    func_that_gives_out(move_cast(&f)); // bad
+    func_that_gives_out(&f); // bad
 
     // Functions without movement tags should not use operators
-    // Good
     int i = 42;
-    declared_in_external_header(&i);
-    // Bad
-    declared_in_external_header(move_cast(&i));
-    declared_in_external_header(out_cast(&i));
-    declared_in_external_header(mod_cast(&i));
+    declared_in_external_header(&i); // good
+    declared_in_external_header(move_cast(&i)); // bad
+    declared_in_external_header(out_cast(&i)); // bad
+    declared_in_external_header(mod_cast(&i)); // bad
 
     // System header
-    // Good
     const char* str = "Hello, world!";
     const char* str_2 = "Hello, world!";
     int result = strcmp(str, str_2);

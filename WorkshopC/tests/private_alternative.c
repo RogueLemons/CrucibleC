@@ -178,7 +178,7 @@ void Container_set_total(Container_t* self, int value)
 // -------------------------------------------------------------
 int get_count(const Container_t* self)
 {
-    return self->count; // bad
+    return self->count;
 }
 
 // -------------------------------------------------------------
@@ -187,7 +187,7 @@ int get_count(const Container_t* self)
 // -------------------------------------------------------------
 int Container_get_total_other(const Container_t* other)
 {
-    return other->total; // bad
+    return other->total;
 }
 
 // -------------------------------------------------------------
@@ -244,7 +244,7 @@ void PointerWrapper_set_container(PointerWrapper_t* self, Container_t* container
 // -------------------------------------------------------------
 Container_t* get_container(const PointerWrapper_t* self)
 {
-    return self->container; // bad
+    return self->container;
 }
 
 // -------------------------------------------------------------
@@ -325,13 +325,13 @@ void test_free_struct_field_access(void)
 // -------------------------------------------------------------
 int get_count_not_suppressed(const Container_t* self)
 {
-    return self->count; // bad, not suppressed
+    return self->count; // bad: not suppressed
 }
 
 // WorkshopC off
 int get_count_suppressed(const Container_t* self)
 {
-    return self->count; // suppressed, no diagnostic expected
+    return self->count; // good: suppressed, no diagnostic expected
 }
 // WorkshopC on
 

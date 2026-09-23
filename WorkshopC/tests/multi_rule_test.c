@@ -40,8 +40,7 @@ static int make_fruit_sallad(mutable core__kitchen_accessor* kitchen, mutable ap
 
     if (!app__fruitbowl__valid(fruitbowl))
     {
-        // Causes error, cannot access e.g. for print
-        int number_of_fruits = fruitbowl->_private.count;
+        int number_of_fruits = fruitbowl->_private.count; // bad: cannot access private field directly
         return 6;
     }
 

@@ -1,9 +1,7 @@
 #include <stddef.h>
 
-// Forbidden
-static int global_unassigned_int;
-// Allowed
-static int global_assigned_int = 5;
+static int global_unassigned_int; // bad
+static int global_assigned_int = 5; // good
 
 struct Data {
     int value;
@@ -38,92 +36,52 @@ void test(
     struct Data *dataPtrArg
 )
 {
-    // Forbidden
-    int unassigned;
-    // Forbidden
-    int* unassigned_ptr;
+    int unassigned; // bad
+    int* unassigned_ptr; // bad
 
-    // Allowed
-    int x = 1;
-    // Allowed
-    int y = 2;
-    // Allowed
-    int *ptr = &x;
-    // Allowed
-    struct Data data;
+    int x = 1; // good
+    int y = 2; // good
+    int *ptr = &x; // good
+    struct Data data; // good
 
-    // Forbidden
-    ptr = 0;
-    // Forbidden
-    ptr = NULL;
-    // Forbidden
-    ptr = (void*)0;
-    // Forbidden
-    ptr = (int*)0;
-    // Allowed
-    int ptr_is_null = ptr == NULL;
+    ptr = 0; // bad
+    ptr = NULL; // bad
+    ptr = (void*)0; // bad
+    ptr = (int*)0; // bad
+    int ptr_is_null = ptr == NULL; // good
 
-    // Forbidden
-    data.ptr = 0;
-    // Forbidden
-    data.ptr = NULL;
-    // Forbidden
-    data.ptr = (void*)0;
-    // Forbidden
-    data.ptr = (int*)0;
-    // Allowed
-    int data_ptr_is_null = data.ptr == NULL;
+    data.ptr = 0; // bad
+    data.ptr = NULL; // bad
+    data.ptr = (void*)0; // bad
+    data.ptr = (int*)0; // bad
+    int data_ptr_is_null = data.ptr == NULL; // good
 
-    // Forbidden
-    takes_mut_int(0);
-    // Forbidden
-    takes_mut_int(NULL);
-    // Forbidden
-    takes_mut_int((void*)0);
-    // Forbidden
-    takes_mut_int((int*)0);
+    takes_mut_int(0); // bad
+    takes_mut_int(NULL); // bad
+    takes_mut_int((void*)0); // bad
+    takes_mut_int((int*)0); // bad
 
-    // Forbidden
-    arg = 10;
-    // Forbidden
-    ptrArg = &x;
-    // Forbidden
-    dataArg.value = 123;
-    // Forbidden
-    int* ptr_to_arg = &arg;
-    // Forbidden
-    const int* const_ptr_to_arg = (const int*)&arg;
-    
-    // Allowed
-    x = 100;
-    // Allowed
-    ptr = &y;
-    // Allowed
-    *ptrArg = 77;
-    // Allowed
-    dataPtrArg->value = 999;
-    // Allowed
-    data.ptr = &x;
-    // Allowed
-    const int ci = 42;
-    // Allowed
-    takes_const_int(&ci);
-    // Allowed
-    takes_const_int((const int*)&x);
-    // Allowed
-    data.value = 55;
-    // Allowed
-    takes_mut_int(ptr);
-    // Allowed
-    takes_struct(data);
+    arg = 10; // bad
+    ptrArg = &x; // bad
+    dataArg.value = 123; // bad
+    int* ptr_to_arg = &arg; // bad
+    const int* const_ptr_to_arg = (const int*)&arg; // bad
 
-    // Forbidden
-    float* zero_init_ptr = {0};
-    // Forbidden
-    struct Data struct_with_ptr = {0};
-    // Allowed
-    struct DataNoPtrs simple_data_obj = {0};
+    x = 100; // good
+    ptr = &y; // good
+    *ptrArg = 77; // good
+    dataPtrArg->value = 999; // good
+    data.ptr = &x; // good
+    const int ci = 42; // good
+    takes_const_int(&ci); // good
+    takes_const_int((const int*)&x); // good
+    data.value = 55; // good
+    takes_mut_int(ptr); // good
+    takes_struct(data); // good
 
-    // Forbidden
-    struct Data init_data_with_null = { .ptr = NULL, .value = 5};
+    float* zero_init_ptr = {0}; // bad
+    struct Data struct_with_ptr = {0}; // bad
+    struct DataNoPtrs simple_data_obj = {0}; // good
+
+    struct Data init_data_with_null = { .ptr = NULL, .value = 5}; // bad
 }

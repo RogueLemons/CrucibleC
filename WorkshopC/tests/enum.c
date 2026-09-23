@@ -5,16 +5,16 @@
 #include "headers/has_enum.h"
 #include "external/has_enum.h"
 
-// This should trigger a warning
+// bad
 enum Color {
     RED,
     GREEN,
     BLUE
 };
 
-DEFINE_SOME_UNDETECTED_ENUM_VALUE
+DEFINE_SOME_UNDETECTED_ENUM_VALUE // good
 
-// This should trigger a warning
+// bad
 DEFINE_SOME_DETECTED_ENUM_VALUE
 
 int main() {

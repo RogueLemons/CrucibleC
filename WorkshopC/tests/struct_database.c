@@ -17,6 +17,8 @@ static inline IgnoredPodStruct IgnoredPodStruct_pod(int x, int y)
 }
 // WorkshopC on
 
+// Good code below
+
 struct PodStruct
 {
     int x;

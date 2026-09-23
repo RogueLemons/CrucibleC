@@ -346,7 +346,7 @@ void cleanup_before_return(int_vector_t vec)
 {
     int_vector_destroy(&vec);
 
-    if (vec.size > 5)
+    if (vec.size > 5) // bad: vec was already destroyed
     {
         return;
     }
@@ -374,7 +374,7 @@ void missing_cleanup_on_one_branch(int_vector_t vec, int value)
 void duplicate_cleanup(int_vector_t double_destroyed_vec)
 {
     int_vector_destroy(&double_destroyed_vec);
-    int_vector_destroy(&double_destroyed_vec);
+    int_vector_destroy(&double_destroyed_vec); // bad: already destroyed
 }
 
 void cleanup_on_nested_scope()
@@ -466,11 +466,11 @@ int_vector_t using_return_function_in_wrong_place(int i)
 
     if (i == 0)
     {
-        return res_vec;                                             // bad
+        return res_vec; // bad: returns a plain variable, not a function call
     }
     if (i == 1)
     {
-        return some_int_vector_func(int_vector_return(&res_vec));   // bad
+        return some_int_vector_func(int_vector_return(&res_vec)); // bad: return function used outside a direct return statement
     }
     
     return int_vector_return(&res_vec);
@@ -479,9 +479,9 @@ int_vector_t using_return_function_in_wrong_place(int i)
 void wrongful_creation_with_return_function()
 {
     int_vector_t some_vec = int_vector_make(3);
-    int_vector_t illegal_vec_creation = int_vector_return(&some_vec);
+    int_vector_t illegal_vec_creation = int_vector_return(&some_vec); // bad: return function used outside a direct return statement
 
-    int_vector_destroy(&some_vec);
+    int_vector_destroy(&some_vec); // bad: some_vec was already returned
     int_vector_destroy(&illegal_vec_creation);
 }
 
@@ -540,7 +540,7 @@ void destroy_in_one_branch_use_in_other(int_vector_t vec, int cond)
         int_vector_destroy(&vec);
     }
     else {
-        int_vector_foo(&vec); // fine: this branch never destroyed vec
+        int_vector_foo(&vec); // good: this branch never destroyed vec
         int_vector_destroy(&vec);
     }
 }

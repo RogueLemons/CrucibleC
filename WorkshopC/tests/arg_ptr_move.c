@@ -52,20 +52,14 @@ int multiple_bad_arguments(float* out_float_ptr, char* mutable_char_ptr, const d
 void foo(void)
 {
     char c = 'c';
-    // Good
-    declared_function_3(&c);
-    // Bad
-    declared_function_3(mod_cast(&c));
+    declared_function_3(&c); // good
+    declared_function_3(mod_cast(&c)); // bad
 
     int* i_ptr = NULL;
-    // Good
-    declared_function_1(i_ptr);
-    // Bad
-    declared_function_1(move_cast(i_ptr));
+    declared_function_1(i_ptr); // good
+    declared_function_1(move_cast(i_ptr)); // bad
 
     float f;
-    // Good
-    declared_function_2(&f);
-    // Bad
-    declared_function_2(out_cast(&f));
+    declared_function_2(&f); // good
+    declared_function_2(out_cast(&f)); // bad
 }
