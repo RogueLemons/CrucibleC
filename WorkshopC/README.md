@@ -145,7 +145,9 @@ This example uses the macro `PRIVATE` for the privacy tag.
 struct Color
 {
   int weight;
-  PRIVATE int r, g, b;
+  PRIVATE int r;
+  PRIVATE int g;
+  PRIVATE int b;
 };
 typedef struct Color Color_t;
 
@@ -463,7 +465,7 @@ void print_big_greeting()
 }
 ```
 
-This rule works better when combined with the [private members rule](#private-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled. It is of course possible to also e.g. make all private fields in the struct just have their names start with the prefix `p_`, or use a tag system similar to the [argument pointer movement rule](#argument-pointer-movement-rule) where the end user can just write `PRIVATE int i;` inside the struct — this is exactly what the [private alternative rule](#private-alternative-rule) provides.
+This rule works better when combined with the [private members rule](#private-rule) or the [private alternative rule](#private-alternative-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled.
 
 #### Free struct
 Finally, there is also a free struct supported where no rules apply to how the struct is used. The pod struct and raii struct work on a safety-first rule and the assumption that the compilers can handle copy elision and `static inline` functions effectively. The free struct is instead about complete freedom for the programmer with no restrictions, other than needing a function called `<void or any> <struct name>_init(<struct name>* self, ...);`. This allows users to optimize without restriction when needed. Here is an example:
