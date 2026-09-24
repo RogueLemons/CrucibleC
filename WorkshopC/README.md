@@ -824,3 +824,4 @@ For V1.2 it shall
 - Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
 - Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 - Add rule to forbid malloc, calloc, realloc, and free, unless in a function with a name from config list (list can be empty)
+- Add rule that all arrays of pointers must end with NULL pointer
