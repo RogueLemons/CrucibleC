@@ -799,6 +799,7 @@ For V0.9 it shall
 For V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
+- Improve null check rule to not just check first use on line axis but also if it has been check for the scope it is in
 
 For V1.1 it shall
 - Add rules for vtables and interfaces
@@ -818,4 +819,8 @@ For V1.2 it shall
 - Provide output to txt or json file if provided as argument
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
 - Add new rule, or refine enum rule, to require enums to have typedef and then enforce that a typedef enum must ALWAYS be initialized from the available enum options
+- Add rule to enforce all switch cases to have a break for each case and always a default case
+- Add rule to enforce only allowing a single return statement per function
+- Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
+- Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 
