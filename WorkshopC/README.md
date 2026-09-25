@@ -40,6 +40,23 @@ Example:
 workshopc workshopc.config.yaml tests/enum.c build/
 ```
 
+**Exit codes:**
+
+The exit code reports the result of the analysis. Codes 0-3 form a bitmask (`1` = errors found, `2` = warnings found), so the tool can be used directly in scripts and CI:
+
+| Code | Meaning |
+|------|---------|
+| `0` | Clean, no warnings or errors |
+| `1` | Errors found |
+| `2` | Warnings found, no errors |
+| `3` | Both errors and warnings found |
+| `64` | Bad usage (missing arguments) |
+| `65` | The config file could not be loaded |
+| `66` | The compilation database could not be loaded |
+| `67` | Clang failed to process the source file (e.g. it does not compile), so the analysis result is not reliable |
+
+Codes of `64` and above always mean the tool itself could not complete the analysis, so they can never be confused with rule results. Note that most build systems treat any non-zero exit code as a failure, so a run with warnings only (`2`) will fail a script using `set -e` unless the caller handles it.
+
 [Here is a premade config.yaml file ready for use as is and provide a base to easily edit](./default/workshopc.config.yaml).
 
 ## Config behavior
@@ -794,7 +811,6 @@ This ensures:
 
 For V0.9 it shall
 - give correct compile_commands.json for running tests
-- return 0 on success, 1 for errors, 2 for warnings, or 3 for errors plus warnings
 
 For V1 it shall
 - Verify build for Linux

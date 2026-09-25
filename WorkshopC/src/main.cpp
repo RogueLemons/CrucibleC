@@ -266,12 +266,30 @@ public:
 };
 
 // -------------------------
+// Exit codes
+//
+// 0-3 report analysis results as a bitmask (1 = errors found,
+// 2 = warnings found). 64 and above mean the tool itself could
+// not run the analysis, so they never collide with rule results.
+// -------------------------
+enum ExitCode {
+    ExitClean = 0,
+    ExitErrors = 1,
+    ExitWarnings = 2,
+    ExitErrorsAndWarnings = 3,
+    ExitBadUsage = 64,
+    ExitConfigFailed = 65,
+    ExitCompilationDatabaseFailed = 66,
+    ExitAnalysisFailed = 67
+};
+
+// -------------------------
 // MAIN
 // -------------------------
 int main(int argc, const char **argv) {
     if (argc < 4) {
         std::cerr << "Usage: workshopc <config.yaml> <source-file> <compdb-dir>\n";
-        return 1;
+        return ExitBadUsage;
     }
 
     // -------------------------
@@ -280,7 +298,7 @@ int main(int argc, const char **argv) {
     Config config;
     if (!ConfigParser::loadFromFile(argv[1], config)) {
         std::cerr << "Failed to load config\n";
-        return 1;
+        return ExitConfigFailed;
     }
 
     std::string file = argv[2];
@@ -296,7 +314,7 @@ int main(int argc, const char **argv) {
     if (!compilationDB) {
         std::cerr << "Failed to load compilation database: "
                   << errorMsg << "\n";
-        return 1;
+        return ExitCompilationDatabaseFailed;
     }
 
     // -------------------------
@@ -332,8 +350,16 @@ int main(int argc, const char **argv) {
     std::cout << "\nWarnings: " << factory.getWarnings() << "\n";
     std::cout << "Errors: " << factory.getErrors() << "\n";
 
-    if (factory.getErrors() > 0)
-        return 1;
+    if (result != 0)
+        return ExitAnalysisFailed;
 
-    return result;
+    int exitCode = ExitClean;
+
+    if (factory.getErrors() > 0)
+        exitCode |= ExitErrors;
+
+    if (factory.getWarnings() > 0)
+        exitCode |= ExitWarnings;
+
+    return exitCode;
 }
