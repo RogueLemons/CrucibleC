@@ -6,8 +6,36 @@ from collections import Counter
 ROOT = Path(__file__).resolve().parent
 
 RELEASE = ROOT / "release"
-BUILD = ROOT / "build"
 TESTS = ROOT / "tests"
+
+# Compilation database for the test files, generated from
+# tests/CMakeLists.txt. The test files are never built.
+TESTS_COMPDB = ROOT / "build-tests"
+
+
+def generate_tests_compdb():
+    """
+    Configure (but never build) the tests project so that CMake writes
+    compile_commands.json for the test files.
+    """
+    result = subprocess.run(
+        [
+            "cmake",
+            "-S", str(TESTS),
+            "-B", str(TESTS_COMPDB),
+            "-G", "Ninja",
+            "-DCMAKE_C_COMPILER=clang",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        ],
+        text=True,
+        capture_output=True
+    )
+
+    if result.returncode != 0 or not (TESTS_COMPDB / "compile_commands.json").exists():
+        print("Failed to generate compile_commands.json for the tests")
+        print(result.stdout)
+        print(result.stderr)
+        sys.exit(1)
 
 
 def get_exe():
@@ -83,6 +111,8 @@ def main():
         print("Missing release executable")
         sys.exit(1)
 
+    generate_tests_compdb()
+
     test_files = list(TESTS.rglob("*.c"))
 
     if not test_files:
@@ -110,7 +140,7 @@ def main():
                 str(exe),
                 str(config_file),
                 str(test),
-                str(BUILD)
+                str(TESTS_COMPDB)
             ],
             text=True,
             capture_output=True

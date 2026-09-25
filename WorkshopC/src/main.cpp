@@ -24,9 +24,13 @@
 #include <clang/Tooling/CompilationDatabase.h>
 #include <clang/Frontend/FrontendActions.h>
 #include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/Options/OptionUtils.h>
+
+#include <llvm/Support/FileSystem.h>
 
 #include <iostream>
 #include <memory>
+#include <string>
 
 using namespace clang;
 using namespace clang::tooling;
@@ -312,6 +316,33 @@ enum ExitCode {
 };
 
 // -------------------------
+// Clang resource directory
+// -------------------------
+static int mainExecutableAnchor;
+
+// Clang's builtin headers (stddef.h, mm_malloc.h, ...) are looked up in
+// its resource directory, which by default is expected next to this
+// executable. When it is not there, fall back to the resource directory
+// of the clang the tool was built against. Returns the argument to add,
+// or an empty string if the default location works or nothing is found.
+static std::string findResourceDirArgument(const char *argv0) {
+    const std::string defaultDir =
+        clang::GetResourcesPath(argv0, &mainExecutableAnchor);
+
+    if (llvm::sys::fs::is_directory(defaultDir + "/include"))
+        return "";
+
+#ifdef WORKSHOPC_CLANG_RESOURCE_DIR
+    const std::string fallbackDir = WORKSHOPC_CLANG_RESOURCE_DIR;
+
+    if (llvm::sys::fs::is_directory(fallbackDir + "/include"))
+        return "-resource-dir=" + fallbackDir;
+#endif
+
+    return "";
+}
+
+// -------------------------
 // MAIN
 // -------------------------
 int main(int argc, const char **argv) {
@@ -367,6 +398,18 @@ int main(int argc, const char **argv) {
             ArgumentInsertPosition::BEGIN
         )
     );
+
+    // Make clang's builtin headers findable
+    const std::string resourceDirArgument = findResourceDirArgument(argv[0]);
+
+    if (!resourceDirArgument.empty()) {
+        tool.appendArgumentsAdjuster(
+            getInsertArgumentAdjuster(
+                resourceDirArgument.c_str(),
+                ArgumentInsertPosition::END
+            )
+        );
+    }
 
     // Only WorkshopC's own rules should report warnings. Clang's warnings
     // are dropped (they belong to the project's normal build) but real

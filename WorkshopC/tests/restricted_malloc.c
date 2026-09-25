@@ -1,24 +1,16 @@
-// #include <stddef.h>
-// #include <stdio.h>
-// #include <string.h>
-// #include <sys/types.h>
+#define _GNU_SOURCE // Makes glibc declare asprintf
 
-// Declared here instead of including <stdlib.h>, and some of them are not
-// declared by every C library (e.g. MinGW)
-typedef unsigned long size_t;
-typedef long ssize_t;
-typedef int FILE;
-#define stdin ((FILE *)0)
-#define NULL ((void *)0)
-void *malloc(size_t size);
-void *calloc(size_t count, size_t size);
-void *realloc(void *memory, size_t size);
-void free(void *memory);
-char *strdup(const char *s);
-char *strndup(const char *s, size_t n);
-int asprintf(char **strp, const char *fmt, ...);
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+
+#ifdef _WIN32
+// POSIX only functions that the Windows C library does not provide
 ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 char *realpath(const char *path, char *resolved_path);
+#endif
 
 void register_deleter(void (*deleter)(void *));
 

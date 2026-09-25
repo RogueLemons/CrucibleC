@@ -841,10 +841,20 @@ After building, use the tool with the compilation database from the build direct
 
 ```bash
 ### Example: analyze a test file
-./build/workshopc workshopc.config.yaml tests/enum.c build/
+./build/workshopc tests/enum.config.yaml tests/enum.c build-tests/
 ```
 
-The tool requires access to the compilation database to understand compiler flags and include paths.
+The tool requires access to the compilation database to understand compiler flags and include paths. The database must describe the code being analyzed, not the tool itself, so the test files have their own (see below).
+
+Clang's builtin headers (`stddef.h`, `mm_malloc.h`, ...) are looked up next to the executable first. If they are not there, the tool falls back to the resource directory of the clang it was built against (`<LLVM lib dir>/clang/<version>`, recorded at build time and printed as `Clang resource dir` when configuring). Without this, including a header such as `<stdlib.h>` fails with `'mm_malloc.h' file not found` on MSYS2.
+
+#### Running the tests
+
+```bash
+python run_tests.py
+```
+
+The files in `tests/` are a standalone project described by `tests/CMakeLists.txt`. They are never built: `run_tests.py` only **configures** that project into `build-tests/` (with clang and Ninja), which writes a `compile_commands.json` for the test files, and then passes that directory to the tool for every test. New test files are picked up automatically, since the project is configured again on every run.
 
 #### What makes this CMake portable
 
@@ -935,9 +945,6 @@ This ensures:
 
 ## TODO
 
-For V0.9 it shall
-- give correct compile_commands.json for running tests (very important to adjust top of tests/restricted_malloc.c after fixing this)
-
 For V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
@@ -964,3 +971,4 @@ For V1.2 it shall
 - Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
 - Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 - Add rule that all arrays of pointers must end with NULL pointer
+- Add a python script for installing dependencies, that shall work on windows/linux/iOS

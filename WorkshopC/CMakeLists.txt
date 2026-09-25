@@ -74,6 +74,17 @@ set(SOURCES
 
 add_executable(workshopc ${SOURCES})
 
+# Clang's own builtin headers (stddef.h, mm_malloc.h, ...) live in its
+# resource directory. The parser looks for it next to its executable by
+# default, which fails when it is not installed next to clang, so the
+# location of the clang it was built against is passed in as a fallback.
+set(WORKSHOPC_CLANG_RESOURCE_DIR "${LLVM_LIBRARY_DIR}/clang/${LLVM_VERSION_MAJOR}")
+message(STATUS "Clang resource dir: ${WORKSHOPC_CLANG_RESOURCE_DIR}")
+
+target_compile_definitions(workshopc PRIVATE
+    "WORKSHOPC_CLANG_RESOURCE_DIR=\"${WORKSHOPC_CLANG_RESOURCE_DIR}\""
+)
+
 # =====================================================
 # LLVM / Clang linking
 # =====================================================

@@ -1,7 +1,7 @@
 #include "headers/managed_structs.h"
 #include "external/some_struct.h"
-// #include <stdlib.h>
-// #include <string.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct ForwardDeclaredStructShallNotTriggerError;
 
@@ -57,11 +57,11 @@ int_vector_t int_vector_make(int capacity)
     int_vector_t self = {0};
     self.size = 0;
     self.capacity = capacity;
-    // self.data = (int*)malloc(capacity * sizeof(int));
-    // if (self.data == NULL) {
-    //     self.capacity = -1;
-    //     return self;
-    // }
+    self.data = (int*)malloc(capacity * sizeof(int));
+    if (self.data == NULL) {
+        self.capacity = -1;
+        return self;
+    }
     return self;
 }
 int_vector_t int_vector_copy(const int_vector_t* const self)
@@ -77,12 +77,12 @@ int_vector_t int_vector_copy(const int_vector_t* const self)
     copy.size = self->size;
     copy.capacity = self->capacity;
     if (self->capacity > 0) {
-        // copy.data = (int*)malloc(self->capacity * sizeof(int));
-        // if (copy.data == NULL) {
-        //     copy.capacity = -1;
-        //     return copy;
-        // }
-        // memcpy(copy.data, self->data, self->size * sizeof(int));
+        copy.data = (int*)malloc(self->capacity * sizeof(int));
+        if (copy.data == NULL) {
+            copy.capacity = -1;
+            return copy;
+        }
+        memcpy(copy.data, self->data, self->size * sizeof(int));
     }
     return copy;
 }
@@ -102,7 +102,7 @@ int_vector_t int_vector_move(int_vector_t* const self)
 
     self->size = 0;
     self->capacity = 0;
-    // self->data = NULL;
+    self->data = NULL;
 
     return moved;
 }
@@ -126,8 +126,8 @@ void int_vector_destroy(int_vector_t* const self)
         return;
 
     if (self->data) {
-        // free(self->data);
-        // self->data = NULL;
+        free(self->data);
+        self->data = NULL;
     }
     self->size = 0;
     self->capacity = 0;
@@ -439,7 +439,7 @@ color_list_t color_list_make(int heap_count)
     color_list_t self = {0};
     
     self.heap_count = heap_count;
-    // self.heap = (color_element_t*)malloc(heap_count * sizeof(color_element_t));
+    self.heap = (color_element_t*)malloc(heap_count * sizeof(color_element_t));
     if (!self.heap) {
         self.heap_count = -1;
         return self;
@@ -472,7 +472,7 @@ void color_list_destroy(color_list_t* const self)
             color_destroy(&self->heap[i].color);
         }
 
-        // free(self->heap);
+        free(self->heap);
         self->heap = (void*)0;
         self->heap_count = 0;
     }

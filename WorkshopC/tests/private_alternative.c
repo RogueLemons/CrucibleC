@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "headers/private_tag.h"
 
 struct Container
@@ -70,7 +72,7 @@ void PointerWrapper_destroy(PointerWrapper_t* self)
     if (!self || !self->container)
         return;
 
-    // free(self->container);
+    free(self->container);
     self->container = (void*)0;
 }
 
