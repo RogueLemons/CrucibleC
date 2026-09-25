@@ -21,3 +21,12 @@ warning: taking address of non-const argument 'arg' is forbidden
 warning: object 'zero_init_ptr' containing pointers may not be initialized with {0}
 warning: object 'struct_with_ptr' containing pointers may not be initialized with {0}
 warning: NULL used in pointer field initializer for 'init_data_with_null.ptr'
+warning: array 'global_unassigned_array' must be initialized at declaration
+warning: array 'unassigned_int_array' must be initialized at declaration
+warning: array 'unassigned_char_array' must be initialized at declaration
+warning: array 'unassigned_float_array' must be initialized at declaration
+warning: array 'unassigned_ptr_array' must be initialized at declaration
+warning: array 'unassigned_void_ptr_array' must be initialized at declaration
+warning: array 'unassigned_matrix' must be initialized at declaration
+warning: array 'unassigned_3d_array' must be initialized at declaration
+warning: array 'unassigned_struct_ptr_array' must be initialized at declaration

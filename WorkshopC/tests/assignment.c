@@ -85,3 +85,35 @@ void test(
 
     struct Data init_data_with_null = { .ptr = NULL, .value = 5}; // bad
 }
+
+static int global_unassigned_array[4]; // bad
+static int global_assigned_array[4] = {1, 2, 3, 4}; // good
+
+void array_test(void)
+{
+    int a = 1; // good
+    int b = 2; // good
+
+    int unassigned_int_array[3]; // bad
+    char unassigned_char_array[16]; // bad
+    float unassigned_float_array[8]; // bad
+    int* unassigned_ptr_array[4]; // bad
+    void* unassigned_void_ptr_array[2]; // bad
+    float unassigned_matrix[2][2]; // bad
+    int unassigned_3d_array[2][3][4]; // bad
+
+    int assigned_int_array[3] = {1, 2, 3}; // good
+    int zero_int_array[3] = {0}; // good
+    char assigned_char_array[16] = "hello"; // good
+    float assigned_float_array[2] = {1.0f, 2.0f}; // good
+    int* assigned_ptr_array[2] = {&a, &b}; // good
+    float assigned_matrix[2][2] = {{1.0f, 2.0f}, {3.0f, 4.0f}}; // good
+    int inferred_size_array[] = {1, 2, 3, 4}; // good
+
+    struct Data struct_array[2]; // good
+    struct DataNoPtrs simple_struct_array[2]; // good
+
+    struct Data* unassigned_struct_ptr_array[2]; // bad
+    struct Data* assigned_struct_ptr_array[2] = {&struct_array[0], &struct_array[1]}; // good
+    struct Data* assigned_struct_ptr_array_with_null[11] = { 0 }; // good
+}

@@ -181,6 +181,24 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
                 "' must be initialized at declaration"
             );
         }
+        else if (qt->isArrayType() && !vd->hasInit()) {
+
+            QualType elementType =
+                result.Context->getBaseElementType(qt)
+                    .getCanonicalType();
+
+            if (elementType->isBuiltinType() ||
+                elementType->isPointerType())
+            {
+                diagnostics.report(
+                    config.assignmentRule.level,
+                    sm,
+                    loc,
+                    "array '" + nameOf(vd) +
+                    "' must be initialized at declaration"
+                );
+            }
+        }
 
         if (config.assignmentRule.forbidZeroInitForObjectsWithPointers) {
 
