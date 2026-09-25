@@ -31,3 +31,8 @@ error: struct field 'self->color' of type 'color' cannot be reassigned with anot
 error: struct field 'temp.color' of type 'color' cannot be reassigned with another struct value (raii)
 error: struct field 'self->wrapper_ptr->color' of type 'color' cannot be reassigned with another struct value (raii)
 error: struct field 'temp.wrapper.color' of type 'color' cannot be reassigned with another struct value (raii)
+error: struct field 'other->vec' of type 'int_vector' cannot be reassigned with another struct value (raii)
+error: variable 'local' of type struct 'int_vector' cannot be reassigned with another struct value (raii)
+error: struct variable 'copied' of type 'int_vector' should be initialized from a function return value
+error: struct field 'self->vec' of type 'int_vector' cannot be reassigned with another struct value (raii)
+error: struct field 'self->inner.vec' of type 'int_vector' cannot be reassigned with another struct value (raii)

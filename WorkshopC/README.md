@@ -451,9 +451,11 @@ struct_resource_management:
     raii_struct_move_suffix: _move
     raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
+    raii_use_after_destroy: false
     free_struct_creator_suffix: _init
 ```
 
+- `raii_use_after_destroy` (default `true`): when `false`, a raii struct that has been destroyed with its destroy function may not be referenced again, neither passed to a function nor accessed through a field.
 #### POD structs
 Plain Old Data (POD) structs come with only one rule: they must always be initialized. A pod struct requires a create function of signature `struct <structname> <structname>_pod(...)` and must always be initialized. They are used to avoid uninitialized variables and make sure they are always initialized correctly. The initial assignment must come from this function or another variable. 
 
@@ -556,6 +558,8 @@ int graphics_renderer_init(graphics_renderer* self, int arg1, float arg2, graphi
 ```
 
 It can be given an enforced initializer function name that makes user act more carefully such as `free_struct_creator_suffix: _init_manual_management_struct` by editing the config.
+
+The init function sets up the free struct itself, so it may assign the struct's own members freely, even when a member is a raii struct. Normally reassigning a raii struct is forbidden since the old value would leak, but in the init function there is no old value yet.
 
 #### Standard and 3rd party structs
 Structs from the standard library or 3rd party libraries are unaffected. Therefore, to ensure that these are always properly initialized and their memory and resources are taken care of, they can be wrapped in pod and raii structs. 
@@ -909,7 +913,6 @@ For V1.1 it shall
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
 - Add ref tag system where a function argument that takes a ref pointer must be either given another ref pointer or a direct dereference to a local object (this must be compatible with move/owenrship rule and the nullcheck rule shall then never require a ref pointer to be nullchecked)
-- Optionally allow free struct create/init functions to disregard all raii and pod struct rules
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 
 For V1.2 it shall

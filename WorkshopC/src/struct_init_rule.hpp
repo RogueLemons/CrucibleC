@@ -68,6 +68,17 @@ private:
         const FunctionDecl *function,
         const std::string &structName) const;
 
+    /*
+     * True if 'function' is the free struct creator of a known free
+     * struct (e.g. 'Name_init') and 'target' is a direct member of
+     * that same struct (e.g. 'self->member'). A free creator sets up
+     * its own struct, so it may assign its members freely, even when
+     * a member is a raii struct.
+     */
+    bool isOwnMemberOfFreeCreator(
+        const Expr *target,
+        const FunctionDecl *function) const;
+
     const FunctionDecl *findEnclosingFunction(
         ASTContext &context,
         const DynTypedNode &node) const;

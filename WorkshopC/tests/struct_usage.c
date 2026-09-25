@@ -563,3 +563,56 @@ void legal_edits_of_pod_struct_field(ABC_pod_wrapper_t* const self)
     temp.i = 43; // good
     ABC_pod_wrapper_destroy(&temp);
 }
+
+struct holder
+{
+    int value;
+    int_vector_t vec;
+    pos_t position;
+};
+typedef struct holder holder_t;
+
+// The free creator of 'holder' may assign the members of its own 'self',
+// even the raii one, since there is no previous value to leak yet
+int holder_init(holder_t* self, holder_t* other, int value)
+{
+    if (!self)
+        return -1;
+
+    self->value = value;                                    // good
+    self->position = pos_pod(1, 2);                         // good
+    self->vec = int_vector_make(value);                     // good: raii member of self
+    self->vec = int_vector_make(value * 2);                 // good: raii member of self
+    (*self).vec = int_vector_make(value * 3);               // good: raii member of self
+
+    other->vec = int_vector_make(value);                    // bad: not a member of self
+
+    int_vector_t local = int_vector_make(4);                // good
+    local = int_vector_make(8);                             // bad: a local, not a member of self
+    int_vector_t copied = local;                            // bad: everything else is still checked
+
+    int_vector_destroy(&local);
+    int_vector_destroy(&copied);
+    return 0;
+}
+
+// Not the free creator, so no exemption
+int holder_reset(holder_t* self, int value)
+{
+    self->vec = int_vector_make(value);                     // bad: only the free creator may do this
+    return 0;
+}
+
+struct outer
+{
+    holder_t inner;
+};
+typedef struct outer outer_t;
+
+// Only direct members of the struct are exempt, not members of its members
+int outer_init(outer_t* self, int value)
+{
+    self->inner.value = value;                              // good: plain int
+    self->inner.vec = int_vector_make(value);               // bad: member of a member
+    return 0;
+}

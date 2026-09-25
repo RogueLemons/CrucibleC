@@ -106,6 +106,59 @@ bool StructInitRule::isInsideHelperFunction(
         name == structName + validSuffix;
 }
 
+bool StructInitRule::isOwnMemberOfFreeCreator(
+    const Expr *target,
+    const FunctionDecl *function) const
+{
+    if (!target || !function || freeSuffix.empty())
+        return false;
+
+    const std::string name = function->getNameAsString();
+
+    if (name.size() <= freeSuffix.size() ||
+        name.compare(
+            name.size() - freeSuffix.size(),
+            freeSuffix.size(),
+            freeSuffix) != 0)
+        return false;
+
+    const std::string structName =
+        name.substr(0, name.size() - freeSuffix.size());
+
+    const auto *info = database.find(structName);
+
+    if (!info || !info->hasFreeCreator)
+        return false;
+
+    const auto *member =
+        dyn_cast<MemberExpr>(target->IgnoreParenImpCasts());
+
+    if (!member)
+        return false;
+
+    const auto *field = dyn_cast<FieldDecl>(member->getMemberDecl());
+
+    if (!field || !field->getParent() ||
+        field->getParent()->getNameAsString() != structName)
+        return false;
+
+    // The member must be reached through the creator's own 'self'
+    // parameter, either 'self->member' or '(*self).member'.
+    if (function->getNumParams() == 0)
+        return false;
+
+    const Expr *base = member->getBase()->IgnoreParenImpCasts();
+
+    if (const auto *unary = dyn_cast<UnaryOperator>(base)) {
+        if (unary->getOpcode() == UO_Deref)
+            base = unary->getSubExpr()->IgnoreParenImpCasts();
+    }
+
+    const auto *declRef = dyn_cast<DeclRefExpr>(base);
+
+    return declRef && declRef->getDecl() == function->getParamDecl(0);
+}
+
 const FunctionDecl *StructInitRule::findEnclosingFunction(
     ASTContext &context,
     const DynTypedNode &node) const
@@ -716,6 +769,9 @@ void StructInitRule::checkAssignment(
         return;
 
     if (info->kind != StructDatabase::Kind::Raii)
+        return;
+
+    if (isOwnMemberOfFreeCreator(lhs, enclosingFunction))
         return;
 
     // A plain variable:
