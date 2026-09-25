@@ -266,6 +266,78 @@ void ConfigParser::applySetting(
     }
 }
 
+std::string ConfigParser::unquote(const std::string &value) {
+    if (value.size() >= 2 &&
+        (value.front() == '"' || value.front() == '\'') &&
+        value.back() == value.front())
+    {
+        return value.substr(1, value.size() - 2);
+    }
+
+    return value;
+}
+
+std::vector<std::string> ConfigParser::parseInlineList(const std::string &value) {
+    std::vector<std::string> items;
+
+    if (value.size() < 2 || value.front() != '[' || value.back() != ']')
+        return items;
+
+    std::string item;
+
+    for (char c : value.substr(1, value.size() - 2)) {
+        if (c == ',') {
+            item = unquote(trim(item));
+
+            if (!item.empty())
+                items.push_back(item);
+
+            item.clear();
+        }
+        else {
+            item += c;
+        }
+    }
+
+    item = unquote(trim(item));
+
+    if (!item.empty())
+        items.push_back(item);
+
+    return items;
+}
+
+void ConfigParser::applySetting(
+    RestrictedMallocRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+    else if (key == "list_of_allowed_malloc_functions") {
+        cfg.listOfAllowedMallocFunctions = parseInlineList(value);
+    }
+}
+
+void ConfigParser::applyRuleListItem(
+    Config &config,
+    const std::string &currentRule,
+    const std::string &key,
+    const std::string &value
+) {
+    const std::string item = unquote(value);
+
+    if (item.empty())
+        return;
+
+    if (currentRule == "restricted_malloc" &&
+        key == "list_of_allowed_malloc_functions")
+    {
+        config.restrictedMallocRule.listOfAllowedMallocFunctions.push_back(item);
+    }
+}
+
 void ConfigParser::applyRuleSetting(
     Config &config,
     const std::string &currentRule,
@@ -305,6 +377,9 @@ void ConfigParser::applyRuleSetting(
     else if (currentRule == "struct_resource_management") {
         applySetting(config.structResourceManagementRule, key, value);
     }
+    else if (currentRule == "restricted_malloc") {
+        applySetting(config.restrictedMallocRule, key, value);
+    }
 }
 
 bool ConfigParser::loadFromFile(
@@ -322,10 +397,20 @@ bool ConfigParser::loadFromFile(
     std::string currentSection;
     std::string currentRule;
 
+    // Indentation of the current rule's name, so that a nested
+    // "key:" line (a list valued setting) can be told apart from
+    // the name of the next rule.
+    size_t currentRuleIndent = 0;
+
+    // The list valued rule setting that "- item" lines belong to.
+    std::string currentListKey;
+
     bool inProjectIncludes = false;
     bool inThirdPartyIncludes = false;
 
     while (std::getline(file, line)) {
+        const size_t indent = line.find_first_not_of(" \t");
+
         line = trim(line);
 
         if (line.empty() || line[0] == '#') {
@@ -333,13 +418,12 @@ bool ConfigParser::loadFromFile(
         }
 
         // sections
-        if (line == "paths:") {
-            currentSection = "paths";
-            continue;
-        }
-
-        if (line == "rules:") {
-            currentSection = "rules";
+        if (line == "paths:" || line == "rules:") {
+            currentSection = line.substr(0, line.size() - 1);
+            currentRule.clear();
+            currentListKey.clear();
+            inProjectIncludes = false;
+            inThirdPartyIncludes = false;
             continue;
         }
 
@@ -360,7 +444,10 @@ bool ConfigParser::loadFromFile(
         if (line.starts_with("-")) {
             std::string value = trim(line.substr(1));
 
-            if (inProjectIncludes) {
+            if (!currentListKey.empty()) {
+                applyRuleListItem(config, currentRule, currentListKey, value);
+            }
+            else if (inProjectIncludes) {
                 config.projectIncludes.push_back(value);
             }
             else if (inThirdPartyIncludes) {
@@ -370,12 +457,20 @@ bool ConfigParser::loadFromFile(
             continue;
         }
 
-        // rule
+        // rule, or a list valued setting nested inside the current rule
         if (currentSection == "rules" && line.back() == ':') {
-            currentRule = trim(
+            const std::string key = trim(
                 line.substr(0, line.size() - 1)
             );
 
+            if (!currentRule.empty() && indent > currentRuleIndent) {
+                currentListKey = key;
+                continue;
+            }
+
+            currentRule = key;
+            currentRuleIndent = indent;
+            currentListKey.clear();
             continue;
         }
 
@@ -383,6 +478,8 @@ bool ConfigParser::loadFromFile(
         size_t colon = line.find(':');
 
         if (colon != std::string::npos && !currentRule.empty()) {
+            currentListKey.clear();
+
             std::string key =
                 trim(line.substr(0, colon));
 

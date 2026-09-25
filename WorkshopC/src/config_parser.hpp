@@ -80,6 +80,33 @@ private:
         const std::string &value
     );
 
+    static void applySetting(
+        RestrictedMallocRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    /*
+     * Parses an inline list value such as "[a, b]" or "[]".
+     */
+    static std::vector<std::string> parseInlineList(const std::string &value);
+
+    static std::string unquote(const std::string &value);
+
+    /*
+     * Applies one "- item" line of a list valued rule setting, e.g.
+     *
+     *   restricted_malloc:
+     *     list_of_allowed_malloc_functions:
+     *       - memory_alloc
+     */
+    static void applyRuleListItem(
+        Config &config,
+        const std::string &currentRule,
+        const std::string &key,
+        const std::string &value
+    );
+
     static void applyRuleSetting(
         Config &config,
         const std::string &currentRule,

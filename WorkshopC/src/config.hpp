@@ -92,6 +92,12 @@ struct StructResourceManagementRuleConfig {
     bool raiiUseAfterDestroy = true;
 };
 
+struct RestrictedMallocRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    std::vector<std::string> listOfAllowedMallocFunctions;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -104,6 +110,7 @@ struct Config {
     NullCheckRuleConfig nullCheckRule;
     ArgumentPointerMovementRuleConfig argumentPointerMovementRule;
     StructResourceManagementRuleConfig structResourceManagementRule;
+    RestrictedMallocRuleConfig restrictedMallocRule;
 
     std::vector<std::string> projectIncludes;
     std::vector<std::string> thirdPartyIncludes;

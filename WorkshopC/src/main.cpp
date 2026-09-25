@@ -12,6 +12,7 @@
 #include "rule_null_check.hpp"
 #include "rule_arg_ptr_move.hpp"
 #include "rule_arg_ptr_move_callsite.hpp"
+#include "rule_restricted_malloc.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -56,6 +57,7 @@ private:
     std::unique_ptr<TypedefStructRule> typedefStructRule{};
     std::unique_ptr<ArgumentPointerMovementRule> argumentPointerMovementRule{};
     std::unique_ptr<ArgumentPointerCallsiteRule> argumentPointerCallsiteRule{};
+    std::unique_ptr<RestrictedMallocRule> restrictedMallocRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -206,6 +208,19 @@ public:
                 );
 
             argumentPointerCallsiteRule->bindFinder(finder);
+        }
+
+        // Restricted malloc rule
+        if (config.restrictedMallocRule.level != RuleLevel::Off) {
+
+            restrictedMallocRule =
+                std::make_unique<RestrictedMallocRule>(
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+
+            restrictedMallocRule->bindFinder(finder);
         }
 
         // struct resource management rule

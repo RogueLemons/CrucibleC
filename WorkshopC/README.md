@@ -14,6 +14,7 @@ A project for parsing C code and generating tips for writing safer code or adher
   - [Null check rule](#null-check-rule)
   - [Argument pointer movement rule](#argument-pointer-movement-rule)
   - [RAII and struct resource management](#raii-and-struct-resource-management)
+  - [Restricted malloc rule](#restricted-malloc-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -564,6 +565,42 @@ The init function sets up the free struct itself, so it may assign the struct's 
 #### Standard and 3rd party structs
 Structs from the standard library or 3rd party libraries are unaffected. Therefore, to ensure that these are always properly initialized and their memory and resources are taken care of, they can be wrapped in pod and raii structs. 
 
+### Restricted malloc rule
+This rule keeps all dynamic memory handling in one place. The memory functions `malloc`, `calloc`, `realloc`, `free`, `strdup`, `strndup`, `asprintf`, `getline` and `realpath` may only be used inside the functions listed in the config. All of them either allocate or free memory, some of them without it being obvious (`getline` grows the buffer it is given and `realpath` allocates when given `NULL`).
+
+```yaml
+restricted_malloc:
+    level: Error
+    list_of_allowed_malloc_functions:
+      - memory_alloc
+      - memory_alloc_array
+      - memory_free
+```
+
+Only the name of the enclosing function is checked, it must match a list entry exactly (case sensitive), and there are no requirements on its return type or arguments. The list can be empty (`list_of_allowed_malloc_functions: []`), in which case the memory functions may not be used anywhere.
+
+```c
+void* memory_alloc(size_t size)
+{
+    return malloc(size);                        // OK, inside an allowed function
+}
+
+void memory_free(void* memory)
+{
+    free(memory);                               // OK
+}
+
+void foo(void)
+{
+    char* name = strdup("name");                // Not OK
+    void* (*allocator)(size_t) = malloc;        // Not OK, taking the function as a pointer is a use too
+    void* memory = memory_alloc(16);            // OK, calls the wrapper
+    memory_free(memory);                        // OK
+}
+```
+
+A macro that expands to one of the functions counts as using it where the macro is used. Uses inside system headers and `third_party_includes` folders are not checked.
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -899,7 +936,7 @@ This ensures:
 ## TODO
 
 For V0.9 it shall
-- give correct compile_commands.json for running tests
+- give correct compile_commands.json for running tests (very important to adjust top of tests/restricted_malloc.c after fixing this)
 
 For V1 it shall
 - Verify build for Linux
@@ -926,5 +963,4 @@ For V1.2 it shall
 - Add rule to enforce only allowing a single return statement per function
 - Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
 - Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
-- Add rule to forbid malloc, calloc, realloc, and free, unless in a function with a name from config list (list can be empty)
 - Add rule that all arrays of pointers must end with NULL pointer

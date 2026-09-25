@@ -86,3 +86,11 @@ rules:
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false
     free_struct_creator_suffix: _init
+
+  # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
+  restricted_malloc:
+    level: Error
+    list_of_allowed_malloc_functions:
+      - memory_alloc
+      - memory_alloc_array
+      - memory_free

@@ -1,0 +1,12 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  restricted_malloc:
+    level: Error
+    list_of_allowed_malloc_functions:
+      - memory_alloc
+      - memory_alloc_array
+      - memory_free
