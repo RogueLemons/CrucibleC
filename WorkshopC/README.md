@@ -905,6 +905,7 @@ For V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
 - Improve null check rule to not just check first use on line axis but also if it has been check for the scope it is in
+- Reorganize README and documentation
 
 For V1.1 it shall
 - Add rules for vtables and interfaces
