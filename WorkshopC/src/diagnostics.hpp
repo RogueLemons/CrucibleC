@@ -21,4 +21,12 @@ public:
         clang::SourceLocation loc,
         const std::string &message
     );
+
+    void report(
+        RuleLevel level,
+        const std::string &file,
+        unsigned line,
+        unsigned column,
+        const std::string &message
+    );
 };

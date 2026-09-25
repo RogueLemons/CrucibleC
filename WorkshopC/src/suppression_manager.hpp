@@ -11,6 +11,11 @@ struct SuppressedRange {
     unsigned endLine;
 };
 
+struct MissingSuppressionReason {
+    unsigned line;
+    unsigned column;
+};
+
 class SuppressionManager {
 private:
     std::unordered_map<
@@ -24,8 +29,23 @@ private:
         const std::string &text
     );
 
+    /*
+     * True if 'line' is a comment of the form "// Reason: <text>"
+     * (or the block comment equivalent) with a non-empty reason.
+     */
+    static bool isReasonComment(const std::string &line);
+
 public:
     void parseFile(const std::string &path);
+
+    /*
+     * Finds every "WorkshopC off" comment in the file that is not
+     * immediately followed, on the next line, by a comment starting
+     * with "Reason: ".
+     */
+    std::vector<MissingSuppressionReason> findMissingReasons(
+        const std::string &path
+    );
 
     bool isSuppressed(
         const clang::SourceManager &sm,

@@ -64,6 +64,16 @@ int ConfigParser::parseInt(const std::string &str, int fallback) {
 }
 
 void ConfigParser::applySetting(
+    SuppressionReasonRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+}
+
+void ConfigParser::applySetting(
     EnumRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -259,7 +269,10 @@ void ConfigParser::applyRuleSetting(
     const std::string &key,
     const std::string &value
 ) {
-    if (currentRule == "enum") {
+    if (currentRule == "suppression_reason_rule") {
+        applySetting(config.suppressionReasonRule, key, value);
+    }
+    else if (currentRule == "enum") {
         applySetting(config.enumRule, key, value);
     }
     else if (currentRule == "private") {

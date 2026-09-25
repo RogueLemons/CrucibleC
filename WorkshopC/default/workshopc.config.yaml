@@ -12,6 +12,10 @@ third_party_includes:
 # Rules section
 # Rules can be: Off, Warning, Error
 rules:
+  # Suppression reason rule - requires a reason for each suppression
+  suppression_reason_rule:
+    level: Error 
+
   # Enum rule - forbids enum declarations
   enum:
     level: Warning

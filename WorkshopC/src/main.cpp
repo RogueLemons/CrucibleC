@@ -1,6 +1,7 @@
 #include "config_parser.hpp"
 #include "config.hpp"
 #include "suppression_manager.hpp"
+#include "rule_suppression_reason.hpp"
 #include "rule_enum.hpp"
 #include "rule_private.hpp"
 #include "rule_private_alternative.hpp"
@@ -44,6 +45,7 @@ private:
     std::unique_ptr<Diagnostics> diagnostics{};
     SuppressionManager suppressions{};
 
+    std::unique_ptr<SuppressionReasonRule> suppressionReasonRule{};
     std::unique_ptr<EnumRule> enumRule{};
     std::unique_ptr<PrivateRule> privateRule{};
     std::unique_ptr<PrivateAlternativeRule> privateAlternativeRule{};
@@ -73,6 +75,17 @@ public:
             warnings,
             errors
         );
+
+        // Suppression reason rule
+        if (config.suppressionReasonRule.level != RuleLevel::Off) {
+            suppressionReasonRule = std::make_unique<SuppressionReasonRule>(
+                config,
+                suppressions,
+                *diagnostics
+            );
+
+            suppressionReasonRule->bindFinder(finder);
+        }
 
         // Enum rule
         if (config.enumRule.level != RuleLevel::Off) {

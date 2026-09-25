@@ -507,6 +507,7 @@ Rules can be temporarily and locally disabled with a comment saying `// Workshop
 
 ```c
 // WorkshopC off
+// Reason: The enum values are dictated by a legacy protocol
 enum Color { // Does not trigger enum rule
   RED,
   GREEN,
@@ -514,6 +515,32 @@ enum Color { // Does not trigger enum rule
 };
 // WorkshopC on
 ```
+
+#### Suppression reason rule
+Every suppression should say why it exists. When `suppression_reason_rule` is enabled, each `// WorkshopC off` comment must be followed **on the very next line** by a comment that starts with `Reason: ` and gives a non-empty reason. A `/* Reason: ... */` block comment is also accepted.
+
+```yaml
+rules:
+  suppression_reason_rule:
+    level: Error
+```
+
+```c
+// WorkshopC off
+// Reason: The enum values are dictated by a legacy protocol
+enum Color { RED, GREEN, BLUE }; // Good
+
+// WorkshopC on
+// WorkshopC off
+enum Shape { CIRCLE, SQUARE };   // Bad: no reason given, the rule reports the 'WorkshopC off' line
+// WorkshopC on
+```
+
+Details:
+- `Reason: ` is case sensitive, and a blank line between the two comments does not count.
+- Only the `WorkshopC off` that opens a suppressed range needs a reason. A repeated `off` inside an already suppressed range is ignored.
+- The check covers the analyzed file and every project header it includes, but not system headers or `third_party_includes` folders.
+- This rule reports on the `WorkshopC off` line itself, so it can not be silenced by the suppression it is checking.
 
 ### Adjust code for parser
 The parser runs with `WORKSHOPC_PARSING` defined as a macro. This allows users to create `#ifndef` guards to adjust code for parsing and usage. 
@@ -824,7 +851,6 @@ For V1.1 it shall
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
 - Add ref tag system where a function argument that takes a ref pointer must be either given another ref pointer or a direct dereference to a local object (this must be compatible with move/owenrship rule and the nullcheck rule shall then never require a ref pointer to be nullchecked)
-- Optionally enforce supression reason on line after (e.g. with comment "// Reason: I know what I am doing")
 - Optionally allow free struct create/init functions to disregard all raii and pod struct rules
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 

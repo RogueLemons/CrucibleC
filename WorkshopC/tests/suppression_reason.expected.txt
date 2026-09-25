@@ -1,0 +1,6 @@
+error: 'WorkshopC off' must be followed on the next line by a comment starting with 'Reason: '
+error: 'WorkshopC off' must be followed on the next line by a comment starting with 'Reason: '
+error: 'WorkshopC off' must be followed on the next line by a comment starting with 'Reason: '
+error: 'WorkshopC off' must be followed on the next line by a comment starting with 'Reason: '
+error: 'WorkshopC off' must be followed on the next line by a comment starting with 'Reason: '
+warning: enum 'this_enum_is_not_ok' is not allowed

@@ -20,17 +20,36 @@ void Diagnostics::report(
     if (presumed.isInvalid())
         return;
 
+    report(
+        level,
+        presumed.getFilename(),
+        presumed.getLine(),
+        presumed.getColumn(),
+        message
+    );
+}
+
+void Diagnostics::report(
+    RuleLevel level,
+    const std::string &file,
+    unsigned line,
+    unsigned column,
+    const std::string &message
+) {
+    if (level == RuleLevel::Off)
+        return;
+
     const char *levelStr =
         (level == RuleLevel::Warning)
             ? "warning"
             : "error";
 
     std::cerr
-        << presumed.getFilename()
+        << file
         << ":"
-        << presumed.getLine()
+        << line
         << ":"
-        << presumed.getColumn()
+        << column
         << ":\t"
         << levelStr
         << ": "

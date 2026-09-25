@@ -55,6 +55,7 @@ set(SOURCES
     src/suppression_manager.cpp
     src/struct_database.cpp
     src/finder_and_finalizer_consumer.cpp
+    src/rule_suppression_reason.cpp
     src/rule_enum.cpp
     src/rule_private.cpp
     src/rule_private_alternative.cpp

@@ -15,6 +15,12 @@ private:
     static int parseInt(const std::string &str, int fallback);
 
     static void applySetting(
+        SuppressionReasonRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    static void applySetting(
         EnumRuleConfig &cfg,
         const std::string &key,
         const std::string &value

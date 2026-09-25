@@ -1,0 +1,10 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  suppression_reason_rule:
+    level: Error
+  enum:
+    level: Warning

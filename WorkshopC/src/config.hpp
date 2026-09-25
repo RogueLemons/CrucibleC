@@ -9,6 +9,10 @@ enum class RuleLevel {
     Error
 };
 
+struct SuppressionReasonRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
 struct EnumRuleConfig {
     RuleLevel level = RuleLevel::Off;
 };
@@ -87,6 +91,7 @@ struct StructResourceManagementRuleConfig {
 };
 
 struct Config {
+    SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
     PrivateRuleConfig privateRule;
     PrivateAlternativeRuleConfig privateAlternativeRule;
