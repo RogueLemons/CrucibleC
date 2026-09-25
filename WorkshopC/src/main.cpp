@@ -353,6 +353,17 @@ int main(int argc, const char **argv) {
         )
     );
 
+    // Only WorkshopC's own rules should report warnings. Clang's warnings
+    // are dropped (they belong to the project's normal build) but real
+    // compile errors are still printed. Added last so it overrides any
+    // -W flags and -Werror from the compilation database.
+    tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster(
+            {"-w"},
+            ArgumentInsertPosition::END
+        )
+    );
+
     WorkshopActionFactory factory(config);
 
     int result = tool.run(&factory);

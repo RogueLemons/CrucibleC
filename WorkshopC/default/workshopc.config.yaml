@@ -16,9 +16,10 @@ rules:
   suppression_reason_rule:
     level: Error 
 
-  # Enum rule - forbids enum declarations
+  # Enum rule - enforces typedef and explciit enum casting, or forbids enums completely
   enum:
     level: Warning
+    allow_enum_typedef: true
 
   # Private rule - forbids access of a private struct field
   private:

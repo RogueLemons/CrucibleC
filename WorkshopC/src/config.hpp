@@ -15,6 +15,8 @@ struct SuppressionReasonRuleConfig {
 
 struct EnumRuleConfig {
     RuleLevel level = RuleLevel::Off;
+
+    bool allowEnumTypedef = false;
 };
 
 struct PrivateRuleConfig {

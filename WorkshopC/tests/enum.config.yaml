@@ -6,3 +6,4 @@ third_party_includes:
 rules:
   enum:
     level: Warning
+    allow_enum_typedef: false

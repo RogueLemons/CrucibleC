@@ -81,6 +81,9 @@ void ConfigParser::applySetting(
     if (key == "level") {
         cfg.level = parseLevel(value);
     }
+    else if (key == "allow_enum_typedef") {
+        cfg.allowEnumTypedef = parseBool(value);
+    }
 }
 
 void ConfigParser::applySetting(

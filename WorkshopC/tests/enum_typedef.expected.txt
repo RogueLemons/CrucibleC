@@ -1,0 +1,26 @@
+warning: enum 'Shape' must have a typedef
+warning: enum '<anonymous>' must have a typedef
+warning: enum 'MacroBad' must have a typedef (macro expansion)
+warning: enum 'HeaderBadEnum' must have a typedef
+warning: variable 'global_bad' of type 'Color' must be initialized with a member of its enum or an explicit cast
+warning: variable 'header_bad' of type 'HeaderGoodEnum' must be initialized with a member of its enum or an explicit cast
+warning: variable 'h' of type 'Color' must be initialized with a member of its enum or an explicit cast
+warning: variable 'j' of type 'Color' must be initialized with a member of its enum or an explicit cast
+warning: variable 'k' of type 'Color' must be initialized with a member of its enum or an explicit cast
+warning: variable 'l' of type 'Color' must be initialized with a member of its enum or an explicit cast
+warning: variable 'm' of type 'Color' must be initialized with a member of its enum or an explicit cast
+warning: variable 'n' of type 'Size' must be initialized with a member of its enum or an explicit cast
+warning: 'a' of type 'Color' must be assigned a member of its enum or an explicit cast
+warning: 'a' of type 'Color' must be assigned a member of its enum or an explicit cast
+warning: 'a' of type 'Color' must be assigned a member of its enum or an explicit cast
+warning: 'color' of type 'Color' must be assigned a member of its enum or an explicit cast
+warning: '*color_ptr' of type 'Color' must be assigned a member of its enum or an explicit cast
+warning: 'a' of type 'Color' may not be modified with arithmetic, assign a member of its enum or an explicit cast
+warning: 'a' of type 'Color' may not be modified with arithmetic, assign a member of its enum or an explicit cast
+warning: 'a' of type 'Color' may not be modified with arithmetic, assign a member of its enum or an explicit cast
+warning: 'a' of type 'Color' may not be modified with arithmetic, assign a member of its enum or an explicit cast
+warning: argument 'color' of type 'Color' passed to function 'takes_color' must be a member of its enum or an explicit cast
+warning: argument 'color' of type 'Color' passed to function 'takes_color' must be a member of its enum or an explicit cast
+warning: argument 'color' of type 'Color' passed to function 'takes_color' must be a member of its enum or an explicit cast
+warning: argument 'size' of type 'Size' passed to function 'takes_size' must be a member of its enum or an explicit cast
+warning: argument #1 of type 'Color' passed to function 'takes_unnamed' must be a member of its enum or an explicit cast

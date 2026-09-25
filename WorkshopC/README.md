@@ -57,13 +57,26 @@ The exit code reports the result of the analysis. Codes 0-3 form a bitmask (`1` 
 
 Codes of `64` and above always mean the tool itself could not complete the analysis, so they can never be confused with rule results. Note that most build systems treat any non-zero exit code as a failure, so a run with warnings only (`2`) will fail a script using `set -e` unless the caller handles it.
 
+**Compiler output:**
+
+The tool runs the file through clang, but only WorkshopC's own rules produce warnings. Clang's warnings (unused variables, implicit conversions and so on) are disabled with `-w`, even if the compilation database enables `-Wall` or `-Werror`, since they belong to the project's normal build. Genuine compile errors are still printed in clang's normal format, and the exit code is then `67`. The rules still run on whatever clang could recover from the broken file, but the result should be treated as incomplete until the file compiles.
+
 [Here is a premade config.yaml file ready for use as is and provide a base to easily edit](./default/workshopc.config.yaml).
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
 
 ### Enum rule
-This rule gets triggered when an `enum` is defined. An `enum` argument can take any kind of integer which easily creates bugs and mistakes. 
+An `enum` argument can take any kind of integer which easily creates bugs and mistakes. This rule either forbids enums completely or, with `allow_enum_typedef: true`, allows them under strict rules.
+
+```yaml
+enum:
+    level: Warning
+    allow_enum_typedef: false
+```
+
+#### Forbid enums (`allow_enum_typedef: false`, the default)
+The rule gets triggered whenever an `enum` is defined.
 
 ```c
 enum Color { // Triggers parser
@@ -89,6 +102,51 @@ Color color_blue();
 #define GREEN color_green()
 #define BLUE color_blue()
 ```
+
+#### Allow typedef enums (`allow_enum_typedef: true`)
+Enums are allowed, but two requirements apply.
+
+**1. Every enum must have a typedef.** The typedef may come before or after the definition, and an anonymous enum is fine if it is defined together with its typedef.
+
+```c
+typedef enum Color { RED, GREEN, BLUE } Color;      // Good
+typedef enum { SMALL, MEDIUM, LARGE } Size;         // Good, anonymous with typedef
+
+enum Direction { NORTH, SOUTH };
+typedef enum Direction Direction;                   // Good, typedef after the definition
+
+enum Shape { CIRCLE, SQUARE };                      // Bad, no typedef
+```
+
+**2. A variable, assignment target or function argument of a typedef enum type may only be given a member of that enum.** Copying a value that already has the enum type (a variable, or the result of a function) is fine, and so is an explicit cast, which is the way to deliberately convert an integer. A conditional expression is fine if both branches are members.
+
+```c
+Color a = RED;                  // Good
+Color b = a;                    // Good, value that already is a Color
+Color c = (Color)1;             // Good, explicit cast
+Color d = flag ? RED : BLUE;    // Good
+
+Color e = 0;                    // Bad, plain integer
+Color f = i;                    // Bad, integer variable
+Color g = SMALL;                // Bad, member of a different enum
+Color h = RED | GREEN;          // Bad, arithmetic
+
+a = 2;                          // Bad
+a = (Color)i;                   // Good, explicit cast
+a++;                            // Bad, arithmetic
+a |= GREEN;                     // Bad, arithmetic
+
+void takes_color(Color color);
+takes_color(GREEN);             // Good
+takes_color(2);                 // Bad
+takes_color((Color)2);          // Good, explicit cast
+```
+
+Details:
+- Initializations, assignments (including through struct fields and pointers) and call arguments are checked. Compound assignments (`+=`, `|=`, ...), `++` and `--` are always reported, since they can produce values outside of the enum.
+- A parameter that is a plain `int` accepts enum members without complaint, since it is not an enum type.
+- Enums defined in system headers or `third_party_includes` folders are not checked, neither their definitions nor the code using them.
+- The compiler can report its own warning when a member of one enum is used as a different enum (`-Wimplicit-enum-enum-cast`), which comes in addition to this rule's warning.
 
 ### Private rule
 This rule enforces privacy by forbidding access to a member of a given name (e.g. `_private`) unless it is accessed by certain static functions. 
@@ -860,7 +918,6 @@ For V1.2 it shall
 - Improved exe arguments (writing e.g. workshopc --config conf.yaml)
 - Provide output to txt or json file if provided as argument
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
-- Add new rule, or refine enum rule, to require enums to have typedef and then enforce that a typedef enum must ALWAYS be initialized from the available enum options
 - Add rule to enforce all switch cases to have a break for each case and always a default case
 - Add rule to enforce only allowing a single return statement per function
 - Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
