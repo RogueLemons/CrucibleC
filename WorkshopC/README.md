@@ -945,13 +945,14 @@ This ensures:
 
 ## TODO
 
-For V1 it shall
+For Beta V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
 - Improve null check rule to not just check first use on line axis but also if it has been check for the scope it is in
 - Reorganize README and documentation
+- Make sure members cannot be directly accessed in raii creation calls (e.g. forbid position_make(1, 2, 3).x; ) as this removes the ability to call the destroy function later
 
-For V1.1 it shall
+For Beta V1.1 it shall
 - Add rules for vtables and interfaces
 - Enforce no use after move for pointer tags (unless reassigned), and no move of mut or out variable
 - Enforce no use of _move functions on pointer arguments (only local scope variables)
@@ -960,7 +961,7 @@ For V1.1 it shall
 - Add ref tag system where a function argument that takes a ref pointer must be either given another ref pointer or a direct dereference to a local object (this must be compatible with move/owenrship rule and the nullcheck rule shall then never require a ref pointer to be nullchecked)
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 
-For V1.2 it shall
+For Beta V1.2 it shall
 - Add .sarif file output support
 - Add LSP support
 - Improved exe arguments (writing e.g. workshopc --config conf.yaml)
