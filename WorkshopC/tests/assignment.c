@@ -115,5 +115,13 @@ void array_test(void)
 
     struct Data* unassigned_struct_ptr_array[2]; // bad
     struct Data* assigned_struct_ptr_array[2] = {&struct_array[0], &struct_array[1]}; // good
-    struct Data* assigned_struct_ptr_array_with_null[11] = { 0 }; // good
+    struct Data* assigned_struct_ptr_3_array[3] = {&struct_array[0], &struct_array[1]}; // bad because the third element is a pointer made null
+    struct Data* assigned_struct_ptr_array_with_null[11] = { 0 }; // bad because the config forbids null assignment to pointers
+    int* assigned_pointer_matrix[2][2] = {{&a, &b}, {&b, &a}}; // good
+    int* partial_pointer_matrix[2][2] = {{&a, &b}, {&a}}; // bad: last element of the second row is missing
+    int* missing_row_pointer_matrix[2][2] = {{&a, &b}}; // bad: the second row is missing
+    int* explicit_null_pointer_array[2] = {&a, NULL}; // bad: explicit null element
+    int* all_null_pointer_array[2] = {NULL, NULL}; // bad: both elements are null
+    int* designated_pointer_array[3] = {[0] = &a, [2] = &b}; // bad: element 1 is missing
+    int partial_int_array[5] = {1, 2}; // good: only arrays of pointers must be fully initialized
 }

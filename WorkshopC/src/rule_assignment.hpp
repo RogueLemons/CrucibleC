@@ -37,6 +37,20 @@ private:
 
     bool isLiteralZeroInit(const Expr *e, SourceManager &sm) const;
 
+    /*
+     * For an array of pointers, when null pointers are forbidden:
+     * every element must be initialized explicitly (elements left out
+     * of the initializer list become null pointers), and none of the
+     * explicit values may be null either. Nested arrays are checked
+     * recursively.
+     */
+    void checkPointerArrayInitializer(
+        const InitListExpr *list,
+        QualType arrayType,
+        const VarDecl *var,
+        SourceManager &sm,
+        ASTContext &context) const;
+
 public:
     AssignmentRule(
         const Config &cfg,

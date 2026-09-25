@@ -119,6 +119,74 @@ bool AssignmentRule::isLiteralZeroInit(const Expr *e, SourceManager &sm) const {
     return text == "{0}";
 }
 
+void AssignmentRule::checkPointerArrayInitializer(
+    const InitListExpr *list,
+    QualType arrayType,
+    const VarDecl *var,
+    SourceManager &sm,
+    ASTContext &context) const
+{
+    const ConstantArrayType *constantArray =
+        context.getAsConstantArrayType(arrayType);
+
+    if (!constantArray)
+        return;
+
+    const uint64_t size = constantArray->getSize().getZExtValue();
+    const QualType elementType =
+        constantArray->getElementType().getCanonicalType();
+
+    uint64_t explicitCount = 0;
+
+    const unsigned numInits = list->getNumInits();
+
+    for (unsigned i = 0; i < numInits && i < size; ++i) {
+        const Expr *element = list->getInit(i);
+
+        // A hole left by a designated initializer, or an element
+        // filled in implicitly, was not written by the user.
+        if (!element || isa<ImplicitValueInitExpr>(element))
+            continue;
+
+        ++explicitCount;
+
+        if (elementType->isArrayType()) {
+            if (const auto *inner =
+                    dyn_cast<InitListExpr>(element->IgnoreImplicit()))
+            {
+                checkPointerArrayInitializer(
+                    inner, elementType, var, sm, context);
+            }
+
+            continue;
+        }
+
+        const Expr *value = norm(element);
+
+        if (isNullExpr(value)) {
+            diagnostics.report(
+                config.assignmentRule.level,
+                sm,
+                value->getExprLoc(),
+                "NULL used in pointer array initializer for '" +
+                nameOf(var) + "'"
+            );
+        }
+    }
+
+    if (explicitCount < size) {
+        diagnostics.report(
+            config.assignmentRule.level,
+            sm,
+            var->getLocation(),
+            "array of pointers '" + nameOf(var) +
+            "' must explicitly initialize every element, " +
+            std::to_string(size - explicitCount) + " of " +
+            std::to_string(size) + " missing"
+        );
+    }
+}
+
 AssignmentRule::AssignmentRule(
     const Config &cfg,
     SuppressionManager &sup,
@@ -227,6 +295,14 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
             init = init->IgnoreImplicit();
 
             if (const auto *ile = dyn_cast<InitListExpr>(init)) {
+
+                if (qt->isArrayType() &&
+                    result.Context->getBaseElementType(qt)
+                        .getCanonicalType()->isPointerType())
+                {
+                    checkPointerArrayInitializer(
+                        ile, qt, vd, sm, *result.Context);
+                }
 
                 const RecordDecl *rd =
                     vd->getType()->getAsRecordDecl();
