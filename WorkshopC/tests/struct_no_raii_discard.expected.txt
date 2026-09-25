@@ -1,0 +1,14 @@
+error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded, assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'int_vector_copy' may not be discarded, assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'produce_vector' may not be discarded, assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by '<function pointer>' may not be discarded, assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded (not even with a void cast), assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'produce_vector' may not be discarded (not even with a void cast), assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded, assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded, assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded, assign it to a variable so that it can be destroyed
+error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded, assign it to a variable so that it can be destroyed
+error: member 'size' may not be accessed directly on the raii struct 'int_vector' returned by 'int_vector_make', assign it to a variable first so that it can be destroyed
+error: member 'capacity' may not be accessed directly on the raii struct 'int_vector' returned by 'int_vector_copy', assign it to a variable first so that it can be destroyed
+error: member 'data' may not be accessed directly on the raii struct 'int_vector' returned by 'produce_vector', assign it to a variable first so that it can be destroyed
+error: member 'data' may not be accessed directly on the raii struct 'int_vector' returned by 'int_vector_make', assign it to a variable first so that it can be destroyed

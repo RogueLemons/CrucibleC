@@ -950,7 +950,6 @@ For Beta V1 it shall
 - Add ability to take folder of source code instead of single file
 - Improve null check rule to not just check first use on line axis but also if it has been check for the scope it is in
 - Reorganize README and documentation
-- Make sure members cannot be directly accessed in raii creation calls (e.g. forbid position_make(1, 2, 3).x; ) as this removes the ability to call the destroy function later
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces

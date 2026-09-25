@@ -69,6 +69,7 @@ set(SOURCES
     src/struct_database_rule.cpp
     src/struct_init_rule.cpp
     src/struct_cleanup_rule.cpp
+    src/struct_raii_discard_rule.cpp
     src/rule_restricted_malloc.cpp
 )
 

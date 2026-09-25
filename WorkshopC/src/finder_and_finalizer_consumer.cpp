@@ -5,12 +5,14 @@ FinderAndFinalizerConsumer::FinderAndFinalizerConsumer(
     StructDatabase &database,
     StructDatabaseRule *databaseRule,
     StructInitRule *initRule,
-    StructCleanupRule *cleanupRule)
+    StructCleanupRule *cleanupRule,
+    StructRaiiDiscardRule *raiiDiscardRule)
     : finder(finder),
       database(database),
       databaseRule(databaseRule),
       initRule(initRule),
-      cleanupRule(cleanupRule)
+      cleanupRule(cleanupRule),
+      raiiDiscardRule(raiiDiscardRule)
 {
 }
 
@@ -61,4 +63,14 @@ void FinderAndFinalizerConsumer::HandleTranslationUnit(
     // -------------------------------------------------
     if (cleanupRule)
         cleanupRule->finalize();
+
+    // -------------------------------------------------
+    // Phase 6:
+    //
+    // Check that raii struct return values are never
+    // discarded or accessed directly, now that the
+    // database knows which structs are raii structs.
+    // -------------------------------------------------
+    if (raiiDiscardRule)
+        raiiDiscardRule->finalize();
 }

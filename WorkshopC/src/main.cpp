@@ -18,6 +18,7 @@
 #include "struct_database_rule.hpp"
 #include "struct_init_rule.hpp"
 #include "struct_cleanup_rule.hpp"
+#include "struct_raii_discard_rule.hpp"
 #include "finder_and_finalizer_consumer.hpp"
 
 #include <clang/Tooling/Tooling.h>
@@ -67,6 +68,7 @@ private:
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
     std::unique_ptr<StructInitRule> structInitRule{};
     std::unique_ptr<StructCleanupRule> structCleanupRule{};
+    std::unique_ptr<StructRaiiDiscardRule> structRaiiDiscardRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, int &w, int &e)
@@ -262,6 +264,17 @@ public:
                 );
 
             structCleanupRule->bindFinder(finder);
+
+            // Raii struct return value discard rule
+            structRaiiDiscardRule =
+                std::make_unique<StructRaiiDiscardRule>(
+                    config,
+                    suppressions,
+                    *diagnostics,
+                    structDatabase
+                );
+
+            structRaiiDiscardRule->bindFinder(finder);
         }
 
         return std::make_unique<FinderAndFinalizerConsumer>(
@@ -269,7 +282,8 @@ public:
             structDatabase,
             structDatabaseRule.get(),
             structInitRule.get(),
-            structCleanupRule.get()
+            structCleanupRule.get(),
+            structRaiiDiscardRule.get()
         );
     }
 };
