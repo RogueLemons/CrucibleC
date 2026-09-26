@@ -100,3 +100,7 @@ rules:
     level: Warning
     allow_early_return: true
     require_return_for_void: false
+
+  # Strict switch rule - require all switch statements to have a default and all cases include a break/return
+  strict_switch:
+    level: Warning

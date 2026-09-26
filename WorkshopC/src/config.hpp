@@ -105,6 +105,10 @@ struct SingleReturnRuleConfig {
     bool requireReturnForVoid = true;
 };
 
+struct StrictSwitchRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -119,6 +123,7 @@ struct Config {
     StructResourceManagementRuleConfig structResourceManagementRule;
     RestrictedMallocRuleConfig restrictedMallocRule;
     SingleReturnRuleConfig singleReturnRule;
+    StrictSwitchRuleConfig strictSwitchRule;
 
     std::vector<std::string> projectIncludes;
     std::vector<std::string> thirdPartyIncludes;

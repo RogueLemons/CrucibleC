@@ -16,6 +16,7 @@ A project for parsing C code and generating tips for writing safer code or adher
   - [RAII and struct resource management](#raii-and-struct-resource-management)
   - [Restricted malloc rule](#restricted-malloc-rule)
   - [Single return rule](#single-return-rule)
+  - [Strict switch rule](#strict-switch-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -657,6 +658,31 @@ int pick(int flag)
 
 With `require_return_for_void: true`, `void` functions must also end with `return;`. When it is `false`, the final return is optional for them, but any other return still has to follow the rules above.
 
+### Strict switch rule
+This rule requires every `switch` statement to have a `default` case, and every case (including `default`) to end with a `break` or `return`, so that a missing `break` can never silently fall through into the next case.
+
+```yaml
+strict_switch:
+    level: Warning
+```
+
+```c
+switch (value)
+{
+  case 1:
+  case 2:             // OK, stacked labels share one body
+    result = 1;
+    break;
+  case 3:             // Triggers parser, falls through into case 4
+    result = 3;
+  case 4:
+    result += 4;
+    break;
+}                     // Triggers parser, no default case
+```
+
+A case also ends correctly with `continue` or `goto`, with a call to a function that never returns (such as `abort()` or `exit()`), with a block whose last statement ends the case, or with an `if`/`else` where both branches end the case. A nested `switch` as the last statement of a case is reported too, since its `break` only leaves the inner switch.
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -1021,7 +1047,6 @@ For Beta V1.2 it shall
 - Improved exe arguments (writing e.g. workshopc --config conf.yaml)
 - Provide output to txt or json file if provided as argument
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
-- Add rule to enforce all switch cases to have a break for each case and always a default case
 - Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
 - Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 - Add rule that all arrays of pointers must end with NULL pointer

@@ -308,6 +308,16 @@ std::vector<std::string> ConfigParser::parseInlineList(const std::string &value)
 }
 
 void ConfigParser::applySetting(
+    StrictSwitchRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+}
+
+void ConfigParser::applySetting(
     SingleReturnRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -398,6 +408,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "single_return") {
         applySetting(config.singleReturnRule, key, value);
+    }
+    else if (currentRule == "strict_switch") {
+        applySetting(config.strictSwitchRule, key, value);
     }
 }
 

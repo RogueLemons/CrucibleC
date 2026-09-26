@@ -1,0 +1,6 @@
+warning: switch statement must have a default case
+warning: switch statement must have a default case
+warning: switch default case must end with a break or return (fallthrough is not allowed)
+warning: switch case must end with a break or return (fallthrough is not allowed)
+warning: switch case must end with a break or return (fallthrough is not allowed)
+warning: switch case must end with a break or return (fallthrough is not allowed)
