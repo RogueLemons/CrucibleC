@@ -57,9 +57,186 @@ void foo(void)
 
     int* i_ptr = NULL;
     declared_function_1(i_ptr); // good
-    declared_function_1(move_cast(i_ptr)); // bad
+    declared_function_1(move_cast(i_ptr)); // bad: operator used while disabled, and i_ptr was already moved
 
     float f;
     declared_function_2(&f); // good
     declared_function_2(out_cast(&f)); // bad
+}
+
+// -------------------------------------------------------------
+// A pointer may not be used after it has been moved, until it
+// has been reassigned
+// -------------------------------------------------------------
+
+void take_ownership(move int* owned);
+void create_int(out int** created);
+void read_int(const int* value);
+void modify_int(mod int* value);
+
+void use_after_move(void)
+{
+    int* value = NULL;
+    create_int(&value);
+    take_ownership(value);  // good: moved
+    read_int(value);        // bad: used after it was moved
+}
+
+void double_move(void)
+{
+    int* value = NULL;
+    create_int(&value);
+    take_ownership(value); // good
+    take_ownership(value); // bad: moved a second time
+}
+
+void compared_after_move(void)
+{
+    int* value = NULL;
+    create_int(&value);
+    take_ownership(value);
+
+    if (value != NULL) // bad: comparing is a use too
+        modify_int(value); // bad
+}
+
+void reassigned_after_move(void)
+{
+    int* value = NULL;
+    create_int(&value);
+    take_ownership(value);
+    create_int(&value); // good: out writes a new value into the pointer
+    read_int(value); // good
+
+    take_ownership(value);
+    value = NULL; // good: plain reassignment
+    read_int(value); // good
+}
+
+void address_and_sizeof_after_move(void)
+{
+    int* value = NULL;
+    create_int(&value);
+    take_ownership(value);
+
+    unsigned long size = sizeof(value); // good: sizeof does not use the value
+    int** address = &value; // good: taking the address does not read the value
+}
+
+void moved_parameter(move int* owned)
+{
+    take_ownership(owned); // good
+    read_int(owned); // bad: parameters can be moved too
+}
+
+void moved_in_one_branch(int flag)
+{
+    int* value = NULL;
+    create_int(&value);
+
+    if (flag)
+        take_ownership(value);
+
+    read_int(value); // bad: may have been moved
+}
+
+void moved_in_branch_that_returns(int flag)
+{
+    int* value = NULL;
+    create_int(&value);
+
+    if (flag)
+    {
+        take_ownership(value);
+        return;
+    }
+
+    read_int(value); // good: the branch that moved it returned
+}
+
+void moved_in_other_branch(int flag)
+{
+    int* value = NULL;
+    create_int(&value);
+
+    if (flag)
+        take_ownership(value); // good
+    else
+        read_int(value); // good: the move happened in the other branch
+}
+
+void moved_in_loop(int count)
+{
+    int* value = NULL;
+    create_int(&value);
+
+    for (int i = 0; i < count; ++i)
+        take_ownership(value); // bad: moved again in the next iteration
+}
+
+void moved_in_loop_then_break(int count)
+{
+    int* value = NULL;
+    create_int(&value);
+
+    for (int i = 0; i < count; ++i)
+    {
+        if (i == 3)
+        {
+            take_ownership(value);
+            break;
+        }
+    }
+
+    read_int(value); // bad: may have been moved before the break
+}
+
+void recreated_every_iteration(int count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        int* value = NULL;
+        create_int(&value);
+        take_ownership(value); // good: a new value in every iteration
+    }
+}
+
+void moved_in_switch_case(int choice)
+{
+    int* value = NULL;
+    create_int(&value);
+
+    switch (choice)
+    {
+        case 1:
+            take_ownership(value);
+            break;
+        default:
+            read_int(value); // good: case 1 did not fall through
+            break;
+    }
+
+    read_int(value); // bad: may have been moved in case 1
+}
+
+// -------------------------------------------------------------
+// A mod or out parameter is only borrowed by the function, so it
+// may not be moved away
+// -------------------------------------------------------------
+
+void move_modified_parameter(mod int* borrowed)
+{
+    take_ownership(borrowed); // bad: a mod parameter is not owned by the function
+}
+
+void move_out_parameter(out int** result)
+{
+    create_int(result); // good
+    take_ownership(*result); // bad: what an out parameter points to is not owned by the function
+}
+
+void modify_borrowed_parameter(mod int* borrowed)
+{
+    modify_int(borrowed); // good: passing it on to be modified is fine
+    read_int(borrowed); // good
 }

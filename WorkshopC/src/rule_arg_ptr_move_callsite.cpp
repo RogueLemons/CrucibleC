@@ -1,5 +1,7 @@
 #include "rule_arg_ptr_move_callsite.hpp"
 
+#include <algorithm>
+
 bool ArgumentPointerCallsiteRule::isThirdParty(const std::string &path) const {
     for (const auto &p : config.thirdPartyIncludes) {
         if (path.find(p) != std::string::npos)
@@ -127,6 +129,97 @@ std::string ArgumentPointerCallsiteRule::getParamTag(const ParmVarDecl *P) const
     return "";
 }
 
+std::string ArgumentPointerCallsiteRule::getOwnParamTag(const ParmVarDecl *P) const {
+    if (!P)
+        return "";
+
+    const std::string tag = getParamTag(P);
+
+    if (!tag.empty())
+        return tag;
+
+    const auto *owner = dyn_cast<FunctionDecl>(P->getDeclContext());
+
+    if (!owner)
+        return "";
+
+    const unsigned index = P->getFunctionScopeIndex();
+
+    for (const FunctionDecl *redecl : owner->redecls()) {
+        if (index < redecl->getNumParams()) {
+            const std::string redeclTag = getParamTag(redecl->getParamDecl(index));
+
+            if (!redeclTag.empty())
+                return redeclTag;
+        }
+    }
+
+    return "";
+}
+
+void ArgumentPointerCallsiteRule::checkMoveOfBorrowedParam(
+    const CallExpr *CE,
+    const FunctionDecl *FD,
+    const SourceManager &sm)
+{
+    const unsigned count = std::min(CE->getNumArgs(), FD->getNumParams());
+
+    for (unsigned i = 0; i < count; ++i) {
+        if (getParamTag(FD->getParamDecl(i)) != kMoveTag)
+            continue;
+
+        // Strip parentheses, casts and the operator wrapper calls
+        const Expr *arg = CE->getArg(i);
+
+        while (arg) {
+            arg = arg->IgnoreParenCasts();
+
+            const auto *call = dyn_cast<CallExpr>(arg);
+            const FunctionDecl *wrapper = call ? call->getDirectCallee() : nullptr;
+
+            if (!wrapper || call->getNumArgs() != 1)
+                break;
+
+            const std::string name = wrapper->getNameAsString();
+
+            if (name != "workshopc_move" &&
+                name != "workshopc_out" &&
+                name != "workshopc_modify")
+                break;
+
+            arg = call->getArg(0);
+        }
+
+        // param, or *param for what an out parameter points to
+        if (const auto *deref = dyn_cast_or_null<UnaryOperator>(arg)) {
+            if (deref->getOpcode() == UO_Deref)
+                arg = deref->getSubExpr()->IgnoreParenCasts();
+        }
+
+        const auto *ref = dyn_cast_or_null<DeclRefExpr>(arg);
+        const auto *param = ref ? dyn_cast<ParmVarDecl>(ref->getDecl()) : nullptr;
+
+        if (!param)
+            continue;
+
+        const std::string ownTag = getOwnParamTag(param);
+
+        if (ownTag != kModTag && ownTag != kOutTag)
+            continue;
+
+        report(
+            std::string(ownTag == kModTag ? "modify" : "out") +
+            " parameter '" + param->getNameAsString() +
+            "' may not be moved to parameter '" +
+            FD->getParamDecl(i)->getNameAsString() +
+            "' of function '" + FD->getNameAsString() +
+            "', the function only borrows it and does not own it",
+            sm,
+            CE->getBeginLoc()
+        );
+    }
+}
+
 void ArgumentPointerCallsiteRule::report(const std::string &msg,
             const SourceManager &sm,
             SourceLocation loc)
@@ -203,6 +296,8 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
     {
         return;
     }
+
+    checkMoveOfBorrowedParam(CE, FD, sm);
 
     for (unsigned i = 0;
          i < CE->getNumArgs();

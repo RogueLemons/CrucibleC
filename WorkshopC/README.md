@@ -438,6 +438,29 @@ void example(void)
 
 Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `mut` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `mutable`, `output`, or `moved` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior. 
 
+Once a pointer has been moved, the called function owns it, so the pointer may not be used again (read, moved again, compared, passed on) until it has been reassigned, either with `=`, by passing its address to an `out` parameter, or by declaring it again. The check follows the control flow of the function: a use is reported if the pointer may have been moved on any path that reaches it, so a move inside one branch of an `if` counts after the `if`, unless that branch returns, and a move inside a loop counts in the next iteration. Only plain pointer variables are followed, not struct fields or array elements.
+
+```c
+void example(void)
+{
+  Data* data = NULL;
+  initialize_data(out(&data));
+  give_data_to_other_section(move(data));
+  edit_data(data, 1, 2, 3);                 // Triggers parser, data was moved
+  initialize_data(out(&data));              // OK, data gets a new value
+  edit_data(data, 1, 2, 3);                 // OK
+}
+```
+
+A parameter tagged `mutable` or `output` is only borrowed by the function, so it may not be moved away. The same goes for what an `output` parameter points to.
+
+```c
+void process(mutable Data* data)
+{
+  give_data_to_other_section(move(data));   // Triggers parser, the function does not own data
+}
+```
+
 As mentioned, the tags are just macro definitions (even if they must follow some simple rules shown in linked document above). This means that the user can provide any names the user wants. For example, `move` and `move_cast()` with `out` and `out_cast`; or `moved` with `move`, `outed` with `out`, and `modded` with `mod`. They can of course all also be caps. 
 
 ### RAII and struct resource management
@@ -1077,7 +1100,6 @@ For Beta V1 it shall
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces
-- Enforce no use after move for pointer tags (unless reassigned), and no move of mut or out variable
 - Enforce no use of _move functions on pointer arguments (only local scope variables)
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order

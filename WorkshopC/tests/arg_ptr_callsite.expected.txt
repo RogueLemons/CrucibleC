@@ -7,3 +7,5 @@ warning: missing out_operator(...) at call site for parameter 'out_float_ptr' in
 warning: move_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
 warning: out_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
 warning: modify_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
+warning: pointer 'i_ptr' may have been moved to 'func_that_takes_move' and can not be used until it is reassigned
+warning: pointer 'i_ptr' may have been moved to 'func_that_takes_move' and can not be used until it is reassigned

@@ -12,6 +12,7 @@
 #include "rule_null_check.hpp"
 #include "rule_arg_ptr_move.hpp"
 #include "rule_arg_ptr_move_callsite.hpp"
+#include "rule_arg_ptr_use_after_move.hpp"
 #include "rule_restricted_malloc.hpp"
 #include "rule_single_return.hpp"
 #include "rule_strict_switch.hpp"
@@ -65,6 +66,7 @@ private:
     std::unique_ptr<TypedefStructRule> typedefStructRule{};
     std::unique_ptr<ArgumentPointerMovementRule> argumentPointerMovementRule{};
     std::unique_ptr<ArgumentPointerCallsiteRule> argumentPointerCallsiteRule{};
+    std::unique_ptr<ArgumentPointerUseAfterMoveRule> argumentPointerUseAfterMoveRule{};
     std::unique_ptr<RestrictedMallocRule> restrictedMallocRule{};
     std::unique_ptr<SingleReturnRule> singleReturnRule{};
     std::unique_ptr<StrictSwitchRule> strictSwitchRule{};
@@ -220,6 +222,16 @@ public:
                 );
 
             argumentPointerCallsiteRule->bindFinder(finder);
+
+            // No use of a pointer after it has been moved
+            argumentPointerUseAfterMoveRule =
+                std::make_unique<ArgumentPointerUseAfterMoveRule>(
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+
+            argumentPointerUseAfterMoveRule->bindFinder(finder);
         }
 
         // Restricted malloc rule

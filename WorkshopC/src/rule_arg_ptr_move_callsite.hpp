@@ -41,6 +41,21 @@ private:
 
     std::string getParamTag(const ParmVarDecl *P) const;
 
+    /*
+     * The tag of a parameter of the function being analyzed, also
+     * looking at the matching parameter of its other declarations.
+     */
+    std::string getOwnParamTag(const ParmVarDecl *P) const;
+
+    /*
+     * Reports passing a parameter tagged mod or out (or what an out
+     * parameter points to) to a parameter tagged move: the function
+     * only borrowed it, so it can not give away ownership of it.
+     */
+    void checkMoveOfBorrowedParam(const CallExpr *CE,
+                                  const FunctionDecl *FD,
+                                  const SourceManager &sm);
+
     void report(const std::string &msg,
                 const SourceManager &sm,
                 SourceLocation loc);

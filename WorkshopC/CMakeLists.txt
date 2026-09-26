@@ -66,6 +66,7 @@ set(SOURCES
     src/rule_null_check.cpp
     src/rule_arg_ptr_move.cpp
     src/rule_arg_ptr_move_callsite.cpp
+    src/rule_arg_ptr_use_after_move.cpp
     src/struct_database_rule.cpp
     src/struct_init_rule.cpp
     src/struct_cleanup_rule.cpp

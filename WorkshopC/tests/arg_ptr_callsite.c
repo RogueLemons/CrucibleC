@@ -22,8 +22,8 @@ void foo(void)
     // Move test
     int* i_ptr = NULL;
     func_that_takes_move(move_cast(i_ptr)); // good
-    func_that_takes_move(mod_cast(i_ptr)); // bad
-    func_that_takes_move(i_ptr); // bad
+    func_that_takes_move(mod_cast(i_ptr)); // bad: wrong operator, and i_ptr was already moved
+    func_that_takes_move(i_ptr); // bad: missing operator, and i_ptr was already moved
 
     // Out test
     float f;
