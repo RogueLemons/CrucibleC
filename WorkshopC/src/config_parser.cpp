@@ -308,6 +308,31 @@ std::vector<std::string> ConfigParser::parseInlineList(const std::string &value)
 }
 
 void ConfigParser::applySetting(
+    GlobalVariableRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+    else if (key == "require_prefix") {
+        cfg.requirePrefix = parseBool(value);
+    }
+    else if (key == "prefix") {
+        cfg.prefix = unquote(value);
+    }
+    else if (key == "must_be_caps") {
+        cfg.mustBeCaps = parseBool(value);
+    }
+    else if (key == "must_be_static") {
+        cfg.mustBeStatic = parseBool(value);
+    }
+    else if (key == "must_be_const") {
+        cfg.mustBeConst = parseBool(value);
+    }
+}
+
+void ConfigParser::applySetting(
     StrictSwitchRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -411,6 +436,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "strict_switch") {
         applySetting(config.strictSwitchRule, key, value);
+    }
+    else if (currentRule == "global_variable") {
+        applySetting(config.globalVariableRule, key, value);
     }
 }
 

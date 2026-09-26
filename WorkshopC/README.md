@@ -17,6 +17,7 @@ A project for parsing C code and generating tips for writing safer code or adher
   - [Restricted malloc rule](#restricted-malloc-rule)
   - [Single return rule](#single-return-rule)
   - [Strict switch rule](#strict-switch-rule)
+  - [Global variable rule](#global-variable-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -683,6 +684,41 @@ switch (value)
 
 A case also ends correctly with `continue` or `goto`, with a call to a function that never returns (such as `abort()` or `exit()`), with a block whose last statement ends the case, or with an `if`/`else` where both branches end the case. A nested `switch` as the last statement of a case is reported too, since its `break` only leaves the inner switch.
 
+### Global variable rule
+This rule enforces conventions for global (file scope) variables, which makes them easy to spot and limits who can change them. Each option can be enabled separately.
+
+```yaml
+global_variable:
+    level: Warning
+    require_prefix: true
+    prefix: g_
+    must_be_caps: false
+    must_be_static: true
+    must_be_const: false
+```
+
+- `require_prefix`: the name must start with `prefix`.
+- `must_be_caps`: the name may not contain lowercase letters. When `require_prefix` is also enabled, only the part after the prefix is checked, so `g_MAX_SIZE` is fine.
+- `must_be_static`: the variable must be `static`, so that it is only visible inside its own file. An `extern` declaration is therefore reported too.
+- `must_be_const`: the variable must be `const`. A pointer must be const on every level, both the pointer itself and what it points to, e.g. `const int* const`. For arrays the elements must be const.
+
+Two common setups are internal state and constants:
+
+```c
+// require_prefix: true, prefix: g_, must_be_static: true
+static int g_counter = 0;               // OK
+static int counter = 0;                 // Triggers parser, missing prefix
+int g_exported = 0;                     // Triggers parser, not static
+
+// must_be_caps: true, must_be_const: true
+const int MAX_SIZE = 10;                // OK
+const char* const APP_NAME = "app";     // OK
+const char* NAME_POINTER = "name";      // Triggers parser, the pointer itself is not const
+int COUNTER = 0;                        // Triggers parser, not const
+```
+
+Only variables at file scope are checked, static variables inside functions are not. A variable declared more than once (e.g. `extern` in a header and the definition in the source file) is only checked once, at its definition.
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -1047,7 +1083,6 @@ For Beta V1.2 it shall
 - Improved exe arguments (writing e.g. workshopc --config conf.yaml)
 - Provide output to txt or json file if provided as argument
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
-- Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
 - Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 - Add rule that all arrays of pointers must end with NULL pointer
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS

@@ -73,6 +73,7 @@ set(SOURCES
     src/rule_restricted_malloc.cpp
     src/rule_single_return.cpp
     src/rule_strict_switch.cpp
+    src/rule_global_variable.cpp
 )
 
 add_executable(workshopc ${SOURCES})

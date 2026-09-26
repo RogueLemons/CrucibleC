@@ -1,0 +1,8 @@
+warning: global variable 'counter' must start with the prefix 'global_'
+warning: global variable 'global_exported' must be static
+warning: global variable 'exported' must start with the prefix 'global_'
+warning: global variable 'exported' must be static
+warning: global variable 'global_tentative' must be static
+warning: global variable 'global_defined_elsewhere' must be static
+warning: global variable 'shared_value' must start with the prefix 'global_'
+warning: global variable 'shared_value' must be static

@@ -104,3 +104,12 @@ rules:
   # Strict switch rule - require all switch statements to have a default and all cases include a break/return
   strict_switch:
     level: Warning
+
+  # Global variable rule - require naming conventions
+  global_variable:
+    level: Warning
+    require_prefix: true
+    prefix: g_
+    must_be_caps: false
+    must_be_static: true
+    must_be_const: false

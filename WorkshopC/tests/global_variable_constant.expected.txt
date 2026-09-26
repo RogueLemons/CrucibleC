@@ -1,0 +1,10 @@
+warning: global variable 'counter' must be written in capital letters
+warning: global variable 'counter' must be const
+warning: global variable 'MUTABLE_VALUE' must be const
+warning: global variable 'lower_case' must be written in capital letters
+warning: global variable 'g_PREFIXED' must be written in capital letters
+warning: global variable 'NAME_POINTER' must be const, and so must everything it points to (e.g. 'const int* const')
+warning: global variable 'DATA_POINTER' must be const, and so must everything it points to (e.g. 'const int* const')
+warning: global variable 'NESTED_POINTER' must be const, and so must everything it points to (e.g. 'const int* const')
+warning: global variable 'VALUES' must be const
+warning: global variable 'POINTER_ARRAY' must be const, and so must everything it points to (e.g. 'const int* const')

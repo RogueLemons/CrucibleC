@@ -15,6 +15,7 @@
 #include "rule_restricted_malloc.hpp"
 #include "rule_single_return.hpp"
 #include "rule_strict_switch.hpp"
+#include "rule_global_variable.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -67,6 +68,7 @@ private:
     std::unique_ptr<RestrictedMallocRule> restrictedMallocRule{};
     std::unique_ptr<SingleReturnRule> singleReturnRule{};
     std::unique_ptr<StrictSwitchRule> strictSwitchRule{};
+    std::unique_ptr<GlobalVariableRule> globalVariableRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -257,6 +259,19 @@ public:
                 );
 
             strictSwitchRule->bindFinder(finder);
+        }
+
+        // Global variable rule
+        if (config.globalVariableRule.level != RuleLevel::Off) {
+
+            globalVariableRule =
+                std::make_unique<GlobalVariableRule>(
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+
+            globalVariableRule->bindFinder(finder);
         }
 
         // struct resource management rule

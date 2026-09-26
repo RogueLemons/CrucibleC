@@ -109,6 +109,16 @@ struct StrictSwitchRuleConfig {
     RuleLevel level = RuleLevel::Off;
 };
 
+struct GlobalVariableRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool requirePrefix = false;
+    std::string prefix = "g_";
+    bool mustBeCaps = false;
+    bool mustBeStatic = false;
+    bool mustBeConst = false;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -124,6 +134,7 @@ struct Config {
     RestrictedMallocRuleConfig restrictedMallocRule;
     SingleReturnRuleConfig singleReturnRule;
     StrictSwitchRuleConfig strictSwitchRule;
+    GlobalVariableRuleConfig globalVariableRule;
 
     std::vector<std::string> projectIncludes;
     std::vector<std::string> thirdPartyIncludes;
