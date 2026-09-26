@@ -7,6 +7,8 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "config.hpp"
 #include "diagnostics.hpp"
@@ -23,7 +25,6 @@ private:
     Diagnostics &diagnostics;
 
     struct ParamState {
-        bool seenGuard = false;
         const Expr *violation = nullptr;
     };
 
@@ -37,17 +38,31 @@ private:
 
     bool isNullLiteral(const Expr *expr) const;
 
+    /*
+     * 'param == NULL', 'NULL != param' and similar.
+     */
     bool isNullComparison(const Expr *expr,
                           const ParmVarDecl *param) const;
 
-    bool isMacroNullCheck(const Expr *expr) const;
+    /*
+     * A call to a function with "null" or "NULL" in its name that is
+     * given 'param', e.g. 'is_null(param)'.
+     */
+    bool isNamedNullCheckCall(const Expr *expr,
+                              const ParmVarDecl *param) const;
 
-    bool isAllowedBooleanUse(const Expr *expr,
-                             const ParmVarDecl *param,
-                             bool allowBool) const;
+    /*
+     * 'param' or '!param' (any number of '!'), which only counts as a
+     * check when used as a condition and allowed by the config.
+     */
+    bool isBooleanCheck(const Expr *expr,
+                        const ParmVarDecl *param) const;
 
-    bool isNullGuard(const Expr *expr,
-                     const ParmVarDecl *param) const;
+    /*
+     * True if 'cond', used as a condition, checks 'param' for null.
+     */
+    bool isConditionCheck(const Expr *cond,
+                          const ParmVarDecl *param) const;
 
     bool isDerefOfParam(
         const Expr *expr,

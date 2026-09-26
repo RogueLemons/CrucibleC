@@ -393,7 +393,7 @@ int dereference_safely(int* i_ptr)
 }
 ```
 
-Note that many more options are valid for checking null, including `if (i_ptr) { ... }` if `allow_direct_ptr_in_if_statement` is true in config. The usage being first is determined simply by being the first line and only verifies that the comparison was made, not that the user implemented its logic correctly thereafter. 
+Note that many more options are valid for checking null, including `if (i_ptr) { ... }` if `allow_direct_ptr_in_if_statement` is true in config. A comparison with null (`i_ptr == NULL`, also through macros and `assert`) or a call to a function with "null" in its name that is given the pointer counts as a check anywhere, while a plain `i_ptr` or `!i_ptr` only counts as a check when used as a condition (`if`, `while`, `for`, `?:`, `&&`, `||`). Passing the pointer on to another function is not a check. `*i_ptr`, `i_ptr->field` and `i_ptr[index]` all count as dereferences.
 
 ### Argument pointer movement rule
 This rule enforces user defined macro tags and "operators" for handling ownership of pointers, and making sure both the callsite and function match their "operator" and tag. [Here is a premade document for tags](./default/move_tags.h) that can be used as is, but all macro definitions can be changed as well.  
@@ -948,7 +948,6 @@ This ensures:
 For Beta V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
-- Improve null check rule to not just check first use on line axis but also if it has been check for the scope it is in
 - Reorganize README and documentation
 
 For Beta V1.1 it shall

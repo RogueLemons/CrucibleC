@@ -4,3 +4,11 @@ warning: pointer parameter 'arg_ptr' is dereferenced before null check
 warning: pointer parameter 'wrap_1' is dereferenced before null check
 warning: pointer parameter 'wrap_2' is dereferenced before null check
 warning: pointer parameter 'wrap_3' is dereferenced before null check
+warning: pointer parameter 'closed_scope' is dereferenced before null check
+warning: pointer parameter 'sibling_branch' is dereferenced before null check
+warning: pointer parameter 'inside_loop' is dereferenced before null check
+warning: pointer parameter 'passed_on' is dereferenced before null check
+warning: pointer parameter 'subscripted' is dereferenced before null check
+warning: pointer parameter 'first_unchecked' is dereferenced before null check
+warning: pointer parameter 'second_unchecked' is dereferenced before null check
+warning: pointer parameter 'unchecked_other' is dereferenced before null check

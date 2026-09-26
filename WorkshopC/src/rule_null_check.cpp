@@ -63,67 +63,58 @@ bool NullCheckRule::isNullComparison(const Expr *expr,
            (isParamRef(rhs, param) && isNullLiteral(lhs));
 }
 
-bool NullCheckRule::isMacroNullCheck(const Expr *expr) const {
+bool NullCheckRule::isNamedNullCheckCall(const Expr *expr,
+                                         const ParmVarDecl *param) const {
     if (!expr)
         return false;
 
-    if (const auto *call = dyn_cast<CallExpr>(expr)) {
-        if (const FunctionDecl *fd = call->getDirectCallee()) {
-            std::string name = fd->getNameAsString();
+    const auto *call = dyn_cast<CallExpr>(expr->IgnoreParenImpCasts());
 
-            return name.find("NULL") != std::string::npos ||
-                   name.find("null") != std::string::npos;
-        }
+    if (!call)
+        return false;
+
+    const FunctionDecl *fd = call->getDirectCallee();
+
+    if (!fd)
+        return false;
+
+    const std::string name = fd->getNameAsString();
+
+    if (name.find("NULL") == std::string::npos &&
+        name.find("null") == std::string::npos)
+        return false;
+
+    for (const Expr *arg : call->arguments()) {
+        if (isParamRef(arg, param))
+            return true;
     }
 
     return false;
 }
 
-bool NullCheckRule::isAllowedBooleanUse(const Expr *expr,
-                         const ParmVarDecl *param,
-                         bool allowBool) const {
-    if (!allowBool)
-        return false;
-
-    if (!expr)
+bool NullCheckRule::isBooleanCheck(const Expr *expr,
+                                   const ParmVarDecl *param) const {
+    if (!expr || !config.nullCheckRule.allowDirectPtrInIfStatement)
         return false;
 
     expr = expr->IgnoreParenImpCasts();
 
-    // if (ptr)
-    if (isParamRef(expr, param))
-        return true;
+    // !ptr, !!ptr (as produced by assert), ...
+    while (const auto *un = dyn_cast<UnaryOperator>(expr)) {
+        if (un->getOpcode() != UO_LNot)
+            break;
 
-    // if (!ptr)
-    if (const auto *un = dyn_cast<UnaryOperator>(expr)) {
-        if (un->getOpcode() == UO_LNot &&
-            isParamRef(un->getSubExpr(), param)) {
-            return true;
-        }
+        expr = un->getSubExpr()->IgnoreParenImpCasts();
     }
 
-    // ptr ? a : b
-    if (const auto *cond = dyn_cast<ConditionalOperator>(expr)) {
-        const Expr *c = cond->getCond()->IgnoreParenImpCasts();
-
-        if (isParamRef(c, param))
-            return true;
-
-        if (const auto *un = dyn_cast<UnaryOperator>(c)) {
-            if (un->getOpcode() == UO_LNot &&
-                isParamRef(un->getSubExpr(), param)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return isParamRef(expr, param);
 }
 
-bool NullCheckRule::isNullGuard(const Expr *expr,
-                 const ParmVarDecl *param) const {
-    return isNullComparison(expr, param) ||
-           isMacroNullCheck(expr);
+bool NullCheckRule::isConditionCheck(const Expr *cond,
+                                     const ParmVarDecl *param) const {
+    return isNullComparison(cond, param) ||
+           isNamedNullCheckCall(cond, param) ||
+           isBooleanCheck(cond, param);
 }
 
 bool NullCheckRule::isDerefOfParam(
@@ -146,6 +137,10 @@ bool NullCheckRule::isDerefOfParam(
         if (member->isArrow())
             return isParamRef(member->getBase(), param);
     }
+
+    // Implicit dereference: param[index]
+    if (const auto *subscript = dyn_cast<ArraySubscriptExpr>(expr))
+        return isParamRef(subscript->getBase(), param);
 
     return false;
 }
@@ -186,9 +181,6 @@ void NullCheckRule::run(const MatchFinder::MatchResult &result) {
     if (!path.empty() && isThirdParty(path))
         return;
 
-    const bool allowBool =
-        config.nullCheckRule.allowDirectPtrInIfStatement;
-
     std::unordered_map<const ParmVarDecl*, ParamState> states;
 
     for (const auto *p : fn->parameters()) {
@@ -199,49 +191,166 @@ void NullCheckRule::run(const MatchFinder::MatchResult &result) {
     if (states.empty())
         return;
 
-    const Stmt *body = fn->getBody();
+    // A null check only guards the scope it was made in and the scopes
+    // nested inside it. Each entry holds the parameters checked in one
+    // open scope, the innermost scope last.
+    std::vector<std::unordered_set<const ParmVarDecl*>> scopes(1);
 
-    std::function<bool(const Stmt*)> walk =
-        [&](const Stmt *s) -> bool {
-            if (!s)
+    auto isGuarded = [&](const ParmVarDecl *param) {
+        for (const auto &scope : scopes) {
+            if (scope.count(param))
                 return true;
+        }
 
-            const Expr *expr = dyn_cast<Expr>(s);
+        return false;
+    };
 
+    // A check made where a condition is evaluated (if, while, for, do,
+    // ?:, && and ||) belongs to the scope that contains the condition,
+    // and therefore also guards the branches and the code after it.
+    auto markConditionChecks = [&](const Expr *cond) {
+        if (!cond)
+            return;
+
+        for (auto &[param, st] : states) {
+            if (isConditionCheck(cond, param))
+                scopes.back().insert(param);
+        }
+    };
+
+    // Statements coming from a macro expansion do not open scopes of
+    // their own, so a check inside e.g. 'do { ... } while (0)' in a
+    // macro counts for the scope where the macro is used.
+    auto pushScope = [&](const Stmt *s) {
+        if (!s || s->getBeginLoc().isMacroID())
+            return false;
+
+        scopes.emplace_back();
+        return true;
+    };
+
+    std::function<void(const Stmt*)> walk;
+
+    auto walkInScope = [&](const Stmt *s) {
+        if (!s)
+            return;
+
+        const bool pushed = pushScope(s);
+
+        walk(s);
+
+        if (pushed)
+            scopes.pop_back();
+    };
+
+    walk = [&](const Stmt *s) {
+        if (!s)
+            return;
+
+        if (const auto *compound = dyn_cast<CompoundStmt>(s)) {
+            const bool pushed = pushScope(compound);
+
+            for (const Stmt *child : compound->body())
+                walk(child);
+
+            if (pushed)
+                scopes.pop_back();
+
+            return;
+        }
+
+        if (const auto *ifStmt = dyn_cast<IfStmt>(s)) {
+            walk(ifStmt->getInit());
+            walk(ifStmt->getConditionVariableDeclStmt());
+            walk(ifStmt->getCond());
+            markConditionChecks(ifStmt->getCond());
+            walkInScope(ifStmt->getThen());
+            walkInScope(ifStmt->getElse());
+            return;
+        }
+
+        if (const auto *whileStmt = dyn_cast<WhileStmt>(s)) {
+            walk(whileStmt->getConditionVariableDeclStmt());
+            walk(whileStmt->getCond());
+            markConditionChecks(whileStmt->getCond());
+            walkInScope(whileStmt->getBody());
+            return;
+        }
+
+        if (const auto *forStmt = dyn_cast<ForStmt>(s)) {
+            const bool pushed = pushScope(forStmt);
+
+            walk(forStmt->getInit());
+            walk(forStmt->getConditionVariableDeclStmt());
+            walk(forStmt->getCond());
+            markConditionChecks(forStmt->getCond());
+            walkInScope(forStmt->getBody());
+            walk(forStmt->getInc());
+
+            if (pushed)
+                scopes.pop_back();
+
+            return;
+        }
+
+        if (const auto *doStmt = dyn_cast<DoStmt>(s)) {
+            walkInScope(doStmt->getBody());
+            walk(doStmt->getCond());
+            markConditionChecks(doStmt->getCond());
+            return;
+        }
+
+        if (const auto *switchStmt = dyn_cast<SwitchStmt>(s)) {
+            walk(switchStmt->getInit());
+            walk(switchStmt->getConditionVariableDeclStmt());
+            walk(switchStmt->getCond());
+            walkInScope(switchStmt->getBody());
+            return;
+        }
+
+        if (const auto *conditional = dyn_cast<ConditionalOperator>(s)) {
+            walk(conditional->getCond());
+            markConditionChecks(conditional->getCond());
+            walk(conditional->getTrueExpr());
+            walk(conditional->getFalseExpr());
+            return;
+        }
+
+        if (const auto *binary = dyn_cast<BinaryOperator>(s)) {
+            if (binary->isLogicalOp()) {
+                walk(binary->getLHS());
+                markConditionChecks(binary->getLHS());
+                walk(binary->getRHS());
+                markConditionChecks(binary->getRHS());
+                return;
+            }
+        }
+
+        if (const auto *expr = dyn_cast<Expr>(s)) {
             for (auto &[param, st] : states) {
-                if (!param)
-                    continue;
-
-                if (!st.seenGuard &&
-                    expr &&
-                    isNullGuard(expr, param)) {
-                    st.seenGuard = true;
+                if (!st.violation &&
+                    isDerefOfParam(expr, param) &&
+                    !isGuarded(param))
+                {
+                    st.violation = expr;
                 }
 
-                if (expr &&
-                    isAllowedBooleanUse(expr, param, allowBool)) {
-                    st.seenGuard = true;
-                }
-
-                if (expr &&
-                    isDerefOfParam(expr, param)) {
-
-                    if (!st.seenGuard) {
-                        st.violation = expr;
-                        return false;
-                    }
+                // An explicit comparison with null or a null checking
+                // function counts wherever it is, e.g. stored in a
+                // variable that is then asserted.
+                if (isNullComparison(expr, param) ||
+                    isNamedNullCheckCall(expr, param))
+                {
+                    scopes.back().insert(param);
                 }
             }
+        }
 
-            for (const Stmt *c : s->children()) {
-                if (!walk(c))
-                    return false;
-            }
+        for (const Stmt *child : s->children())
+            walk(child);
+    };
 
-            return true;
-        };
-
-    walk(body);
+    walk(fn->getBody());
 
     for (const auto &[param, st] : states) {
         if (!st.violation)
