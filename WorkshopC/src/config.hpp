@@ -117,6 +117,11 @@ struct GlobalVariableRuleConfig {
     bool mustBeCaps = false;
     bool mustBeStatic = false;
     bool mustBeConst = false;
+
+    bool treatLocalStaticAsGlobal = false;
+    bool requireLocalStaticPrefix = false;
+    std::string localStaticPrefix = "s_";
+    bool forbidStaticInHeader = false;
 };
 
 struct Config {

@@ -55,13 +55,14 @@ bool GlobalVariableRule::isDeepConst(
 void GlobalVariableRule::report(
     const SourceManager &sm,
     const VarDecl *var,
+    const std::string &kind,
     const std::string &message)
 {
     diagnostics.report(
         config.globalVariableRule.level,
         sm,
         sm.getExpansionLoc(var->getLocation()),
-        "global variable '" + var->getNameAsString() + "' " + message
+        kind + " '" + var->getNameAsString() + "' " + message
     );
 }
 
@@ -90,9 +91,24 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
 
     const auto *var = result.Nodes.getNodeAs<VarDecl>("var");
 
-    // Only variables at file scope, not static locals
-    if (!var || !var->isFileVarDecl())
+    if (!var)
         return;
+
+    const bool isStaticLocal = var->isStaticLocal();
+
+    // Variables at file scope, and static locals when configured
+    if (isStaticLocal) {
+        if (!cfg.treatLocalStaticAsGlobal && !cfg.requireLocalStaticPrefix)
+            return;
+    }
+    else if (!var->isFileVarDecl()) {
+        return;
+    }
+
+    // Static locals only follow the global conventions (capital
+    // letters, const and the global prefix) when treated as globals
+    const bool followsGlobalRules =
+        !isStaticLocal || cfg.treatLocalStaticAsGlobal;
 
     // Check each variable once: at its definition, at its tentative
     // definition ('int x;'), or otherwise at its first declaration.
@@ -112,21 +128,37 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
     if (shouldIgnore(sm, var->getLocation()))
         return;
 
+    const std::string kind =
+        isStaticLocal ? "static local variable" : "global variable";
+
+    // Static locals use their own prefix whenever it is required, and
+    // otherwise the global prefix settings if treated as globals
+    const bool useLocalPrefix =
+        isStaticLocal && cfg.requireLocalStaticPrefix;
+
+    const bool prefixRequired =
+        useLocalPrefix || (followsGlobalRules && cfg.requirePrefix);
+
+    const std::string &prefix =
+        useLocalPrefix ? cfg.localStaticPrefix : cfg.prefix;
+
     const std::string name = var->getNameAsString();
 
     std::string nameAfterPrefix = name;
+    bool hasPrefix = false;
 
-    if (cfg.requirePrefix) {
-        if (name.rfind(cfg.prefix, 0) != 0) {
-            report(sm, var,
-                "must start with the prefix '" + cfg.prefix + "'");
+    if (prefixRequired) {
+        if (name.rfind(prefix, 0) != 0) {
+            report(sm, var, kind,
+                "must start with the prefix '" + prefix + "'");
         }
         else {
-            nameAfterPrefix = name.substr(cfg.prefix.size());
+            nameAfterPrefix = name.substr(prefix.size());
+            hasPrefix = true;
         }
     }
 
-    if (cfg.mustBeCaps) {
+    if (followsGlobalRules && cfg.mustBeCaps) {
         bool hasLowercase = false;
 
         for (unsigned char c : nameAfterPrefix) {
@@ -135,29 +167,48 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
         }
 
         if (hasLowercase) {
-            report(sm, var,
-                cfg.requirePrefix
+            report(sm, var, kind,
+                hasPrefix
                     ? "must be written in capital letters after the prefix '" +
-                      cfg.prefix + "'"
+                      prefix + "'"
                     : std::string("must be written in capital letters"));
         }
     }
 
-    if (cfg.mustBeStatic && var->getStorageClass() != SC_Static) {
-        report(sm, var, "must be static");
+    // A static local is always static
+    if (!isStaticLocal &&
+        cfg.mustBeStatic &&
+        var->getStorageClass() != SC_Static)
+    {
+        report(sm, var, kind, "must be static");
     }
 
-    if (cfg.mustBeConst &&
+    if (followsGlobalRules &&
+        cfg.mustBeConst &&
         !isDeepConst(var->getType(), *result.Context))
     {
         const bool involvesPointer =
             var->getType()->isPointerType() ||
             result.Context->getBaseElementType(var->getType())->isPointerType();
 
-        report(sm, var,
+        report(sm, var, kind,
             involvesPointer
                 ? "must be const, and so must everything it points to "
                   "(e.g. 'const int* const')"
                 : "must be const");
+    }
+
+    // A static global in a header gives every file that includes the
+    // header its own separate copy of the variable. The same goes for a
+    // static local in a function defined in a header, so it is checked
+    // too when static locals are treated as globals.
+    if (followsGlobalRules &&
+        cfg.forbidStaticInHeader &&
+        var->getStorageClass() == SC_Static &&
+        !sm.isInMainFile(sm.getExpansionLoc(var->getLocation())))
+    {
+        report(sm, var, kind,
+            "may not be static in a header, every file that includes "
+            "the header would get its own copy of it");
     }
 }

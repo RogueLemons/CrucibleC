@@ -1,5 +1,9 @@
 // Globals as internal state: prefixed with 'global_' and static,
-// capital letters and const are not required
+// capital letters and const are not required. Static locals are
+// treated as globals but use their own prefix 's_', and static
+// globals are not allowed in headers.
+
+#include "headers/global_variable_state.h"
 
 struct point
 {
@@ -19,10 +23,11 @@ static int global_redeclared = 5;                       // good: redeclarations 
 
 int use_state(int argument)
 {
-    static int calls = 0;                               // good: static local, not a global
-    int local = argument;                               // good: local variable
-    calls++;
-    return global_counter + global_values[0] + global_origin.x + local + global_redeclared + global_Mixed_Case + calls;
+    static int s_calls = 0;                             // good: static local with the 's_' prefix
+    static const char* s_last_name = "none";            // good: const is not required
+    int local = argument;                               // good: local variable, not static
+    s_calls++;
+    return global_counter + global_values[0] + global_origin.x + local + global_redeclared + global_Mixed_Case + s_calls + (s_last_name ? 1 : 0);
 }
 
 // Bad
@@ -35,6 +40,14 @@ extern int global_defined_elsewhere;                    // bad: extern is not st
 
 extern int shared_value;                                // declaration of the variable below
 int shared_value = 3;                                   // bad: missing prefix, and not static, reported once
+
+int use_bad_state(void)
+{
+    static int calls = 0;                               // bad: static local without the 's_' prefix
+    static int global_calls = 0;                        // bad: static locals use 's_', not the global prefix
+    calls++;
+    return calls + global_calls;
+}
 
 // WorkshopC off
 int suppressed_value = 0;                               // good: suppressed, no diagnostic expected

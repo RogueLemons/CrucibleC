@@ -1,0 +1,17 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  global_variable:
+    level: Warning
+    require_prefix: true
+    prefix: G_
+    must_be_caps: true
+    must_be_static: true
+    must_be_const: true
+    treat_local_static_as_global: false
+    require_local_static_prefix: true
+    local_static_prefix: s_
+    forbid_static_in_header: false

@@ -16,10 +16,15 @@ using namespace clang::ast_matchers;
 
 /*
  * Naming and qualifier conventions for global (file scope) variables:
- * a required prefix, capital letters, static and const. A variable
- * that is declared more than once is only checked once, at its
- * definition, or at its first declaration if it is not defined in the
- * file being analyzed.
+ * a required prefix, capital letters, static and const, and optionally
+ * no static globals in headers. A variable that is declared more than
+ * once is only checked once, at its definition, or at its first
+ * declaration if it is not defined in the file being analyzed.
+ *
+ * With treat_local_static_as_global, static variables inside functions
+ * follow the prefix, capital letter and const conventions too, using
+ * local_static_prefix when require_local_static_prefix is set and the
+ * global prefix settings otherwise.
  */
 class GlobalVariableRule : public MatchFinder::MatchCallback {
 private:
@@ -44,6 +49,7 @@ private:
     void report(
         const SourceManager &sm,
         const VarDecl *var,
+        const std::string &kind,
         const std::string &message);
 
 public:

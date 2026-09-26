@@ -11,3 +11,7 @@ rules:
     must_be_caps: true
     must_be_static: false
     must_be_const: true
+    treat_local_static_as_global: true
+    require_local_static_prefix: false
+    local_static_prefix: s_
+    forbid_static_in_header: false

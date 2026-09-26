@@ -695,12 +695,19 @@ global_variable:
     must_be_caps: false
     must_be_static: true
     must_be_const: false
+    treat_local_static_as_global: false
+    require_local_static_prefix: true
+    local_static_prefix: s_
+    forbid_static_in_header: true
 ```
 
 - `require_prefix`: the name must start with `prefix`.
 - `must_be_caps`: the name may not contain lowercase letters. When `require_prefix` is also enabled, only the part after the prefix is checked, so `g_MAX_SIZE` is fine.
 - `must_be_static`: the variable must be `static`, so that it is only visible inside its own file. An `extern` declaration is therefore reported too.
 - `must_be_const`: the variable must be `const`. A pointer must be const on every level, both the pointer itself and what it points to, e.g. `const int* const`. For arrays the elements must be const.
+- `forbid_static_in_header`: a `static` global may not be declared in a header, since every file that includes the header would get its own separate copy of it. Together with `must_be_static` this means globals can not be declared in headers at all. When `treat_local_static_as_global` is `true`, this also covers static locals in functions defined in a header (e.g. `static inline` functions), which get a separate copy per file in the same way.
+- `treat_local_static_as_global`: static variables inside functions follow the capital letter and const settings too. They keep their value between calls just like globals, but look like ordinary local variables where they are used.
+- `require_local_static_prefix` and `local_static_prefix`: static locals must start with `local_static_prefix`, whether or not they are treated as globals, so that e.g. `g_` marks globals and `s_` marks static locals. When `require_local_static_prefix` is `false`, static locals treated as globals follow `require_prefix` and `prefix` like globals instead. Static locals are only left completely unchecked when both `treat_local_static_as_global` and `require_local_static_prefix` are `false`.
 
 Two common setups are internal state and constants:
 
@@ -717,7 +724,7 @@ const char* NAME_POINTER = "name";      // Triggers parser, the pointer itself i
 int COUNTER = 0;                        // Triggers parser, not const
 ```
 
-Only variables at file scope are checked, static variables inside functions are not. A variable declared more than once (e.g. `extern` in a header and the definition in the source file) is only checked once, at its definition.
+Local variables that are not static are never checked. A variable declared more than once (e.g. `extern` in a header and the definition in the source file) is only checked once, at its definition.
 
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.

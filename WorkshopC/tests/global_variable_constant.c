@@ -1,5 +1,9 @@
 // Globals as constants: capital letters and const (all the way down
-// for pointers), a prefix and static are not required
+// for pointers), a prefix and static are not required. Static locals
+// are treated as globals and follow the global prefix settings, and
+// static globals are allowed in headers.
+
+#include "headers/global_variable_constants.h"
 
 typedef void (*callback_t)(void);
 
@@ -18,10 +22,10 @@ extern const int EXTERNAL_LIMIT;                        // good
 
 int use_constants(int argument)
 {
-    static int calls = 0;                               // good: static local, not a global
-    int local = argument;                               // good: local variable
-    calls++;
-    return MAX_SIZE + LOOKUP_TABLE[0] + local + calls;
+    static const int CALL_LIMIT = 5;                    // good: static local in capital letters and const
+    static const char* const DEFAULT_NAME = "name";     // good
+    int local = argument;                               // good: local variable, not static
+    return MAX_SIZE + LOOKUP_TABLE[0] + local + CALL_LIMIT + HEADER_LIMIT + (DEFAULT_NAME ? 1 : 0);
 }
 
 // Bad
@@ -35,3 +39,12 @@ char* const DATA_POINTER = 0;                           // bad: what it points t
 const char** const NESTED_POINTER = 0;                  // bad: the middle pointer is not const
 int VALUES[3] = {1, 2, 3};                              // bad: array elements are not const
 const int* POINTER_ARRAY[2] = {0, 0};                   // bad: the pointers in the array are not const
+
+int use_bad_constants(void)
+{
+    static int calls = 0;                               // bad: not capital letters, and not const
+    static const int lower_limit = 3;                   // bad: not capital letters
+    static int MUTABLE_CALLS = 0;                       // bad: not const
+    calls++;
+    return calls + lower_limit + MUTABLE_CALLS;
+}

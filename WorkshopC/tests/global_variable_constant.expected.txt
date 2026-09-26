@@ -8,3 +8,7 @@ warning: global variable 'DATA_POINTER' must be const, and so must everything it
 warning: global variable 'NESTED_POINTER' must be const, and so must everything it points to (e.g. 'const int* const')
 warning: global variable 'VALUES' must be const
 warning: global variable 'POINTER_ARRAY' must be const, and so must everything it points to (e.g. 'const int* const')
+warning: static local variable 'calls' must be written in capital letters
+warning: static local variable 'calls' must be const
+warning: static local variable 'lower_limit' must be written in capital letters
+warning: static local variable 'MUTABLE_CALLS' must be const

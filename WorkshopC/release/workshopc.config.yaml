@@ -105,7 +105,7 @@ rules:
   strict_switch:
     level: Warning
 
-  # Global variable rule - require naming conventions
+  # Global variable rule - require naming and safety conventions
   global_variable:
     level: Warning
     require_prefix: true
@@ -113,3 +113,7 @@ rules:
     must_be_caps: false
     must_be_static: true
     must_be_const: false
+    treat_local_static_as_global: false
+    require_local_static_prefix: true
+    local_static_prefix: s_
+    forbid_static_in_header: true

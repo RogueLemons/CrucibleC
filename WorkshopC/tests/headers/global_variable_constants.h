@@ -1,0 +1,6 @@
+#ifndef TESTS_HEADERS_GLOBAL_VARIABLE_CONSTANTS_H
+#define TESTS_HEADERS_GLOBAL_VARIABLE_CONSTANTS_H
+
+static const int HEADER_LIMIT = 5;      // good: forbid_static_in_header is false
+
+#endif // TESTS_HEADERS_GLOBAL_VARIABLE_CONSTANTS_H

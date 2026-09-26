@@ -330,6 +330,18 @@ void ConfigParser::applySetting(
     else if (key == "must_be_const") {
         cfg.mustBeConst = parseBool(value);
     }
+    else if (key == "treat_local_static_as_global") {
+        cfg.treatLocalStaticAsGlobal = parseBool(value);
+    }
+    else if (key == "require_local_static_prefix") {
+        cfg.requireLocalStaticPrefix = parseBool(value);
+    }
+    else if (key == "local_static_prefix") {
+        cfg.localStaticPrefix = unquote(value);
+    }
+    else if (key == "forbid_static_in_header") {
+        cfg.forbidStaticInHeader = parseBool(value);
+    }
 }
 
 void ConfigParser::applySetting(
