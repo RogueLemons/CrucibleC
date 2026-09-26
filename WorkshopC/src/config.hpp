@@ -98,6 +98,13 @@ struct RestrictedMallocRuleConfig {
     std::vector<std::string> listOfAllowedMallocFunctions;
 };
 
+struct SingleReturnRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool allowEarlyReturn = true;
+    bool requireReturnForVoid = true;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -111,6 +118,7 @@ struct Config {
     ArgumentPointerMovementRuleConfig argumentPointerMovementRule;
     StructResourceManagementRuleConfig structResourceManagementRule;
     RestrictedMallocRuleConfig restrictedMallocRule;
+    SingleReturnRuleConfig singleReturnRule;
 
     std::vector<std::string> projectIncludes;
     std::vector<std::string> thirdPartyIncludes;

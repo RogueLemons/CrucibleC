@@ -1,0 +1,9 @@
+warning: function 'guard_clause' has more than a single return, only one final return is allowed
+warning: function 'guard_clause_block' has more than a single return, only one final return is allowed
+warning: function 'guard_clause_macro' has more than a single return, only one final return is allowed
+warning: function 'void_early_return' has more than a single return, only one final return is allowed
+warning: function 'return_in_loop' has more than a single return, only one final return is allowed
+warning: function 'return_in_both_branches' has more than a single return, only one final return is allowed
+warning: function 'return_in_both_branches' has more than a single return, only one final return is allowed
+warning: function 'return_in_both_branches' must end with a return statement
+warning: function 'void_without_return' must end with a return statement

@@ -15,6 +15,7 @@ A project for parsing C code and generating tips for writing safer code or adher
   - [Argument pointer movement rule](#argument-pointer-movement-rule)
   - [RAII and struct resource management](#raii-and-struct-resource-management)
   - [Restricted malloc rule](#restricted-malloc-rule)
+  - [Single return rule](#single-return-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -601,6 +602,61 @@ void foo(void)
 
 A macro that expands to one of the functions counts as using it where the macro is used. Uses inside system headers and `third_party_includes` folders are not checked.
 
+### Single return rule
+This rule requires every function to have a single return statement, which must be the last statement of the function. A function with one exit point is easier to follow, and cleanup code placed before the return can never be skipped.
+
+```yaml
+single_return:
+    level: Warning
+    allow_early_return: true
+    require_return_for_void: true
+```
+
+```c
+int sum(const int* values, int count)
+{
+  int result = 0;
+
+  for (int i = 0; i < count; ++i)
+  {
+    if (values[i] < 0)
+      return -1;      // Triggers parser, return inside a loop
+
+    result += values[i];
+  }
+
+  return result;      // OK, the final return
+}
+```
+
+With `allow_early_return: true`, guard clauses are allowed as well: an `if` without an `else`, placed directly in the function's top-level block, may return from its branch, either as its only statement or as the last statement of its block. They do not have to come before all other code. A macro used as a statement at the top level, such as `RETURN_IF_NULL(ptr);`, counts as an early return too.
+
+```c
+int get_value(const int* value)
+{
+  if (!value)
+    return -1;        // OK with allow_early_return: true
+
+  if (*value > 100)
+  {
+    log_error("too large");
+    return -2;        // OK with allow_early_return: true
+  }
+
+  return *value;      // OK, the final return
+}
+
+int pick(int flag)
+{
+  if (flag)
+    return 1;         // Triggers parser, an if with an else is not a guard clause
+  else
+    return 2;         // Triggers parser
+}                     // Triggers parser, the function does not end with a return
+```
+
+With `require_return_for_void: true`, `void` functions must also end with `return;`. When it is `false`, the final return is optional for them, but any other return still has to follow the rules above.
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -966,7 +1022,6 @@ For Beta V1.2 it shall
 - Provide output to txt or json file if provided as argument
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
 - Add rule to enforce all switch cases to have a break for each case and always a default case
-- Add rule to enforce only allowing a single return statement per function
 - Add rule with options to enforce prefix of global variable, make it all caps, and enforce being static
 - Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 - Add rule that all arrays of pointers must end with NULL pointer

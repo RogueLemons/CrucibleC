@@ -308,6 +308,22 @@ std::vector<std::string> ConfigParser::parseInlineList(const std::string &value)
 }
 
 void ConfigParser::applySetting(
+    SingleReturnRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+    else if (key == "allow_early_return") {
+        cfg.allowEarlyReturn = parseBool(value);
+    }
+    else if (key == "require_return_for_void") {
+        cfg.requireReturnForVoid = parseBool(value);
+    }
+}
+
+void ConfigParser::applySetting(
     RestrictedMallocRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -379,6 +395,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "restricted_malloc") {
         applySetting(config.restrictedMallocRule, key, value);
+    }
+    else if (currentRule == "single_return") {
+        applySetting(config.singleReturnRule, key, value);
     }
 }
 

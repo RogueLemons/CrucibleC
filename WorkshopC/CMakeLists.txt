@@ -71,6 +71,7 @@ set(SOURCES
     src/struct_cleanup_rule.cpp
     src/struct_raii_discard_rule.cpp
     src/rule_restricted_malloc.cpp
+    src/rule_single_return.cpp
 )
 
 add_executable(workshopc ${SOURCES})

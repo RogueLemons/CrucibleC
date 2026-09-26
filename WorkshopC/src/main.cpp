@@ -13,6 +13,7 @@
 #include "rule_arg_ptr_move.hpp"
 #include "rule_arg_ptr_move_callsite.hpp"
 #include "rule_restricted_malloc.hpp"
+#include "rule_single_return.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -63,6 +64,7 @@ private:
     std::unique_ptr<ArgumentPointerMovementRule> argumentPointerMovementRule{};
     std::unique_ptr<ArgumentPointerCallsiteRule> argumentPointerCallsiteRule{};
     std::unique_ptr<RestrictedMallocRule> restrictedMallocRule{};
+    std::unique_ptr<SingleReturnRule> singleReturnRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -227,6 +229,19 @@ public:
                 );
 
             restrictedMallocRule->bindFinder(finder);
+        }
+
+        // Single return rule
+        if (config.singleReturnRule.level != RuleLevel::Off) {
+
+            singleReturnRule =
+                std::make_unique<SingleReturnRule>(
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+
+            singleReturnRule->bindFinder(finder);
         }
 
         // struct resource management rule

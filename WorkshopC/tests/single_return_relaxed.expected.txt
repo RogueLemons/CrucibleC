@@ -1,0 +1,7 @@
+warning: function 'return_in_loop' has more than a single return, only early returns directly in the function's top-level block and one final return are allowed
+warning: function 'return_in_else' has more than a single return, only early returns directly in the function's top-level block and one final return are allowed
+warning: function 'return_in_nested_if' has more than a single return, only early returns directly in the function's top-level block and one final return are allowed
+warning: function 'return_in_both_branches' has more than a single return, only early returns directly in the function's top-level block and one final return are allowed
+warning: function 'return_in_both_branches' has more than a single return, only early returns directly in the function's top-level block and one final return are allowed
+warning: function 'return_in_both_branches' must end with a return statement
+warning: function 'void_return_in_loop' has more than a single return, only early returns directly in the function's top-level block and one final return are allowed

@@ -1,0 +1,10 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  single_return:
+    level: Warning
+    allow_early_return: true
+    require_return_for_void: false

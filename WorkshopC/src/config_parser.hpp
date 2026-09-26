@@ -81,6 +81,12 @@ private:
     );
 
     static void applySetting(
+        SingleReturnRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    static void applySetting(
         RestrictedMallocRuleConfig &cfg,
         const std::string &key,
         const std::string &value

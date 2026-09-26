@@ -94,3 +94,9 @@ rules:
       - memory_alloc
       - memory_alloc_array
       - memory_free
+
+  # Single return rule - requires functions to have a single return statement
+  single_return:
+    level: Warning
+    allow_early_return: true
+    require_return_for_void: false
