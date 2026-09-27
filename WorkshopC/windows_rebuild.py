@@ -1,3 +1,4 @@
+import argparse
 import os
 import shutil
 import subprocess
@@ -40,21 +41,33 @@ def configure():
     ], env=env)
 
 
-def build():
+def build(clean_first):
     print("Building...")
 
-    run([
-        "cmake",
-        "--build", str(BUILD_DIR),
-        "--clean-first",
-        "-j"
-    ])
+    cmd = ["cmake", "--build", str(BUILD_DIR)]
+
+    if clean_first:
+        cmd.append("--clean-first")
+
+    cmd.append("-j")
+
+    run(cmd)
 
 
 def main():
-    clean()
+    parser = argparse.ArgumentParser(description="Rebuild WorkshopC")
+    parser.add_argument(
+        "--noclean",
+        action="store_true",
+        help="keep the build directory and only rebuild what changed"
+    )
+    args = parser.parse_args()
+
+    if not args.noclean:
+        clean()
+
     configure()
-    build()
+    build(clean_first=not args.noclean)
 
     print("\nBuild complete")
     print("Release folder updated automatically via CMake")
