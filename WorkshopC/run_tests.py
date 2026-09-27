@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent
 
 RELEASE = ROOT / "release"
 TESTS = ROOT / "tests"
+CASES = TESTS / "cases"
 
 # Compilation database for the test files, generated from
 # tests/CMakeLists.txt. The test files are never built.
@@ -18,7 +19,7 @@ TESTS_COMPDB = ROOT / "build-tests"
 TESTS_OUTPUT = TESTS / "output"
 
 # The test whose diagnostics are written to every output format at once
-OUTPUT_FILES_TEST = TESTS / "suppression_balance" / "suppression_balance.c"
+OUTPUT_FILES_TEST = CASES / "suppression_balance" / "suppression_balance.c"
 
 CODE_PATTERN = re.compile(r" \[(CCW\d{4})\]$")
 
@@ -50,12 +51,12 @@ def generate_tests_compdb():
 
 def find_tests():
     """
-    Every test is a folder tests/<name>/ holding <name>.c,
+    Every test case is a folder tests/cases/<name>/ holding <name>.c,
     <name>.config.yaml and <name>.expected.txt.
     """
     return sorted(
         folder / f"{folder.name}.c"
-        for folder in TESTS.iterdir()
+        for folder in CASES.iterdir()
         if (folder / f"{folder.name}.c").is_file()
     )
 
