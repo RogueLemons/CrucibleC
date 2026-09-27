@@ -56,6 +56,12 @@ private:
     // =====================================================
     bool isWorkshopCInternal(const FunctionDecl *FD) const;
 
+    /*
+     * The movement tags may only be written on function parameters,
+     * not on variables, fields, functions or types.
+     */
+    void checkTagPlacement(const Decl *D, const SourceManager &sm);
+
 public:
     ArgumentPointerMovementRule(
         const Config &cfg,

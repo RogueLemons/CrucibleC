@@ -22,9 +22,10 @@ using namespace clang::ast_matchers;
 /*
  * A pointer variable passed to a parameter tagged 'move' is owned by the
  * called function afterwards, so it may not be used again (read, moved
- * again, compared, ...) until it is reassigned. Reassigning means a plain
- * assignment, a new declaration, or passing its address to a parameter
- * tagged 'out'.
+ * again, compared, its address taken, ...) until it is reassigned.
+ * Reassigning means a plain assignment or a new declaration. Passing its
+ * address to a parameter tagged 'out' does not count, since the function
+ * is not guaranteed to write to it (it may fail and return early).
  *
  * The analysis follows the control flow of each function: a use is
  * reported if the pointer may have been moved on any path reaching it.

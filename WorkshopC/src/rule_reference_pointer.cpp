@@ -1,6 +1,7 @@
 #include "rule_reference_pointer.hpp"
 
 #include "reference_tag.hpp"
+#include "tag_placement.hpp"
 
 #include <algorithm>
 
@@ -211,6 +212,44 @@ void ReferencePointerRule::checkFunction(
     }
 }
 
+void ReferencePointerRule::checkTagPlacement(
+    const Decl *decl,
+    const SourceManager &sm)
+{
+    if (!decl || decl->isImplicit())
+        return;
+
+    const auto *param = dyn_cast<ParmVarDecl>(decl);
+
+    // The tag belongs on the parameters of function declarations
+    if (param && isParameterOfFunctionDecl(param))
+        return;
+
+    for (const auto *attr : decl->attrs()) {
+        const auto *annotate = dyn_cast<AnnotateAttr>(attr);
+
+        // Inherited attributes were already reported where written
+        if (!annotate || annotate->isInherited() ||
+            annotate->getAnnotation() != kReferencePointerTag)
+            continue;
+
+        std::string name = "<unnamed>";
+
+        if (const auto *named = dyn_cast<NamedDecl>(decl)) {
+            if (!named->getName().empty())
+                name = named->getNameAsString();
+        }
+
+        report(sm, decl->getLocation(),
+            param
+                ? "reference tag on '" + name +
+                  "' may not be used on a parameter of a function pointer "
+                  "type, calls through function pointers are not checked"
+                : "reference tag on '" + name +
+                  "' may only be used on function parameters");
+    }
+}
+
 ReferencePointerRule::ReferencePointerRule(const Config &cfg,
                                            SuppressionManager &sup,
                                            Diagnostics &diag)
@@ -240,6 +279,13 @@ void ReferencePointerRule::bindFinder(MatchFinder &finder) {
     finder.addMatcher(
         functionDecl(unless(isExpansionInSystemHeader())).bind("function"),
         this);
+
+    finder.addMatcher(
+        decl(
+            hasAttr(clang::attr::Annotate),
+            unless(isExpansionInSystemHeader())
+        ).bind("taggedDecl"),
+        this);
 }
 
 void ReferencePointerRule::run(const MatchFinder::MatchResult &result) {
@@ -260,6 +306,11 @@ void ReferencePointerRule::run(const MatchFinder::MatchResult &result) {
 
     if (const auto *incDec = result.Nodes.getNodeAs<UnaryOperator>("incDec")) {
         checkReassignment(incDec->getSubExpr(), incDec->getOperatorLoc(), sm);
+        return;
+    }
+
+    if (const auto *tagged = result.Nodes.getNodeAs<Decl>("taggedDecl")) {
+        checkTagPlacement(tagged, sm);
         return;
     }
 

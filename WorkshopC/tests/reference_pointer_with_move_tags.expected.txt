@@ -1,4 +1,6 @@
 warning: function 'missing_movement_tag' parameter 'value' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
+warning: pointer 'pointer' may have been moved to 'take_ownership' and can not be used until it is reassigned
+warning: pointer 'pointer' may have been moved to 'take_ownership' and can not be used until it is reassigned
 warning: argument for reference parameter 'value' of function 'scale' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
 warning: missing modify_operator(...) at call site for parameter 'value' in function 'scale'
 warning: argument for reference parameter 'value' of function 'read_only' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null

@@ -104,3 +104,34 @@ void suppressed(int* pointer)
     set_value(pointer, 1); // good: suppressed, no diagnostic expected
     // WorkshopC on
 }
+
+// -------------------------------------------------------------
+// The reference tag may only be used on function parameters
+// -------------------------------------------------------------
+
+REF int* tagged_global = NULL; // bad: a global variable
+REF int* tagged_function(void); // bad: the tag applies to the function itself
+
+struct tagged_field_holder
+{
+    REF int* field; // bad: a struct field
+};
+
+void tagged_local(void)
+{
+    int value = 0;
+    REF int* local = &value; // bad: a local variable
+}
+
+// Calls through function pointers are not checked yet, so the tag is not
+// allowed on the parameters of function pointer types either
+
+typedef void (*reference_callback)(REF int* value); // bad: a parameter of a function pointer type
+void register_reference_callback(void (*callback)(REF int* value)); // bad: a parameter of a function pointer parameter
+
+void reference_local_callback(void)
+{
+    void (*callback)(REF int* value) = NULL; // bad: a function pointer variable inside a function
+}
+
+typedef void (*plain_reference_callback)(int* value); // good

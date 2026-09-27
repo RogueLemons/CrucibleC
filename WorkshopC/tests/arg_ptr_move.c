@@ -100,16 +100,22 @@ void compared_after_move(void)
         modify_int(value); // bad
 }
 
+void out_does_not_reassign(void)
+{
+    int* value = NULL;
+    create_int(&value);
+    take_ownership(value);
+    create_int(&value); // bad: the out function may fail and return without writing a new value
+    read_int(value); // bad: still counts as moved
+}
+
 void reassigned_after_move(void)
 {
     int* value = NULL;
     create_int(&value);
     take_ownership(value);
-    create_int(&value); // good: out writes a new value into the pointer
-    read_int(value); // good
-
-    take_ownership(value);
     value = NULL; // good: plain reassignment
+    create_int(&value); // good
     read_int(value); // good
 }
 
@@ -120,7 +126,7 @@ void address_and_sizeof_after_move(void)
     take_ownership(value);
 
     unsigned long size = sizeof(value); // good: sizeof does not use the value
-    int** address = &value; // good: taking the address does not read the value
+    int** address = &value; // bad: taking the address is a use too
 }
 
 void moved_parameter(move int* owned)
@@ -239,4 +245,42 @@ void modify_borrowed_parameter(mod int* borrowed)
 {
     modify_int(borrowed); // good: passing it on to be modified is fine
     read_int(borrowed); // good
+}
+
+// -------------------------------------------------------------
+// The movement tags may only be used on function parameters
+// -------------------------------------------------------------
+
+mod int* tagged_global = NULL; // bad: a global variable
+move int* tagged_function(void); // bad: the tag applies to the function itself
+typedef mod int* tagged_typedef; // bad: a typedef
+
+struct tagged_field_holder
+{
+    out int** field; // bad: a struct field
+};
+
+void tagged_local(void)
+{
+    mod int* local = NULL; // bad: a local variable
+}
+
+// Calls through function pointers are not checked yet, so the tags are
+// not allowed on the parameters of function pointer types either
+
+typedef void (*tagged_callback)(mod int* value); // bad: a parameter of a function pointer type
+void register_tagged_callback(void (*callback)(move int* value)); // bad: a parameter of a function pointer parameter
+
+void tagged_local_callback(void)
+{
+    void (*callback)(out int** value) = NULL; // bad: a function pointer variable inside a function
+}
+
+typedef void (*plain_callback)(int* value); // good: function pointer parameters need no tags
+
+void use_plain_callback(const plain_callback callback)
+{
+    int* value = NULL;
+    create_int(&value);
+    callback(value); // good: a function pointer parameter needs no movement tag itself
 }

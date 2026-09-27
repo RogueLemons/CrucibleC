@@ -140,20 +140,14 @@ void ArgumentPointerUseAfterMoveRule::walkCall(const CallExpr *call, State &stat
         const std::string tag = getParamTag(callee->getParamDecl(i));
         const Expr *arg = stripWrappers(call->getArg(i));
 
+        // Passing '&ptr' to an out parameter does not count as reassigning
+        // it: the function may fail and return early without writing a
+        // new value, so a moved pointer must be reassigned explicitly.
         if (tag == kMoveTag) {
             const VarDecl *var = getVariable(arg);
 
             if (isTracked(var))
                 state[var] = callee->getNameAsString();
-        }
-        else if (tag == kOutTag) {
-            // out(&ptr) writes a new value into the pointer
-            const auto *addressOf = dyn_cast_or_null<UnaryOperator>(arg);
-
-            if (addressOf && addressOf->getOpcode() == UO_AddrOf) {
-                if (const VarDecl *var = getVariable(addressOf->getSubExpr()))
-                    state.erase(var);
-            }
         }
     }
 }
@@ -175,13 +169,6 @@ void ArgumentPointerUseAfterMoveRule::walkExpr(const Expr *expr, State &state) {
         }
 
         return;
-    }
-
-    if (const auto *unary = dyn_cast<UnaryOperator>(expr)) {
-        // Taking the address does not read the moved value
-        if (unary->getOpcode() == UO_AddrOf &&
-            isTracked(getVariable(unary->getSubExpr())))
-            return;
     }
 
     if (const auto *binary = dyn_cast<BinaryOperator>(expr)) {

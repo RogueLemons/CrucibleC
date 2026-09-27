@@ -10,3 +10,10 @@ warning: reference pointer 'reference' may not be reassigned
 warning: reference pointer 'reference' may not be reassigned
 warning: reference pointer 'reference' may not be reassigned
 warning: reference tag on parameter 'value' of function 'tag_on_value' may only be used on a pointer
+warning: reference tag on 'tagged_global' may only be used on function parameters
+warning: reference tag on 'tagged_function' may only be used on function parameters
+warning: reference tag on 'field' may only be used on function parameters
+warning: reference tag on 'local' may only be used on function parameters
+warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked
+warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked
+warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked

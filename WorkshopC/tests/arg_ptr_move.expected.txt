@@ -5,10 +5,13 @@ warning: function 'mismatch_in_declaration_and_definition' parameter 'some_ptr' 
 warning: function 'header_and_source_tag_mismatch' parameter 'f_ptr' movement attribute mismatch between declaration and definition
 warning: function 'multiple_bad_arguments' parameter 'out_float_ptr' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
 warning: function 'multiple_bad_arguments' parameter 'mutable_char_ptr' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify)
+warning: pointer 'i_ptr' may have been moved to 'declared_function_1' and can not be used until it is reassigned
 warning: modify_operator(...) used for parameter 'mutable_char_ptr' in function 'declared_function_3', but modify callsite operators are disabled
 warning: move_operator(...) used for parameter 'moved_int_ptr' in function 'declared_function_1', but move callsite operators are disabled
 warning: out_operator(...) used for parameter 'out_float_ptr' in function 'declared_function_2', but out callsite operators are disabled
-warning: pointer 'i_ptr' may have been moved to 'declared_function_1' and can not be used until it is reassigned
+warning: pointer 'value' may have been moved to 'take_ownership' and can not be used until it is reassigned
+warning: pointer 'value' may have been moved to 'take_ownership' and can not be used until it is reassigned
+warning: pointer 'value' may have been moved to 'take_ownership' and can not be used until it is reassigned
 warning: pointer 'value' may have been moved to 'take_ownership' and can not be used until it is reassigned
 warning: pointer 'value' may have been moved to 'take_ownership' and can not be used until it is reassigned
 warning: pointer 'value' may have been moved to 'take_ownership' and can not be used until it is reassigned
@@ -20,3 +23,11 @@ warning: pointer 'value' may have been moved to 'take_ownership' and can not be 
 warning: pointer 'value' may have been moved to 'take_ownership' and can not be used until it is reassigned
 warning: modify parameter 'borrowed' may not be moved to parameter 'owned' of function 'take_ownership', the function only borrows it and does not own it
 warning: out parameter 'result' may not be moved to parameter 'owned' of function 'take_ownership', the function only borrows it and does not own it
+warning: movement attribute (workshopc_modify) on 'tagged_global' may only be used on function parameters
+warning: movement attribute (workshopc_move) on 'tagged_function' may only be used on function parameters
+warning: movement attribute (workshopc_modify) on 'tagged_typedef' may only be used on function parameters
+warning: movement attribute (workshopc_out) on 'field' may only be used on function parameters
+warning: movement attribute (workshopc_modify) on 'local' may only be used on function parameters
+warning: movement attribute (workshopc_modify) on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked
+warning: movement attribute (workshopc_move) on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked
+warning: movement attribute (workshopc_out) on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked

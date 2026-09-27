@@ -72,6 +72,12 @@ private:
 
     void checkFunction(const FunctionDecl *function, const SourceManager &sm);
 
+    /*
+     * The reference tag may only be written on function parameters,
+     * not on variables, fields, functions or types.
+     */
+    void checkTagPlacement(const Decl *decl, const SourceManager &sm);
+
 public:
     ReferencePointerRule(const Config &cfg,
                          SuppressionManager &sup,

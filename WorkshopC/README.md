@@ -439,7 +439,7 @@ void example(void)
 
 Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `mut` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `mutable`, `output`, or `moved` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior. 
 
-Once a pointer has been moved, the called function owns it, so the pointer may not be used again (read, moved again, compared, passed on) until it has been reassigned, either with `=`, by passing its address to an `out` parameter, or by declaring it again. The check follows the control flow of the function: a use is reported if the pointer may have been moved on any path that reaches it, so a move inside one branch of an `if` counts after the `if`, unless that branch returns, and a move inside a loop counts in the next iteration. Only plain pointer variables are followed, not struct fields or array elements.
+Once a pointer has been moved, the called function owns it, so the pointer may not be used again (read, moved again, compared, passed on, its address taken) until it has been reassigned, either with `=` or by declaring it again. Passing its address to an `out` parameter does not count as reassigning it, since the called function is not guaranteed to write a new value, for example when it fails and returns an error code early. Reassign it explicitly first, e.g. `data = NULL;`. The check follows the control flow of the function: a use is reported if the pointer may have been moved on any path that reaches it, so a move inside one branch of an `if` counts after the `if`, unless that branch returns, and a move inside a loop counts in the next iteration. Only plain pointer variables are followed, not struct fields or array elements.
 
 ```c
 void example(void)
@@ -448,10 +448,14 @@ void example(void)
   initialize_data(out(&data));
   give_data_to_other_section(move(data));
   edit_data(data, 1, 2, 3);                 // Triggers parser, data was moved
-  initialize_data(out(&data));              // OK, data gets a new value
+  initialize_data(out(&data));              // Triggers parser, out may not write a new value
+  data = NULL;                              // OK, data is reassigned
+  initialize_data(out(&data));              // OK
   edit_data(data, 1, 2, 3);                 // OK
 }
 ```
+
+The movement tags may only be written on the parameters of function declarations and definitions, not on variables, struct fields, functions or typedefs. They are not allowed on the parameters of function pointer types either, since calls through a function pointer are not checked yet, so a tag there would look like a guarantee without being one.
 
 A parameter tagged `mutable` or `output` is only borrowed by the function, so it may not be moved away. The same goes for what an `output` parameter points to.
 
@@ -784,6 +788,8 @@ void example(REF int* reference, int* pointer)
 The argument for a reference parameter must be the address of an object: a variable, a field of a variable (`&point.x`), an array element (`&numbers[1]`) or a field reached through another reference (`&reference->field`). An array or a string literal is accepted too, since it decays to a pointer to its first element, and so is another reference parameter passed on. A pointer variable, `NULL`, a pointer returned from a function, or anything reached through a normal pointer is reported. A reference parameter may not be reassigned (`=`, `+=`, `++`, ...), and the tag may only be used on pointers.
 
 With `disable_null_check_rule_for_reference_pointers: true`, the [null check rule](#null-check-rule) does not require a null check for reference parameters, since they can never be null.
+
+The reference tag may only be written on the parameters of function declarations and definitions, not on variables, struct fields, functions or typedefs, and not on the parameters of function pointer types, since calls through a function pointer are not checked yet.
 
 The tag works side by side with the [argument pointer movement rule](#argument-pointer-movement-rule), in any order, e.g. `void scale(mutable REF float* value, float factor);` called as `scale(mut(&value), 2.0f);`. The reference tag is not a movement tag, so a non-const reference still needs one of the movement tags when that rule is enabled.
 
@@ -1139,7 +1145,7 @@ For Beta V1 it shall
 - Check if "project_includes" can be removed from config
 
 For Beta V1.1 it shall
-- Add rules for vtables and interfaces
+- Add rules for vtables and interfaces, including support for the argument pointer tags (move, out, mutable) and the reference tag on the parameters of function pointer types: a function assigned or passed to a function pointer must have the same tags as the function pointer type, parameter by parameter, and calls through a function pointer must follow the tags of its type (callsite operators, use after move, reference arguments). Until then the tags are not allowed on function pointer parameters
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead

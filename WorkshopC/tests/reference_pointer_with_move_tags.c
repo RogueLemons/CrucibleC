@@ -27,6 +27,6 @@ void compatible_calls(void)
     scale(&value, 2.0f); // bad: the mod operator is missing
 
     take_ownership(move_cast(pointer)); // good
-    create_float(out_cast(&pointer)); // good: out gives the pointer a new value, also with REF written first
-    read_only(pointer); // bad: not a reference, but not a use after move either
+    create_float(out_cast(&pointer)); // bad: out is not guaranteed to write a new value, so the pointer is still moved
+    read_only(pointer); // bad: not a reference, and still moved
 }
