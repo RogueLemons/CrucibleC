@@ -90,6 +90,7 @@ struct StructResourceManagementRuleConfig {
     std::string freeStructCreatorSuffix;
 
     bool raiiUseAfterDestroy = true;
+    bool raiiMayOnlyMoveValueRef = false;
 };
 
 struct RestrictedMallocRuleConfig {

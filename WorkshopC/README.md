@@ -476,6 +476,7 @@ struct_resource_management:
     raii_struct_destroyer_suffix: _destroy
     raii_struct_copy_suffix: _copy
     raii_struct_move_suffix: _move
+    raii_may_only_move_value_ref: true
     raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false
@@ -483,6 +484,7 @@ struct_resource_management:
 ```
 
 - `raii_use_after_destroy` (default `true`): when `false`, a raii struct that has been destroyed with its destroy function may not be referenced again, neither passed to a function nor accessed through a field.
+- `raii_may_only_move_value_ref` (default `false`): when `true`, a raii move function may only be given the address of a variable, e.g. `dynamic_string_move(&name)`, so that only an object owned by the calling scope can be moved from. A pointer (`dynamic_string_move(name_ptr)`), a struct field (`&holder.name`, `&holder->name`) or anything behind a pointer (`&*name_ptr`) is reported. The struct's own helper functions, such as its return function, may still move through their `self` pointer.
 #### POD structs
 Plain Old Data (POD) structs come with only one rule: they must always be initialized. A pod struct requires a create function of signature `struct <structname> <structname>_pod(...)` and must always be initialized. They are used to avoid uninitialized variables and make sure they are always initialized correctly. The initial assignment must come from this function or another variable. 
 
@@ -1097,10 +1099,10 @@ For Beta V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
 - Reorganize README and documentation
+- Suppression must always, in file, end manually
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces
-- Enforce no use of _move functions on pointer arguments (only local scope variables)
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
 - Add ref tag system where a function argument that takes a ref pointer must be either given another ref pointer or a direct dereference to a local object (this must be compatible with move/owenrship rule and the nullcheck rule shall then never require a ref pointer to be nullchecked)

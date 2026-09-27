@@ -73,6 +73,8 @@ rules:
     raii_struct_destroyer_suffix: __destroy
     raii_struct_copy_suffix: __copy
     raii_struct_move_suffix: __move
+    raii_may_only_move_value_ref: false
     raii_struct_return_suffix: __return
     raii_struct_valid_suffix: __valid
+    raii_use_after_destroy: false
     free_struct_creator_suffix: __init_manually

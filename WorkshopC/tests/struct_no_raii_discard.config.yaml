@@ -11,6 +11,7 @@ rules:
     raii_struct_destroyer_suffix: _destroy
     raii_struct_copy_suffix: _copy
     raii_struct_move_suffix: _move
+    raii_may_only_move_value_ref: false
     raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false

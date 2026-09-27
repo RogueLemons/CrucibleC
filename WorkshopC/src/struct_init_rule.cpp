@@ -819,6 +819,66 @@ void StructInitRule::checkAssignment(
     }
 }
 
+void StructInitRule::checkMoveArgument(
+    const CallExpr *call,
+    const FunctionDecl *enclosingFunction) const
+{
+    if (!call ||
+        !config.structResourceManagementRule.raiiMayOnlyMoveValueRef ||
+        moveSuffix.empty())
+        return;
+
+    const FunctionDecl *callee = call->getDirectCallee();
+
+    if (!callee || call->getNumArgs() < 1)
+        return;
+
+    const std::string calleeName = callee->getNameAsString();
+
+    if (calleeName.size() <= moveSuffix.size() ||
+        calleeName.compare(
+            calleeName.size() - moveSuffix.size(),
+            moveSuffix.size(),
+            moveSuffix) != 0)
+        return;
+
+    const std::string structName =
+        calleeName.substr(0, calleeName.size() - moveSuffix.size());
+
+    const auto *info = database.find(structName);
+
+    if (!info || info->kind != StructDatabase::Kind::Raii)
+        return;
+
+    // The struct's own helpers (e.g. its return function) may move
+    // through their 'self' pointer
+    if (enclosingFunction &&
+        isInsideHelperFunction(enclosingFunction, structName))
+        return;
+
+    // Allowed: &variable, where the variable is the struct itself
+    const Expr *arg = call->getArg(0)->IgnoreParenImpCasts();
+
+    if (const auto *addressOf = dyn_cast<UnaryOperator>(arg)) {
+        if (addressOf->getOpcode() == UO_AddrOf) {
+            const auto *ref = dyn_cast<DeclRefExpr>(
+                addressOf->getSubExpr()->IgnoreParenImpCasts());
+
+            const auto *var =
+                ref ? dyn_cast<VarDecl>(ref->getDecl()) : nullptr;
+
+            if (var && !var->getType()->isPointerType())
+                return;
+        }
+    }
+
+    reportUsageIssue(
+        call->getArg(0)->getExprLoc(),
+        "move function '" + calleeName +
+        "' may only be given the address of a variable ('" + calleeName +
+        "(&variable)'), not a pointer, a struct field or an array element (raii)");
+}
+
 void StructInitRule::checkCallArguments(
     const CallExpr *call,
     const FunctionDecl *enclosingFunction) const
@@ -1171,6 +1231,10 @@ void StructInitRule::finalize()
 
     for (const auto &pending : pendingCalls) {
         checkCallArguments(
+            pending.call,
+            pending.function);
+
+        checkMoveArgument(
             pending.call,
             pending.function);
 

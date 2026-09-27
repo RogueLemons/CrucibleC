@@ -1,0 +1,5 @@
+error: move function 'int_vector_move' may only be given the address of a variable ('int_vector_move(&variable)'), not a pointer, a struct field or an array element (raii)
+error: move function 'int_vector_move' may only be given the address of a variable ('int_vector_move(&variable)'), not a pointer, a struct field or an array element (raii)
+error: move function 'int_vector_move' may only be given the address of a variable ('int_vector_move(&variable)'), not a pointer, a struct field or an array element (raii)
+error: move function 'int_vector_move' may only be given the address of a variable ('int_vector_move(&variable)'), not a pointer, a struct field or an array element (raii)
+error: move function 'int_vector_move' may only be given the address of a variable ('int_vector_move(&variable)'), not a pointer, a struct field or an array element (raii)

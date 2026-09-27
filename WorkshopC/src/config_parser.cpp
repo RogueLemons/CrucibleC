@@ -264,6 +264,9 @@ void ConfigParser::applySetting(
     else if (key == "raii_use_after_destroy") {
         cfg.raiiUseAfterDestroy = parseBool(value);
     }
+    else if (key == "raii_may_only_move_value_ref") {
+        cfg.raiiMayOnlyMoveValueRef = parseBool(value);
+    }
 }
 
 std::string ConfigParser::unquote(const std::string &value) {

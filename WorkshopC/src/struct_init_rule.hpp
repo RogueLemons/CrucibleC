@@ -130,6 +130,16 @@ private:
         const CallExpr *call,
         const FunctionDecl *enclosingFunction) const;
 
+    /*
+     * With raii_may_only_move_value_ref, a raii move function may only
+     * be given the address of a variable ('Name_move(&variable)'), not
+     * a pointer, so that only an object owned by the calling scope can
+     * be moved from. The struct's own helper functions are exempt.
+     */
+    void checkMoveArgument(
+        const CallExpr *call,
+        const FunctionDecl *enclosingFunction) const;
+
     void checkReturnStmt(
         const ReturnStmt *returnStmt,
         const FunctionDecl *enclosingFunction) const;
