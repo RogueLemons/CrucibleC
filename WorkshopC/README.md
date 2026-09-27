@@ -1,5 +1,5 @@
 # WorkshopC
-A project for parsing C code and generating tips for writing safer code or adhering to a certain style.
+A configurable analyzer that enforces safer C: RAII-style structs, explicit pointer ownership, null checks, and strict style rules.
 
 ## Contents
 - [How to use](#how-to-use)
