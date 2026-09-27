@@ -18,7 +18,7 @@ TESTS_COMPDB = ROOT / "build-tests"
 TESTS_OUTPUT = TESTS / "output"
 
 # The test whose diagnostics are written to every output format at once
-OUTPUT_FILES_TEST = TESTS / "suppression_balance.c"
+OUTPUT_FILES_TEST = TESTS / "suppression_balance" / "suppression_balance.c"
 
 CODE_PATTERN = re.compile(r" \[(CCW\d{4})\]$")
 
@@ -46,6 +46,18 @@ def generate_tests_compdb():
         print(result.stdout)
         print(result.stderr)
         sys.exit(1)
+
+
+def find_tests():
+    """
+    Every test is a folder tests/<name>/ holding <name>.c,
+    <name>.config.yaml and <name>.expected.txt.
+    """
+    return sorted(
+        folder / f"{folder.name}.c"
+        for folder in TESTS.iterdir()
+        if (folder / f"{folder.name}.c").is_file()
+    )
 
 
 def get_exe():
@@ -239,7 +251,7 @@ def main():
 
     generate_tests_compdb()
 
-    test_files = list(TESTS.rglob("*.c"))
+    test_files = find_tests()
 
     if not test_files:
         print("No test files found")

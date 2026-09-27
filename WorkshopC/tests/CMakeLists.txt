@@ -12,12 +12,14 @@ project(WorkshopCTests LANGUAGES C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Every test is a folder <name>/ holding <name>.c
 file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/*/*.c
 )
 
 add_library(workshopc_tests OBJECT ${TEST_SOURCES})
 
+# Lets the tests include the shared "headers/..." and "external/..."
 target_include_directories(workshopc_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

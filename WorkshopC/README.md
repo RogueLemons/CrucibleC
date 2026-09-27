@@ -1497,7 +1497,7 @@ After building, use the tool with the compilation database from the build direct
 
 ```bash
 # Example: analyze a test file
-./build/workshopc --config tests/enum.config.yaml -p build-tests/ tests/enum.c
+./build/workshopc --config tests/enum/enum.config.yaml -p build-tests/ tests/enum/enum.c
 ```
 
 The tool requires access to the compilation database to understand compiler flags and include paths. The database must describe the code being analyzed, not the tool itself, so the test files have their own (see below).
@@ -1510,9 +1510,16 @@ Clang's builtin headers (`stddef.h`, `mm_malloc.h`, ...) are looked up next to t
 python run_tests.py
 ```
 
-The files in `tests/` are a standalone project described by `tests/CMakeLists.txt`. They are never built: `run_tests.py` only **configures** that project into `build-tests/` (with clang and Ninja), which writes a `compile_commands.json` for the test files, and then passes that directory to the tool for every test. New test files are picked up automatically, since the project is configured again on every run.
+Every test is a folder in `tests/` holding three files with the folder's name, e.g. `tests/struct_usage/`:
+- `struct_usage.c`: the code to analyze, with a `// good` or `// bad: reason` comment on the lines that matter,
+- `struct_usage.config.yaml`: the config it is analyzed with,
+- `struct_usage.expected.txt`: every diagnostic the tool must report, one per line as `level: message [code]`, in any order.
 
-The expected files list every diagnostic with its code. One more test writes the diagnostics of `tests/suppression_balance.c` to a text, a JSON and a SARIF file in a single `--quiet` run, into `tests/output/` (ignored by git), and checks that nothing was printed and that all three files hold exactly the expected diagnostics.
+Headers shared by the tests are in `tests/headers/`, and `tests/external/` stands in for third party code (every test config lists `external/` in `third_party_includes`). The tests include them as `"headers/..."` and `"external/..."`, which works from every test folder since `tests/` is on the include path.
+
+The test files are a standalone project described by `tests/CMakeLists.txt`. They are never built: `run_tests.py` only **configures** that project into `build-tests/` (with clang and Ninja), which writes a `compile_commands.json` for the test files, and then passes that directory to the tool for every test. New test folders are picked up automatically, since the project is configured again on every run.
+
+The expected files list every diagnostic with its code. One more test writes the diagnostics of `tests/suppression_balance/suppression_balance.c` to a text, a JSON and a SARIF file in a single `--quiet` run, into `tests/output/` (ignored by git), and checks that nothing was printed and that all three files hold exactly the expected diagnostics.
 
 #### What makes this CMake portable
 
