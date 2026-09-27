@@ -61,6 +61,9 @@ struct PrefixNamespaceRuleConfig {
     bool applyToFunctions = false;
     bool applyToStructs = false;
     bool applyToTypedefs = false;
+
+    // Names only need the same letters as the prefix, in any case
+    bool caseInsensitive = false;
 };
 
 struct NullCheckRuleConfig {

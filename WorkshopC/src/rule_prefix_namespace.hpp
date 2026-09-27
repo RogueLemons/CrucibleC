@@ -31,6 +31,8 @@ private:
 
     std::string upper(const std::string &s) const;
 
+    std::string lower(const std::string &s) const;
+
     std::vector<std::string> splitPath(
         const std::string &path) const;
 

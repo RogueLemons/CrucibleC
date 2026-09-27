@@ -1,2 +1,7 @@
 warning: function pointer 'math_func' must be declared using a typedef [CCW0401]
 warning: function pointer 'add_func' must be declared using a typedef [CCW0401]
+warning: function pointer 'raw_field' must be declared using a typedef [CCW0401]
+warning: function pointer 'raw_functions' must be declared using a typedef [CCW0401]
+warning: function pointer 'raw_pointer' must be declared using a typedef [CCW0401]
+warning: function pointer 'raw_with_typedef_return' must be declared using a typedef [CCW0401]
+warning: function 'get_raw_function' must return a function pointer declared using a typedef [CCW0401]

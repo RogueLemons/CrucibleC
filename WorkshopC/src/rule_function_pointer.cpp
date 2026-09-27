@@ -13,39 +13,47 @@ bool FunctionPointerRule::isFunctionPointer(QualType qt) const {
         return false;
 
     const Type *t = qt.getTypePtrOrNull();
-    if (!t)
+
+    // Through arrays and pointers, e.g. an array of function pointers
+    // or a pointer to a function pointer
+    while (t) {
+        t = t->getUnqualifiedDesugaredType();
+
+        if (const auto *array = dyn_cast<ArrayType>(t)) {
+            t = array->getElementType().getTypePtrOrNull();
+            continue;
+        }
+
+        if (const auto *ptr = dyn_cast<PointerType>(t)) {
+            const Type *pt = ptr->getPointeeType().getTypePtrOrNull();
+
+            if (!pt)
+                return false;
+
+            if (pt->getUnqualifiedDesugaredType()->isFunctionType())
+                return true;
+
+            t = pt;
+            continue;
+        }
+
         return false;
-
-    t = t->getUnqualifiedDesugaredType();
-
-    if (const auto *ptr = dyn_cast<PointerType>(t)) {
-        const Type *pt = ptr->getPointeeType().getTypePtrOrNull();
-        if (!pt)
-            return false;
-
-        return pt->isFunctionType();
     }
 
     return false;
 }
 
-bool FunctionPointerRule::isTypedefSpelled(const Decl *decl) const {
-    const TypeSourceInfo *TSI = nullptr;
-
-    if (const auto *vd = dyn_cast<VarDecl>(decl))
-        TSI = vd->getTypeSourceInfo();
-    else if (const auto *pd = dyn_cast<ParmVarDecl>(decl))
-        TSI = pd->getTypeSourceInfo();
-
-    if (!TSI)
-        return false;
-
-    TypeLoc TL = TSI->getTypeLoc();
-
+bool FunctionPointerRule::isTypedefSpelled(TypeLoc TL) const {
     // Walk through type locations to find typedef spelling
     while (!TL.isNull()) {
         if (TL.getTypeLocClass() == TypeLoc::Typedef)
             return true;
+
+        // Past the function type the walk continues into its return
+        // type, e.g. the 'size_t' of 'size_t (*f)(int)', which says
+        // nothing about how the function pointer itself is written
+        if (TL.getAs<FunctionTypeLoc>())
+            return false;
 
         TL = TL.getNextTypeLoc();
     }
@@ -75,39 +83,57 @@ FunctionPointerRule::FunctionPointerRule(const Config &cfg,
       diagnostics(diag) {}
 
 void FunctionPointerRule::bindFinder(MatchFinder &finder) {
+    // Variables, including parameters, and struct fields
     finder.addMatcher(
-        parmVarDecl().bind("funcptr"),
+        declaratorDecl(
+            anyOf(varDecl(), fieldDecl())
+        ).bind("funcptr"),
         this
     );
 
+    // Return types
     finder.addMatcher(
-        varDecl().bind("funcptr"),
+        functionDecl().bind("function"),
         this
     );
 }
 
 void FunctionPointerRule::run(const MatchFinder::MatchResult &result) {
-    const auto *vd =
-        result.Nodes.getNodeAs<VarDecl>("funcptr");
-
-    const auto *pd =
-        result.Nodes.getNodeAs<ParmVarDecl>("funcptr");
-
-    if (!vd && !pd)
-        return;
-
     if (config.functionPointerRule.level == RuleLevel::Off)
         return;
 
+    const auto *declarator =
+        result.Nodes.getNodeAs<DeclaratorDecl>("funcptr");
+
+    const auto *function =
+        result.Nodes.getNodeAs<FunctionDecl>("function");
+
+    const Decl *decl = nullptr;
+    QualType qt;
+    TypeLoc typeLoc;
+
+    if (declarator) {
+        decl = declarator;
+        qt = declarator->getType();
+
+        if (const TypeSourceInfo *TSI = declarator->getTypeSourceInfo())
+            typeLoc = TSI->getTypeLoc();
+    }
+    else if (function) {
+        decl = function;
+        qt = function->getReturnType();
+
+        if (const FunctionTypeLoc FTL = function->getFunctionTypeLoc())
+            typeLoc = FTL.getReturnLoc();
+    }
+    else {
+        return;
+    }
+
+    if (decl->isImplicit())
+        return;
+
     auto &sm = *result.SourceManager;
-
-    const Decl *decl =
-        vd ? static_cast<const Decl*>(vd)
-           : static_cast<const Decl*>(pd);
-
-    QualType qt =
-        vd ? vd->getType()
-           : pd->getType();
 
     // -------------------------
     // Location
@@ -122,6 +148,9 @@ void FunctionPointerRule::run(const MatchFinder::MatchResult &result) {
     // Suppression
     // -------------------------
     if (suppressions.isSuppressed(sm, expansionLoc))
+        return;
+
+    if (sm.isInSystemHeader(spellingLoc))
         return;
 
     std::string spellingPath = sm.getFilename(spellingLoc).str();
@@ -140,9 +169,9 @@ void FunctionPointerRule::run(const MatchFinder::MatchResult &result) {
         return;
 
     // -------------------------
-    // TYPODEF EXCEPTION (FIXED PROPERLY)
+    // Typedef exception
     // -------------------------
-    if (isTypedefSpelled(decl))
+    if (typeLoc.isNull() || isTypedefSpelled(typeLoc))
         return;
 
     // -------------------------
@@ -162,15 +191,18 @@ void FunctionPointerRule::run(const MatchFinder::MatchResult &result) {
     // -------------------------
     std::string name;
 
-    if (vd)
-        name = vd->getNameAsString();
-    else if (pd)
-        name = pd->getNameAsString();
+    if (const auto *named = dyn_cast<NamedDecl>(decl))
+        name = named->getNameAsString();
 
-    std::string msg =
-        name.empty()
-            ? std::string("function pointer must be declared using a typedef")
-            : "function pointer '" + name + "' must be declared using a typedef";
+    std::string msg;
+
+    if (function)
+        msg = "function '" + name + "' must return a function pointer "
+              "declared using a typedef";
+    else if (name.empty())
+        msg = "function pointer must be declared using a typedef";
+    else
+        msg = "function pointer '" + name + "' must be declared using a typedef";
 
     if (fromMacro)
         msg += " (macro expansion)";

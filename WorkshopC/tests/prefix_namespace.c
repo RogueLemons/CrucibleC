@@ -1,5 +1,6 @@
 #include "headers/a/b/c/prefix_testing_bad.h"
 #include "headers/a/b/c/prefix_testing_good.h"
+#include "headers/Mixed/Case/prefix_testing_case.h"
 
 struct struct_in_c_file
 {

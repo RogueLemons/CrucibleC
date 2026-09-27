@@ -544,3 +544,60 @@ void destroy_in_one_branch_use_in_other(int_vector_t vec, int cond)
         int_vector_destroy(&vec);
     }
 }
+
+// -------------------------------------------------------------
+// goto exits every scope that does not contain its label
+// -------------------------------------------------------------
+
+void goto_cleanup_in_same_scope(int flag)
+{
+    int_vector_t vec = int_vector_make(1);
+
+    if (flag)
+        goto cleanup; // good: the label is in the same scope as vec
+
+    int_vector_foo(&vec);
+
+cleanup:
+    int_vector_destroy(&vec);
+}
+
+void goto_out_of_scope(int flag)
+{
+    {
+        int_vector_t inner = int_vector_make(1);
+
+        if (flag)
+            goto done; // bad: leaves the scope of inner without destroying it
+
+        int_vector_destroy(&inner);
+    }
+
+done:
+    return;
+}
+
+void goto_out_of_scope_after_destroy(int flag)
+{
+    {
+        int_vector_t inner = int_vector_make(1);
+        int_vector_destroy(&inner);
+
+        if (flag)
+            goto done; // good: inner is already destroyed
+    }
+
+done:
+    return;
+}
+
+void goto_skips_to_label(void)
+{
+    int_vector_t vec = int_vector_make(1);
+    goto cleanup;
+
+    int_vector_foo(&vec); // good: never reached, but not an error
+
+cleanup:
+    int_vector_destroy(&vec); // good: reached through the goto
+}

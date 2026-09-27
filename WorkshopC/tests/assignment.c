@@ -41,6 +41,9 @@ void test(
 
     int x = 1; // good
     int y = 2; // good
+    int* null_decl = NULL; // bad: pointer initialized with NULL
+    int* zero_decl = 0; // bad: pointer initialized with NULL
+    int* cast_null_decl = (int*)0; // bad: pointer initialized with NULL
     int *ptr = &x; // good
     struct Data data; // good
 
@@ -64,6 +67,11 @@ void test(
     arg = 10; // bad: argument reassigned
     ptrArg = &x; // bad: argument reassigned
     dataArg.value = 123; // bad: field of a by-value argument modified
+    arg++; // bad: argument modified
+    --arg; // bad: argument modified
+    dataArg.value++; // bad: field of a by-value argument modified
+    (*ptrArg)++; // good: modifies what the pointer points to
+    dataPtrArg->value--; // good: modifies what the pointer points to
     int* ptr_to_arg = &arg; // bad: pointer to non-const argument
     const int* const_ptr_to_arg = (const int*)&arg; // good: pointer to const
 

@@ -30,15 +30,16 @@ private:
     bool isThirdParty(const std::string &path) const;
 
     // ------------------------------------------------------------
-    // Detect: pointer to function type
+    // Detect: pointer to function type, also as the element of an
+    // array or behind further pointers
     // ------------------------------------------------------------
     bool isFunctionPointer(QualType qt) const;
 
     // ------------------------------------------------------------
-    // THIS is the correct fix:
-    // Detect whether type was written as typedef or raw syntax
+    // Detect whether the type was written with a typedef or with
+    // raw function pointer syntax
     // ------------------------------------------------------------
-    bool isTypedefSpelled(const Decl *decl) const;
+    bool isTypedefSpelled(TypeLoc TL) const;
 
     // ------------------------------------------------------------
     // Stable dedup key

@@ -64,6 +64,7 @@ rules:
     apply_to_structs: true
     apply_to_typedefs: true
     require_ifndef_for_filepath: true
+    case_insensitive: false
 
   # Null check rule - require first use of pointer argument to be checked if null
   null_check:

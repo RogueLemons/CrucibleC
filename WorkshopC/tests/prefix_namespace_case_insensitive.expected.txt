@@ -1,0 +1,5 @@
+warning: missing include guard 'TESTS_HEADERS_A_B_C_PREFIX_TESTING_BAD_H' [CCW0702]
+warning: struct 'bad_name' must use namespace prefix 'tests__headers__a__b__c__' [CCW0701]
+warning: typedef 'bad_typedef' must use namespace prefix 'tests__headers__a__b__c__' [CCW0701]
+warning: function 'bad_function_name' must use namespace prefix 'tests__headers__a__b__c__' [CCW0701]
+warning: function 'tests__headers__other__function_name' must use namespace prefix 'tests__headers__Mixed__Case__' [CCW0701]

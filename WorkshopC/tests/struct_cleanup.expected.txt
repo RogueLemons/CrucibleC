@@ -53,3 +53,4 @@ error: struct variable 'local_double_destroyed_vec' of type 'int_vector' must no
 error: struct variable 'vec' of type 'int_vector' must not be used after being destroyed with 'int_vector_destroy' (raii) [CCW1203]
 error: struct variable 'vec' of type 'int_vector' must not be used after being destroyed with 'int_vector_destroy' (raii) [CCW1203]
 error: struct variable 'vec' of type 'int_vector' must not be used after being destroyed with 'int_vector_destroy' (raii) [CCW1203]
+error: struct variable 'inner' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii) [CCW1201]

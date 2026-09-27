@@ -30,6 +30,9 @@ private:
     };
 
     struct ScopeState {
+        // The block this scope belongs to
+        const CompoundStmt *compound = nullptr;
+
         std::vector<TrackedVar> vars;
         std::unordered_set<const VarDecl *> destroyed;
     };
@@ -162,6 +165,13 @@ private:
          */
         void reportBreakCleanup(
             SourceLocation loc);
+
+        /*
+         * Handle cleanup required by a goto: every active scope
+         * that does not contain the target label is exited.
+         */
+        void reportGotoCleanup(
+            const GotoStmt *gotoStmt);
 
         StateSnapshot captureState() const;
 

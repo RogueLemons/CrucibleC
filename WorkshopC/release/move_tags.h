@@ -7,23 +7,23 @@ static inline void* workshopc_out(void* arg) { return arg; }
 static inline void* workshopc_move(void* arg) { return arg; }
 static inline void* workshopc_modify(void* arg) { return arg; }
 
-#define out(expr)  ((__typeof__(expr))workshopc_out((void*)(expr)))
-#define move(expr) ((__typeof__(expr))workshopc_move((void*)(expr)))
-#define mut(expr)  ((__typeof__(expr))workshopc_modify((void*)(expr)))
+#define OUT(expr)  ((__typeof__(expr))workshopc_out((void*)(expr)))
+#define MOVE(expr) ((__typeof__(expr))workshopc_move((void*)(expr)))
+#define MUT(expr)  ((__typeof__(expr))workshopc_modify((void*)(expr)))
 
-#define moved __attribute__((annotate("workshopc_move")))
-#define output  __attribute__((annotate("workshopc_out")))
-#define mutable  __attribute__((annotate("workshopc_modify")))
+#define MOVED __attribute__((annotate("workshopc_move")))
+#define OUTPUT __attribute__((annotate("workshopc_out")))
+#define MUTABLE  __attribute__((annotate("workshopc_modify")))
 
 #else
 
-#define out(expr)  (expr)
-#define move(expr) (expr)
-#define mut(expr)  (expr)
+#define OUT(expr)  (expr)
+#define MOVE(expr) (expr)
+#define MUT(expr)  (expr)
 
-#define moved
-#define output
-#define mutable
+#define MOVED
+#define OUTPUT
+#define MUTABLE
 
 #endif
 

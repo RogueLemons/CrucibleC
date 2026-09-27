@@ -113,7 +113,7 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW0301` | `private-alternative-access-outside-function` | A private field is accessed outside of any function |
 | `CCW0302` | `private-alternative-access` | A private field is accessed from a function that is not named after its struct and does not take 'self' |
 | | **04 — [Function pointer](#function-pointer-rule)** | |
-| `CCW0401` | `function-pointer-missing-typedef` | A function pointer variable or parameter is declared without a typedef |
+| `CCW0401` | `function-pointer-missing-typedef` | A function pointer variable, parameter, struct field or return type is declared without a typedef |
 | | **05 — [Typedef struct](#typedef-struct-rule)** | |
 | `CCW0501` | `struct-missing-typedef` | A struct must have a typedef |
 | | **06 — [Assignment](#assignment-rule)** | |
@@ -124,9 +124,9 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW0605` | `null-pointer-array-initializer` | NULL is used in the initializer of an array of pointers |
 | `CCW0606` | `pointer-array-partially-initialized` | An array of pointers must explicitly initialize every element |
 | `CCW0607` | `mutable-argument-pointer` | The address of an argument is taken as a pointer to non-const |
-| `CCW0608` | `pointer-assigned-null` | A pointer is assigned NULL |
+| `CCW0608` | `pointer-assigned-null` | A pointer is assigned or initialized with NULL |
 | `CCW0609` | `pointer-field-assigned-null` | A pointer field is assigned NULL |
-| `CCW0610` | `argument-reassigned` | A function argument is reassigned |
+| `CCW0610` | `argument-reassigned` | A function argument is reassigned, or changed with ++ or -- |
 | `CCW0611` | `by-value-argument-modified` | A field of a by-value argument is modified |
 | `CCW0612` | `null-argument` | NULL is passed as an argument |
 | | **07 — [Prefix namespace](#prefix-namespace-rule)** | |
@@ -480,7 +480,7 @@ void Wrapper_bad(Wrapper_t* self)
 As with the private rule, an access outside of any function is always reported, and accesses in system headers and `third_party_includes` folders are not checked.
 
 ### Function pointer rule
-This rule gets triggered when a variable or parameter holding a function pointer is declared without a typedef. Using a typedef makes function signatures clearer, reduces errors when the signature changes (you only need to update it in one place), and is less error-prone since it's harder to accidentally mistype the function signature.
+This rule gets triggered when a function pointer is declared without a typedef, whether it is a variable, a parameter, a struct field or the return type of a function. Using a typedef makes function signatures clearer, reduces errors when the signature changes (you only need to update it in one place), and is less error-prone since it's harder to accidentally mistype the function signature.
 
 ```yaml
 function_pointer:
@@ -508,12 +508,23 @@ void foo(void)
 {
   int (*raw)(int, int) = add;           // Triggers parser
   math_function typed = add;            // OK
+  int (*table[2])(int, int) = {add, add}; // Triggers parser, an array of function pointers
+  math_function typed_table[2] = {add, add}; // OK
 }
+
+struct calculator
+{
+  int (*raw_operation)(int, int);       // Triggers parser
+  math_function operation;              // OK
+};
+
+int (*get_raw_operation(void))(int, int); // Triggers parser, the return type
+math_function get_operation(void);        // OK
 ```
 
 Details:
-- Global, static and local variables and function parameters are checked. Struct fields, arrays of function pointers and return types are not checked yet.
-- Any typedef works, whatever its name, as long as the declaration uses it.
+- Global, static and local variables, function parameters, struct fields and return types are checked, also when the function pointer is the element of an array or is pointed to by another pointer (`int (**)(int)`).
+- Any typedef works, whatever its name, as long as the function pointer itself is written with it. A typedef used only for the return or parameter types of the function (`size_t (*f)(int)`) does not count.
 - Declarations in system headers and `third_party_includes` folders are not checked, and a macro that expands to a function pointer declaration is reported with `(macro expansion)` added to the message.
 
 ### Typedef struct rule
@@ -562,7 +573,7 @@ Details:
 - A struct defined by a macro is checked where the macro is used, even when the macro itself comes from a third party header. Structs defined in system headers and `third_party_includes` folders are not checked.
 
 ### Assignment rule
-This rule gets triggered whenever a variable of a basic type (e.g. `int`, `float`, `char`, `_Bool`) or a pointer is declared but not initialized in the same statement, and the same goes for arrays of them. Requiring initialization prevents use-before-initialization bugs and makes developer intent clearer (a variable that's initialized is ready to use). Structs and unions are not required to be initialized by this rule, see [RAII and struct resource management](#raii-and-struct-resource-management) for that.
+This rule gets triggered whenever a variable of a basic/primitive type (e.g. `int`, `float`, `char`, `_Bool`) or a pointer is declared but not initialized in the same statement, and the same goes for arrays of them. Requiring initialization prevents use-before-initialization bugs and makes developer intent clearer (a variable that's initialized is ready to use). Structs and unions are not required to be initialized by this rule, see [RAII and struct resource management](#raii-and-struct-resource-management) for that.
 
 ```yaml
 assignment:
@@ -601,6 +612,7 @@ void example(int* a, int* b)
 {
   int* ptr = a;
   ptr = NULL;                                 // Not OK with forbid_null_assign: true
+  int* empty = NULL;                          // Not OK with forbid_null_assign: true
   foo(NULL, 3, 7);                            // Not OK with forbid_null_as_arg: true
 
   Setting setting = {0};                      // Not OK with forbid_zero_init_for_objects_with_pointers: true
@@ -613,7 +625,7 @@ void example(int* a, int* b)
 }
 ```
 
-- `forbid_null_assign`: a pointer or a pointer field may not be assigned null, a pointer field in an initializer list may not be given null, and an array of pointers must explicitly initialize every element (at every level of an array of arrays) with a non-null value, since elements left out become null pointers.
+- `forbid_null_assign`: a pointer may not be initialized with null, a pointer or a pointer field may not be assigned null, a pointer field in an initializer list may not be given null, and an array of pointers must explicitly initialize every element (at every level of an array of arrays) with a non-null value, since elements left out become null pointers.
 - `forbid_null_as_arg`: null may not be passed as an argument to any function.
 - `forbid_zero_init_for_objects_with_pointers`: an object that contains a pointer, directly or in a field of a field, may not be initialized with `{0}`, since that silently makes every pointer in it null. Objects without pointers may still use `{0}`.
 
@@ -633,6 +645,7 @@ void foo(const char* name, int x, RGB color, RGB* rgb)
   name = "New string";  // Not OK with forbid_arg_reassign: true
   x = 5;                // Not OK with forbid_arg_reassign: true
   x += 1;               // Not OK with forbid_arg_reassign: true
+  x++;                  // Not OK with forbid_arg_reassign: true
   color.r = 0;          // Not OK with forbid_arg_reassign: true, a field of a struct passed by value
   int* x_ptr = &x;      // Not OK with forbid_mut_arg_pointer: true
   set_int(&x);          // Not OK with forbid_mut_arg_pointer: true (void set_int(int* out))
@@ -644,7 +657,7 @@ void foo(const char* name, int x, RGB color, RGB* rgb)
 }
 ```
 
-- `forbid_arg_reassign`: an argument may not be assigned a new value (`=`, `+=`, `|=`, ...), and neither may the fields of a struct passed by value, since the change would only affect the local copy.
+- `forbid_arg_reassign`: an argument may not be assigned a new value (`=`, `+=`, `|=`, ...) or be changed with `++` or `--`, and neither may the fields of a struct passed by value, since the change would only affect the local copy.
 - `forbid_mut_arg_pointer`: the address of an argument, or of a field of a by-value argument, may only be taken as a pointer to const, wherever it is taken: in a declaration, an assignment, a function call or a return. A cast decides the type, so `(const int*)&x` is OK while `(int*)&x` is not. Without this, `forbid_arg_reassign` could be worked around by writing through a pointer to the argument.
 
 ### Prefix namespace rule
@@ -662,6 +675,7 @@ prefix_namespace:
     apply_to_structs: true
     apply_to_typedefs: true
     require_ifndef_for_filepath: true
+    case_insensitive: false
 ```
 
 - `top_dir` (default `src`): the folder the namespaces start in. The prefix is built from the folders after the first folder with this name in the header's path, not including it. A header that is not inside such a folder is not checked.
@@ -669,8 +683,9 @@ prefix_namespace:
 - `use_seperator` and `seperator` (note the spelling of the keys): the separator is written between the folder names and after the last one. Without it the folder names are joined directly, e.g. `appchrono`.
 - `apply_to_functions`, `apply_to_structs` and `apply_to_typedefs`: which names must have the prefix. Static functions never need it, since they are not visible outside the file.
 - `require_ifndef_for_filepath`: the first `#ifndef` in the first 10 lines of the header must be the path after `top_dir`, including the file name, in capital letters and joined with `_`, whatever the separator setting.
+- `case_insensitive` (default `false`): a name only needs the same letters as the prefix, in upper or lower case, so for the folders `App/Chrono` both `App__Chrono__start` and `app__chrono__start` are fine. Without it the case must match the folders exactly. The include guard is not affected, it is always in capital letters.
 
-Folder names are written in lowercase, and every character that is not a letter or digit becomes `_`, so a folder `My-Lib` becomes `my_lib` in the prefix and `MY_LIB` in the include guard. Only headers (`.h`, `.hpp`, `.hh`, `.hxx`) are checked, since their names are the ones other files see, and headers in `third_party_includes` folders are skipped.
+Folder names keep their case in the prefix, and every character that is not a letter or digit becomes `_`, so a folder `My-Lib` becomes `My_Lib` in the prefix (e.g. `My_Lib__open`) and `MY_LIB` in the include guard. Finding `top_dir` in the path does not depend on case. Only headers (`.h`, `.hpp`, `.hh`, `.hxx`) are checked, since their names are the ones other files see, and headers in `third_party_includes` folders are skipped.
 
 Here is what the above settings expect from a header.
 
@@ -976,7 +991,7 @@ A raii struct owns its resources, so every value of it must have exactly one own
 - A variable must be initialized from a function return value, e.g. the make, copy or move function, never from another variable (`d_str b = a;` would make two owners of the same memory).
 - It may not be reassigned once initialized, not even through a pointer, a field or an array element, since the old value would leak.
 - It may only be passed by value as a function return value, e.g. `take(dynamic_string_copy(&s))` or `take(dynamic_string_move(&s))`, so that the called function gets its own value, which it then must destroy.
-- Every variable, and every parameter passed by value, must be destroyed or returned before every scope exit (the end of its block, `return`, `break` or `continue`).
+- Every variable, and every parameter passed by value, must be destroyed or returned before every scope exit (the end of its block, `return`, `break`, `continue` or `goto`). A `goto` exits the blocks that do not contain its label, so the common `goto cleanup;` pattern works as long as the label is in the same block as the variables it destroys.
 - A function returning a raii struct must return a function call, and a local variable is returned with the return function.
 - A raii struct returned by a function may not be discarded or have a field read directly on the returned value, since it could then never be destroyed.
 

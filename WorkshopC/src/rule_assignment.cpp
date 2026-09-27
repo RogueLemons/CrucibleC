@@ -228,6 +228,68 @@ void AssignmentRule::bindFinder(MatchFinder &finder) {
         ).bind("addressOf"),
         this
     );
+
+    finder.addMatcher(
+        unaryOperator(
+            anyOf(hasOperatorName("++"), hasOperatorName("--")),
+            unless(isExpansionInSystemHeader())
+        ).bind("incDec"),
+        this
+    );
+}
+
+void AssignmentRule::checkArgumentModification(
+    const Expr *target,
+    SourceLocation loc,
+    SourceManager &sm) const
+{
+    target = norm(target);
+
+    if (const auto *dre = dyn_cast_or_null<DeclRefExpr>(target)) {
+
+        if (const auto *pd =
+                dyn_cast<ParmVarDecl>(dre->getDecl()))
+        {
+            diagnostics.report(
+                config.assignmentRule.level,
+                DiagCode::ArgumentReassigned,
+                sm,
+                loc,
+                "function argument '" +
+                nameOf(pd) +
+                "' reassignment is forbidden"
+            );
+        }
+    }
+
+    if (const auto *me = dyn_cast_or_null<MemberExpr>(target)) {
+
+        const Expr *base = norm(me->getBase());
+
+        if (const auto *dre =
+                dyn_cast<DeclRefExpr>(base))
+        {
+            if (const auto *pd =
+                    dyn_cast<ParmVarDecl>(dre->getDecl()))
+            {
+                QualType qt =
+                    pd->getType().getCanonicalType();
+
+                if (!qt->isPointerType()) {
+
+                    diagnostics.report(
+                        config.assignmentRule.level,
+                        DiagCode::ByValueArgumentModified,
+                        sm,
+                        loc,
+                        "fields of by-value argument '" +
+                        nameOf(pd) +
+                        "' may not be modified"
+                    );
+                }
+            }
+        }
+    }
 }
 
 void AssignmentRule::checkArgumentAddress(
@@ -310,6 +372,20 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
         return;
     }
 
+    if (const auto *incDec =
+            result.Nodes.getNodeAs<UnaryOperator>("incDec"))
+    {
+        if (config.assignmentRule.forbidArgReassign) {
+            const SourceLocation loc =
+                sm.getSpellingLoc(incDec->getOperatorLoc());
+
+            if (!shouldSkip(sm, loc))
+                checkArgumentModification(incDec->getSubExpr(), loc, sm);
+        }
+
+        return;
+    }
+
     if (const auto *vd =
             result.Nodes.getNodeAs<VarDecl>("varDecl"))
     {
@@ -383,6 +459,17 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
                 return;
 
             init = init->IgnoreImplicit();
+
+            if (qt->isPointerType() && isNullExpr(init)) {
+                diagnostics.report(
+                    config.assignmentRule.level,
+                    DiagCode::PointerAssignedNull,
+                    sm,
+                    loc,
+                    "pointer '" + nameOf(vd) +
+                    "' cannot be initialized with NULL"
+                );
+            }
 
             if (const auto *ile = dyn_cast<InitListExpr>(init)) {
 
@@ -488,56 +575,8 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
             }
         }
 
-        if (config.assignmentRule.forbidArgReassign) {
-
-            const Expr *nLHS = norm(lhs);
-
-            if (const auto *dre = dyn_cast<DeclRefExpr>(nLHS)) {
-
-                if (const auto *pd =
-                        dyn_cast<ParmVarDecl>(dre->getDecl()))
-                {
-                    diagnostics.report(
-                        config.assignmentRule.level,
-                        DiagCode::ArgumentReassigned,
-                        sm,
-                        loc,
-                        "function argument '" +
-                        nameOf(pd) +
-                        "' reassignment is forbidden"
-                    );
-                }
-            }
-
-            if (const auto *me = dyn_cast<MemberExpr>(nLHS)) {
-
-                const Expr *base = norm(me->getBase());
-
-                if (const auto *dre =
-                        dyn_cast<DeclRefExpr>(base))
-                {
-                    if (const auto *pd =
-                            dyn_cast<ParmVarDecl>(dre->getDecl()))
-                    {
-                        QualType qt =
-                            pd->getType().getCanonicalType();
-
-                        if (!qt->isPointerType()) {
-
-                            diagnostics.report(
-                                config.assignmentRule.level,
-                                DiagCode::ByValueArgumentModified,
-                                sm,
-                                loc,
-                                "fields of by-value argument '" +
-                                nameOf(pd) +
-                                "' may not be modified"
-                            );
-                        }
-                    }
-                }
-            }
-        }
+        if (config.assignmentRule.forbidArgReassign)
+            checkArgumentModification(lhs, loc, sm);
     }
 
     if (const auto *call =

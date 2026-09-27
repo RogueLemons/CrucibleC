@@ -52,6 +52,7 @@ StructCleanupRule::CleanupAnalyzer::Flow StructCleanupRule::CleanupAnalyzer::sca
             dyn_cast<CompoundStmt>(stmt)) {
 
         scopes.emplace_back();
+        scopes.back().compound = compound;
 
         Flow flow = Flow::Normal;
 
@@ -61,10 +62,18 @@ StructCleanupRule::CleanupAnalyzer::Flow StructCleanupRule::CleanupAnalyzer::sca
             if (!child)
                 continue;
 
-            flow = scanStmt(child);
+            /*
+             * The code after a jump is only reached again
+             * through a label, e.g. the target of a goto.
+             */
+            if (flow != Flow::Normal) {
+                if (!isa<LabelStmt>(child))
+                    continue;
 
-            if (flow != Flow::Normal)
-                break;
+                flow = Flow::Normal;
+            }
+
+            flow = scanStmt(child);
         }
 
         if (flow == Flow::Normal) {
@@ -121,6 +130,28 @@ StructCleanupRule::CleanupAnalyzer::Flow StructCleanupRule::CleanupAnalyzer::sca
             stmt->getEndLoc());
 
         return Flow::Break;
+    }
+
+    /*
+     * goto exits every scope that does not contain its label.
+     * Like a return, execution does not continue after it, the
+     * code at the label is scanned where the label appears.
+     */
+    if (const auto *gotoStmt =
+            dyn_cast<GotoStmt>(stmt)) {
+
+        reportGotoCleanup(gotoStmt);
+
+        return Flow::Return;
+    }
+
+    /*
+     * A label passes on the flow of the statement it labels.
+     */
+    if (const auto *labelStmt =
+            dyn_cast<LabelStmt>(stmt)) {
+
+        return scanStmt(labelStmt->getSubStmt());
     }
 
     /*
@@ -973,6 +1004,49 @@ void StructCleanupRule::CleanupAnalyzer::reportContinueCleanup(
 
         owner.reportPendingVarsForScopeExit(
             loc,
+            scopes[i - 1],
+            reportedVars);
+    }
+}
+
+namespace {
+
+// True if 'inner' is 'outer' itself or anywhere inside it
+bool containsStmt(const Stmt *outer, const Stmt *inner)
+{
+    if (!outer || !inner)
+        return false;
+
+    if (outer == inner)
+        return true;
+
+    for (const Stmt *child : outer->children()) {
+        if (containsStmt(child, inner))
+            return true;
+    }
+
+    return false;
+}
+
+} // namespace
+
+void StructCleanupRule::CleanupAnalyzer::reportGotoCleanup(
+    const GotoStmt *gotoStmt)
+{
+    const LabelDecl *label = gotoStmt->getLabel();
+    const LabelStmt *target = label ? label->getStmt() : nullptr;
+
+    if (!target)
+        return;
+
+    // From the innermost scope outwards, until the one that
+    // also contains the label
+    for (size_t i = scopes.size(); i > 0; --i) {
+        if (containsStmt(scopes[i - 1].compound, target))
+            break;
+
+        owner.reportPendingVarsForScopeExit(
+            gotoStmt->getEndLoc(),
             scopes[i - 1],
             reportedVars);
     }

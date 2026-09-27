@@ -32,19 +32,32 @@ bool PrefixNamespaceRule::isHeaderFile(const std::string &path) const {
            lower.ends_with(".hxx");
 }
 
+// Keeps the case of the folder name, so a folder 'App' gives the
+// prefix 'App'
 std::string PrefixNamespaceRule::sanitize(const std::string &s) const {
     std::string out;
 
     for (char c : s) {
 
-        if (std::isalnum(static_cast<unsigned char>(c))) {
-            out += static_cast<char>(
-                std::tolower(static_cast<unsigned char>(c)));
-        }
-        else {
+        if (std::isalnum(static_cast<unsigned char>(c)))
+            out += c;
+        else
             out += '_';
-        }
     }
+
+    return out;
+}
+
+std::string PrefixNamespaceRule::lower(const std::string &s) const {
+    std::string out = s;
+
+    std::transform(
+        out.begin(),
+        out.end(),
+        out.begin(),
+        [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
 
     return out;
 }
@@ -85,7 +98,7 @@ std::vector<std::string> PrefixNamespaceRule::extractDirs(
     const std::string &path) const {
 
     const std::string topDir =
-        sanitize(config.prefixNamespaceRule.topDir);
+        lower(sanitize(config.prefixNamespaceRule.topDir));
 
     std::vector<std::string> parts =
         splitPath(path);
@@ -103,7 +116,7 @@ std::vector<std::string> PrefixNamespaceRule::extractDirs(
 
         if (!collecting) {
 
-            if (part == topDir)
+            if (lower(part) == topDir)
                 collecting = true;
 
             continue;
@@ -191,7 +204,7 @@ std::string PrefixNamespaceRule::buildIncludeGuardName(
     const std::string &path) const {
 
     const std::string topDir =
-        sanitize(config.prefixNamespaceRule.topDir);
+        lower(sanitize(config.prefixNamespaceRule.topDir));
 
     std::vector<std::string> parts =
         splitPath(path);
@@ -210,7 +223,7 @@ std::string PrefixNamespaceRule::buildIncludeGuardName(
 
         if (!collecting) {
 
-            if (part == topDir)
+            if (lower(part) == topDir)
                 collecting = true;
 
             continue;
@@ -266,6 +279,10 @@ void PrefixNamespaceRule::checkName(SourceManager &sm,
         return;
 
     if (name.starts_with(prefix))
+        return;
+
+    if (config.prefixNamespaceRule.caseInsensitive &&
+        lower(name).starts_with(lower(prefix)))
         return;
 
     diagnostics.report(

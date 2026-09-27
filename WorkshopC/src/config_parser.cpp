@@ -195,6 +195,9 @@ void ConfigParser::applySetting(
     else if (key == "apply_to_typedefs") {
         cfg.applyToTypedefs = parseBool(value);
     }
+    else if (key == "case_insensitive") {
+        cfg.caseInsensitive = parseBool(value);
+    }
 }
 
 void ConfigParser::applySetting(

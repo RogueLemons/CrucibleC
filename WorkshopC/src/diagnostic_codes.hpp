@@ -60,7 +60,7 @@
       "A private field is accessed from a function that is not named after its struct and does not take 'self'") \
     /* 04 function_pointer */ \
     X(FunctionPointerMissingTypedef, "CCW0401", "function-pointer-missing-typedef", \
-      "A function pointer variable or parameter is declared without a typedef") \
+      "A function pointer variable, parameter, struct field or return type is declared without a typedef") \
     /* 05 typedef_struct */ \
     X(StructMissingTypedef, "CCW0501", "struct-missing-typedef", \
       "A struct must have a typedef") \
@@ -80,11 +80,11 @@
     X(MutableArgumentPointer, "CCW0607", "mutable-argument-pointer", \
       "The address of an argument is taken as a pointer to non-const") \
     X(PointerAssignedNull, "CCW0608", "pointer-assigned-null", \
-      "A pointer is assigned NULL") \
+      "A pointer is assigned or initialized with NULL") \
     X(PointerFieldAssignedNull, "CCW0609", "pointer-field-assigned-null", \
       "A pointer field is assigned NULL") \
     X(ArgumentReassigned, "CCW0610", "argument-reassigned", \
-      "A function argument is reassigned") \
+      "A function argument is reassigned, or changed with ++ or --") \
     X(ByValueArgumentModified, "CCW0611", "by-value-argument-modified", \
       "A field of a by-value argument is modified") \
     X(NullArgument, "CCW0612", "null-argument", \

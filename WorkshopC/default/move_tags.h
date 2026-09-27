@@ -12,7 +12,7 @@ static inline void* workshopc_modify(void* arg) { return arg; }
 #define MUT(expr)  ((__typeof__(expr))workshopc_modify((void*)(expr)))
 
 #define MOVED __attribute__((annotate("workshopc_move")))
-#define OUPUT  __attribute__((annotate("workshopc_out")))
+#define OUTPUT __attribute__((annotate("workshopc_out")))
 #define MUTABLE  __attribute__((annotate("workshopc_modify")))
 
 #else
@@ -22,7 +22,7 @@ static inline void* workshopc_modify(void* arg) { return arg; }
 #define MUT(expr)  (expr)
 
 #define MOVED
-#define OUPUT
+#define OUTPUT
 #define MUTABLE
 
 #endif

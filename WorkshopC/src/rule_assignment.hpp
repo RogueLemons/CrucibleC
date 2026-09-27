@@ -52,6 +52,16 @@ private:
         ASTContext &context) const;
 
     /*
+     * When arguments may not be modified: 'target' of an assignment,
+     * ++ or -- may not be an argument, or a field of a by-value
+     * argument.
+     */
+    void checkArgumentModification(
+        const Expr *target,
+        SourceLocation loc,
+        SourceManager &sm) const;
+
+    /*
      * When pointers to arguments must not be mutable: the address of an
      * argument, or of a field of a by-value argument, may only become a
      * pointer to const, wherever it is taken.
