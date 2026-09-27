@@ -1615,7 +1615,8 @@ For Beta V1 it shall
 - Reorganize README and documentation
 
 For Beta V1.1 it shall
-- Add rules for vtables and interfaces, including support for the argument pointer tags (move, out, mutable) and the reference tag on the parameters of function pointer types: a function assigned or passed to a function pointer must have the same tags as the function pointer type, parameter by parameter, and calls through a function pointer must follow the tags of its type (callsite operators, use after move, reference arguments). Until then the tags are not allowed on function pointer parameters
+- Add rules for vtables and interfaces (the rule codes shall be 14 and 15)
+- (continue from above point) ...including support for the argument pointer tags (move, out, mutable) and the reference tag on the parameters of function pointer types: a function assigned or passed to a function pointer must have the same tags as the function pointer type, parameter by parameter, and calls through a function pointer must follow the tags of its type (callsite operators, use after move, reference arguments). Until then the tags are not allowed on function pointer parameters (remember to remove the two error codes)
 - Optionally enforce raii struct destroy calls in reverse init order
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 
