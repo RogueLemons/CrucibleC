@@ -1613,6 +1613,7 @@ This ensures:
 For Beta V1 it shall
 - Verify build for Linux
 - Reorganize README and documentation
+- Make release folder a gitignore, and use githubs release system to make linux and windows releases
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15)
