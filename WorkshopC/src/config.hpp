@@ -92,6 +92,7 @@ struct StructResourceManagementRuleConfig {
 
     bool raiiUseAfterDestroy = true;
     bool raiiMayOnlyMoveValueRef = false;
+    bool raiiMayOnlyDestroyValueRef = false;
 };
 
 struct RestrictedMallocRuleConfig {

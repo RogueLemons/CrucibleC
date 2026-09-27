@@ -1,0 +1,4 @@
+error: destroy function 'int_vector_destroy' may only be given the address of a variable ('int_vector_destroy(&variable)'), not a pointer, a struct field or an array element (raii)
+error: destroy function 'int_vector_destroy' may only be given the address of a variable ('int_vector_destroy(&variable)'), not a pointer, a struct field or an array element (raii)
+error: destroy function 'int_vector_destroy' may only be given the address of a variable ('int_vector_destroy(&variable)'), not a pointer, a struct field or an array element (raii)
+error: destroy function 'int_vector_destroy' may only be given the address of a variable ('int_vector_destroy(&variable)'), not a pointer, a struct field or an array element (raii)

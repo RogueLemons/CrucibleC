@@ -80,6 +80,7 @@ rules:
     pod_struct_creator_suffix: _pod
     raii_struct_creator_suffix: _make
     raii_struct_destroyer_suffix: _destroy
+    raii_may_only_destroy_value_ref: true
     raii_struct_copy_suffix: _copy
     raii_struct_move_suffix: _move
     raii_may_only_move_value_ref: true

@@ -163,6 +163,41 @@ private:
         const CallExpr *call,
         const FunctionDecl *enclosingFunction) const;
 
+    /*
+     * With raii_may_only_destroy_value_ref, the same for a raii destroy
+     * function: 'Name_destroy(&variable)'.
+     */
+    void checkDestroyArgument(
+        const CallExpr *call,
+        const FunctionDecl *enclosingFunction) const;
+
+    /*
+     * Shared by the move and destroy checks: if 'call' is to the raii
+     * function '<struct><suffix>', its first argument must be the
+     * address of a variable.
+     */
+    void checkValueRefArgument(
+        const CallExpr *call,
+        const FunctionDecl *enclosingFunction,
+        const std::string &suffix,
+        const std::string &kind,
+        bool allowFreeStructFields) const;
+
+    /*
+     * True if 'expr' is a field of a free struct, or an element of an
+     * array field of one, e.g. 'holder.vec', 'holder->vec' or
+     * 'holder.vecs[1]'. Free structs come with no rules, so their raii
+     * fields may be handled from anywhere.
+     */
+    bool isFreeStructField(const Expr *expr) const;
+
+    /*
+     * True if 'function' is one of the lifecycle functions of any known
+     * struct (e.g. 'pair_destroy'), which may pass on its own fields
+     * through its 'self' pointer.
+     */
+    bool isHelperOfAnyStruct(const FunctionDecl *function) const;
+
     void checkReturnStmt(
         const ReturnStmt *returnStmt,
         const FunctionDecl *enclosingFunction) const;

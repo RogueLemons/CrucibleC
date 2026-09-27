@@ -270,6 +270,9 @@ void ConfigParser::applySetting(
     else if (key == "raii_may_only_move_value_ref") {
         cfg.raiiMayOnlyMoveValueRef = parseBool(value);
     }
+    else if (key == "raii_may_only_destroy_value_ref") {
+        cfg.raiiMayOnlyDestroyValueRef = parseBool(value);
+    }
 }
 
 std::string ConfigParser::unquote(const std::string &value) {

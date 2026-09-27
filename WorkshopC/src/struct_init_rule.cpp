@@ -935,13 +935,93 @@ void StructInitRule::checkAssignment(
     }
 }
 
+bool StructInitRule::isHelperOfAnyStruct(const FunctionDecl *function) const
+{
+    if (!function)
+        return false;
+
+    const std::string name = function->getNameAsString();
+
+    for (const std::string *suffix : {
+             &podSuffix, &raiiSuffix, &freeSuffix, &destroySuffix,
+             &copySuffix, &moveSuffix, &returnSuffix, &validSuffix,
+             &arrayDestroySuffix })
+    {
+        if (suffix->empty() ||
+            name.size() <= suffix->size() ||
+            name.compare(
+                name.size() - suffix->size(),
+                suffix->size(),
+                *suffix) != 0)
+            continue;
+
+        if (database.find(name.substr(0, name.size() - suffix->size())))
+            return true;
+    }
+
+    return false;
+}
+
 void StructInitRule::checkMoveArgument(
     const CallExpr *call,
     const FunctionDecl *enclosingFunction) const
 {
-    if (!call ||
-        !config.structResourceManagementRule.raiiMayOnlyMoveValueRef ||
-        moveSuffix.empty())
+    if (!config.structResourceManagementRule.raiiMayOnlyMoveValueRef)
+        return;
+
+    checkValueRefArgument(call, enclosingFunction, moveSuffix, "move", false);
+}
+
+void StructInitRule::checkDestroyArgument(
+    const CallExpr *call,
+    const FunctionDecl *enclosingFunction) const
+{
+    if (!config.structResourceManagementRule.raiiMayOnlyDestroyValueRef)
+        return;
+
+    checkValueRefArgument(call, enclosingFunction, destroySuffix, "destroy", true);
+}
+
+bool StructInitRule::isFreeStructField(const Expr *expr) const
+{
+    if (!expr)
+        return false;
+
+    expr = expr->IgnoreParenImpCasts();
+
+    // An element of an array field: look at the field itself
+    while (const auto *subscript = dyn_cast<ArraySubscriptExpr>(expr)) {
+        const Expr *base = subscript->getBase()->IgnoreParenImpCasts();
+
+        if (!base->getType()->isArrayType())
+            return false;
+
+        expr = base;
+    }
+
+    const auto *member = dyn_cast<MemberExpr>(expr);
+
+    if (!member)
+        return false;
+
+    const auto *field = dyn_cast<FieldDecl>(member->getMemberDecl());
+
+    if (!field || !field->getParent())
+        return false;
+
+    const auto *owner = database.find(field->getParent()->getNameAsString());
+
+    return owner && owner->kind == StructDatabase::Kind::Free;
+}
+
+void StructInitRule::checkValueRefArgument(
+    const CallExpr *call,
+    const FunctionDecl *enclosingFunction,
+    const std::string &suffix,
+    const std::string &kind,
+    bool allowFreeStructFields) const
+{
+    if (!call || suffix.empty())
         return;
 
     const FunctionDecl *callee = call->getDirectCallee();
@@ -951,25 +1031,25 @@ void StructInitRule::checkMoveArgument(
 
     const std::string calleeName = callee->getNameAsString();
 
-    if (calleeName.size() <= moveSuffix.size() ||
+    if (calleeName.size() <= suffix.size() ||
         calleeName.compare(
-            calleeName.size() - moveSuffix.size(),
-            moveSuffix.size(),
-            moveSuffix) != 0)
+            calleeName.size() - suffix.size(),
+            suffix.size(),
+            suffix) != 0)
         return;
 
     const std::string structName =
-        calleeName.substr(0, calleeName.size() - moveSuffix.size());
+        calleeName.substr(0, calleeName.size() - suffix.size());
 
     const auto *info = database.find(structName);
 
     if (!info || info->kind != StructDatabase::Kind::Raii)
         return;
 
-    // The struct's own helpers (e.g. its return function) may move
-    // through their 'self' pointer
-    if (enclosingFunction &&
-        isInsideHelperFunction(enclosingFunction, structName))
+    // Lifecycle functions work through their 'self' pointer: the struct's
+    // own (e.g. its return function moving 'self'), and those of structs
+    // with raii fields (e.g. 'pair_destroy' destroying '&self->first')
+    if (enclosingFunction && isHelperOfAnyStruct(enclosingFunction))
         return;
 
     // Allowed: &variable, where the variable is the struct itself
@@ -977,6 +1057,11 @@ void StructInitRule::checkMoveArgument(
 
     if (const auto *addressOf = dyn_cast<UnaryOperator>(arg)) {
         if (addressOf->getOpcode() == UO_AddrOf) {
+            // Allowed when configured: &free_struct.field
+            if (allowFreeStructFields &&
+                isFreeStructField(addressOf->getSubExpr()))
+                return;
+
             const auto *ref = dyn_cast<DeclRefExpr>(
                 addressOf->getSubExpr()->IgnoreParenImpCasts());
 
@@ -990,7 +1075,7 @@ void StructInitRule::checkMoveArgument(
 
     reportUsageIssue(
         call->getArg(0)->getExprLoc(),
-        "move function '" + calleeName +
+        kind + " function '" + calleeName +
         "' may only be given the address of a variable ('" + calleeName +
         "(&variable)'), not a pointer, a struct field or an array element (raii)");
 }
@@ -1419,6 +1504,10 @@ void StructInitRule::finalize()
             pending.function);
 
         checkMoveArgument(
+            pending.call,
+            pending.function);
+
+        checkDestroyArgument(
             pending.call,
             pending.function);
 
