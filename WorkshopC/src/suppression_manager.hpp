@@ -6,6 +6,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "diagnostic_codes.hpp"
+
 struct SuppressedRange {
     unsigned startLine;
     unsigned endLine;
@@ -17,6 +19,7 @@ struct MissingSuppressionReason {
 };
 
 struct UnbalancedSuppression {
+    DiagCode code;
     unsigned line;
     unsigned column;
     std::string message;

@@ -152,4 +152,7 @@ struct Config {
     ReferencePointerRuleConfig referencePointerRule;
 
     std::vector<std::string> thirdPartyIncludes;
+
+    // Folder containing compile_commands.json, relative to the config file
+    std::string compileCommandsDir;
 };

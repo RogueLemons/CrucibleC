@@ -1505,6 +1505,7 @@ bool StructCleanupRule::isReturnCall(
 }
 
 void StructCleanupRule::reportUsageIssue(
+    DiagCode code,
     SourceLocation loc,
     const std::string &message) const
 {
@@ -1518,6 +1519,7 @@ void StructCleanupRule::reportUsageIssue(
 
     diagnostics.report(
         config.structResourceManagementRule.level,
+        code,
         *sourceManager,
         loc,
         message);
@@ -1548,6 +1550,7 @@ void StructCleanupRule::reportPendingVarsForScopeExit(
         reportedVars.insert(key);
 
         reportUsageIssue(
+            DiagCode::RaiiNotDestroyed,
             loc,
             std::string(tracked.decl->getType()->isArrayType()
                 ? "struct array '"
@@ -1604,6 +1607,7 @@ void StructCleanupRule::reportPendingVarsForExit(
         reportedVars.insert(key);
 
         reportUsageIssue(
+            DiagCode::RaiiParameterNotDestroyed,
             loc,
             "struct parameter '" +
             tracked.decl->getNameAsString() +
@@ -1644,6 +1648,7 @@ void StructCleanupRule::reportPendingParams(
         reportedVars.insert(key);
 
         reportUsageIssue(
+            DiagCode::RaiiParameterNotDestroyed,
             loc,
             "struct parameter '" +
             tracked.decl->getNameAsString() +
@@ -1670,6 +1675,7 @@ void StructCleanupRule::reportUseAfterDestroy(
             : target->getType()->isArrayType() ? "array" : "variable";
 
     reportUsageIssue(
+        DiagCode::RaiiUseAfterDestroy,
         loc,
         std::string("struct ") +
         kind +

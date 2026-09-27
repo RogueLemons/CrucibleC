@@ -166,6 +166,7 @@ void AssignmentRule::checkPointerArrayInitializer(
         if (isNullExpr(value)) {
             diagnostics.report(
                 config.assignmentRule.level,
+                DiagCode::NullPointerArrayInitializer,
                 sm,
                 value->getExprLoc(),
                 "NULL used in pointer array initializer for '" +
@@ -177,6 +178,7 @@ void AssignmentRule::checkPointerArrayInitializer(
     if (explicitCount < size) {
         diagnostics.report(
             config.assignmentRule.level,
+            DiagCode::PointerArrayPartiallyInitialized,
             sm,
             var->getLocation(),
             "array of pointers '" + nameOf(var) +
@@ -218,10 +220,95 @@ void AssignmentRule::bindFinder(MatchFinder &finder) {
         ).bind("callExpr"),
         this
     );
+
+    finder.addMatcher(
+        unaryOperator(
+            hasOperatorName("&"),
+            unless(isExpansionInSystemHeader())
+        ).bind("addressOf"),
+        this
+    );
+}
+
+void AssignmentRule::checkArgumentAddress(
+    const UnaryOperator *addressOf,
+    SourceManager &sm,
+    ASTContext &context) const
+{
+    // The argument itself, or a field of a by-value argument. A field
+    // reached with '->' lives behind the argument, not in it.
+    const Expr *target = addressOf->getSubExpr()->IgnoreParenImpCasts();
+
+    while (const auto *member = dyn_cast<MemberExpr>(target)) {
+        if (member->isArrow())
+            return;
+
+        target = member->getBase()->IgnoreParenImpCasts();
+    }
+
+    const auto *ref = dyn_cast<DeclRefExpr>(target);
+    const auto *param = ref ? dyn_cast<ParmVarDecl>(ref->getDecl()) : nullptr;
+
+    if (!param)
+        return;
+
+    // The type the address ends up as, after any parentheses and casts
+    // around it, e.g. 'const int*' for 'const int* p = &arg;'
+    const Expr *outer = addressOf;
+
+    while (true) {
+        const auto parents = context.getParents(*outer);
+
+        if (parents.empty())
+            break;
+
+        const auto *parent = parents[0].get<Expr>();
+
+        if (!parent || !(isa<ParenExpr>(parent) || isa<CastExpr>(parent)))
+            break;
+
+        outer = parent;
+    }
+
+    // Never evaluated, e.g. sizeof(&arg)
+    if (!context.getParents(*outer).empty() &&
+        context.getParents(*outer)[0].get<UnaryExprOrTypeTraitExpr>())
+        return;
+
+    const QualType type = outer->getType().getCanonicalType();
+
+    if (type->isVoidType())
+        return;
+
+    if (type->isPointerType() && type->getPointeeType().isConstQualified())
+        return;
+
+    const SourceLocation loc = sm.getExpansionLoc(addressOf->getOperatorLoc());
+
+    if (shouldSkip(sm, loc))
+        return;
+
+    diagnostics.report(
+        config.assignmentRule.level,
+        DiagCode::MutableArgumentPointer,
+        sm,
+        loc,
+        "the address of argument '" + nameOf(param) +
+        "' may only be taken as a pointer to const"
+    );
 }
 
 void AssignmentRule::run(const MatchFinder::MatchResult &result) {
     SourceManager &sm = *result.SourceManager;
+
+    if (const auto *addressOf =
+            result.Nodes.getNodeAs<UnaryOperator>("addressOf"))
+    {
+        if (config.assignmentRule.forbidMutArgPointer)
+            checkArgumentAddress(addressOf, sm, *result.Context);
+
+        return;
+    }
 
     if (const auto *vd =
             result.Nodes.getNodeAs<VarDecl>("varDecl"))
@@ -243,6 +330,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
 
             diagnostics.report(
                 config.assignmentRule.level,
+                DiagCode::VariableUninitialized,
                 sm,
                 loc,
                 "variable '" + nameOf(vd) +
@@ -260,6 +348,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
             {
                 diagnostics.report(
                     config.assignmentRule.level,
+                    DiagCode::ArrayUninitialized,
                     sm,
                     loc,
                     "array '" + nameOf(vd) +
@@ -278,6 +367,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
             {
                 diagnostics.report(
                     config.assignmentRule.level,
+                    DiagCode::PointerObjectZeroInitialized,
                     sm,
                     vd->getLocation(),
                     "object '" + nameOf(vd) +
@@ -336,6 +426,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
 
                             diagnostics.report(
                                 config.assignmentRule.level,
+                                DiagCode::NullPointerFieldInitializer,
                                 sm,
                                 child->getExprLoc(),
                                 "NULL used in pointer field initializer for '" +
@@ -343,43 +434,6 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
                                 field->getNameAsString() + "'"
                             );
                         }
-                    }
-                }
-            }
-        }
-
-        // FIXED: forbid_mut_arg_pointer (now handles all Clang wrapping)
-        if (config.assignmentRule.forbidMutArgPointer) {
-
-            const Expr *init = vd->getInit();
-            if (!init)
-                return;
-
-            init = norm(init);
-            init = init->IgnoreImplicit();
-
-            const Expr *sub = init;
-
-            if (const auto *uop = dyn_cast<UnaryOperator>(sub)) {
-                if (uop->getOpcode() == UO_AddrOf)
-                    sub = norm(uop->getSubExpr());
-            }
-
-            if (const auto *dre = dyn_cast<DeclRefExpr>(sub)) {
-
-                if (const auto *pd =
-                        dyn_cast<ParmVarDecl>(dre->getDecl()))
-                {
-                    if (!pd->getType().isConstQualified()) {
-
-                        diagnostics.report(
-                            config.assignmentRule.level,
-                            sm,
-                            vd->getLocation(),
-                            "taking address of non-const argument '" +
-                            nameOf(pd) +
-                            "' is forbidden"
-                        );
                     }
                 }
             }
@@ -411,6 +465,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
 
                     diagnostics.report(
                         config.assignmentRule.level,
+                        DiagCode::PointerAssignedNull,
                         sm,
                         loc,
                         "pointer '" +
@@ -422,6 +477,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
 
                     diagnostics.report(
                         config.assignmentRule.level,
+                        DiagCode::PointerFieldAssignedNull,
                         sm,
                         loc,
                         "pointer field '" +
@@ -443,6 +499,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
                 {
                     diagnostics.report(
                         config.assignmentRule.level,
+                        DiagCode::ArgumentReassigned,
                         sm,
                         loc,
                         "function argument '" +
@@ -469,6 +526,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
 
                             diagnostics.report(
                                 config.assignmentRule.level,
+                                DiagCode::ByValueArgumentModified,
                                 sm,
                                 loc,
                                 "fields of by-value argument '" +
@@ -510,6 +568,7 @@ void AssignmentRule::run(const MatchFinder::MatchResult &result) {
 
                     diagnostics.report(
                         config.assignmentRule.level,
+                        DiagCode::NullArgument,
                         sm,
                         arg->getExprLoc(),
                         "NULL passed as argument to function '" +

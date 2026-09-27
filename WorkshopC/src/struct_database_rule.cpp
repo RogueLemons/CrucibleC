@@ -343,6 +343,7 @@ void StructDatabaseRule::reportInvalidStruct(
 
     diagnostics.report(
         config.structResourceManagementRule.level,
+        DiagCode::StructInvalidConstructor,
         *sourceManager,
         info.decl->getLocation(),
         message);
@@ -362,6 +363,7 @@ void StructDatabaseRule::reportMissingRaiiHelpers(
 
         diagnostics.report(
             config.structResourceManagementRule.level,
+            DiagCode::StructMissingDestroy,
             *sourceManager,
             info.decl->getLocation(),
             message);
@@ -375,6 +377,7 @@ void StructDatabaseRule::reportMissingRaiiHelpers(
 
         diagnostics.report(
             config.structResourceManagementRule.level,
+            DiagCode::StructMissingCopy,
             *sourceManager,
             info.decl->getLocation(),
             message);
@@ -388,6 +391,7 @@ void StructDatabaseRule::reportMissingRaiiHelpers(
 
         diagnostics.report(
             config.structResourceManagementRule.level,
+            DiagCode::StructMissingMove,
             *sourceManager,
             info.decl->getLocation(),
             message);
@@ -401,6 +405,7 @@ void StructDatabaseRule::reportMissingRaiiHelpers(
 
         diagnostics.report(
             config.structResourceManagementRule.level,
+            DiagCode::StructMissingReturn,
             *sourceManager,
             info.decl->getLocation(),
             message);
@@ -408,11 +413,12 @@ void StructDatabaseRule::reportMissingRaiiHelpers(
 
     if (!info.hasValid) {
         std::string message =
-            "struct '" + structName + "' is missing required valididation function '_Bool / bool " +
+            "struct '" + structName + "' is missing required validation function '_Bool / bool " +
             structName + validSuffix + "(const " + structName + "* self)'";
 
         diagnostics.report(
             config.structResourceManagementRule.level,
+            DiagCode::StructMissingValid,
             *sourceManager,
             info.decl->getLocation(),
             message);

@@ -59,6 +59,7 @@ private:
     bool isValidArgument(const Expr *arg) const;
 
     void report(
+        DiagCode code,
         const SourceManager &sm,
         SourceLocation loc,
         const std::string &message);

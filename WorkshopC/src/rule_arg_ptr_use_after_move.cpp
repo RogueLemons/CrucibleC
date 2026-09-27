@@ -114,6 +114,7 @@ void ArgumentPointerUseAfterMoveRule::reportUse(
 
     diagnostics.report(
         config.argumentPointerMovementRule.level,
+        DiagCode::UseAfterMove,
         *sourceManager,
         sourceManager->getExpansionLoc(loc),
         "pointer '" + use->getDecl()->getNameAsString() +

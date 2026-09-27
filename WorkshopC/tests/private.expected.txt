@@ -1,6 +1,7 @@
-warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'
-warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'
-warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'
-warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'
-warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'
-warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'
+warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset' [CCW0202]
+warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset' [CCW0202]
+warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset' [CCW0202]
+warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset' [CCW0202]
+warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset' [CCW0202]
+warning: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset' [CCW0202]
+warning: direct access to private field '_private' is not allowed [CCW0201]

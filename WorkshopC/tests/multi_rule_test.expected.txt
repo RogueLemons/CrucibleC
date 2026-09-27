@@ -1,5 +1,5 @@
-error: enum 'error_fruit_option' is not allowed
-error: struct 'knife' must have a typedef
-error: struct 'knife' must use namespace prefix 'type__tool__'
-error: struct 'knife' is invalid: it requires exactly one of the following constructor functions: 'knife knife__pod(...)', 'knife knife__make(...)', or '<any> knife__init_manually(knife* self, ...)'
-error: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset'
+error: enum 'error_fruit_option' is not allowed [CCW0101]
+error: struct 'knife' must have a typedef [CCW0501]
+error: struct 'knife' must use namespace prefix 'type__tool__' [CCW0701]
+error: struct 'knife' is invalid: it requires exactly one of the following constructor functions: 'knife knife__pod(...)', 'knife knife__make(...)', or '<any> knife__init_manually(knife* self, ...)' [CCW1001]
+error: private field '_private' may only be accessed from static .c functions containing 'pget' or 'pset' [CCW0202]

@@ -1,41 +1,47 @@
-warning: variable 'global_unassigned_int' must be initialized at declaration
-warning: variable 'unassigned' must be initialized at declaration
-warning: variable 'unassigned_ptr' must be initialized at declaration
-warning: pointer 'ptr' cannot be assigned NULL
-warning: pointer 'ptr' cannot be assigned NULL
-warning: pointer 'ptr' cannot be assigned NULL
-warning: pointer 'ptr' cannot be assigned NULL
-warning: pointer field 'ptr' cannot be assigned NULL
-warning: pointer field 'ptr' cannot be assigned NULL
-warning: pointer field 'ptr' cannot be assigned NULL
-warning: pointer field 'ptr' cannot be assigned NULL
-warning: NULL passed as argument to function 'takes_mut_int'
-warning: NULL passed as argument to function 'takes_mut_int'
-warning: NULL passed as argument to function 'takes_mut_int'
-warning: NULL passed as argument to function 'takes_mut_int'
-warning: function argument 'arg' reassignment is forbidden
-warning: function argument 'ptrArg' reassignment is forbidden
-warning: fields of by-value argument 'dataArg' may not be modified
-warning: taking address of non-const argument 'arg' is forbidden
-warning: taking address of non-const argument 'arg' is forbidden
-warning: object 'zero_init_ptr' containing pointers may not be initialized with {0}
-warning: object 'struct_with_ptr' containing pointers may not be initialized with {0}
-warning: NULL used in pointer field initializer for 'init_data_with_null.ptr'
-warning: array 'global_unassigned_array' must be initialized at declaration
-warning: array 'unassigned_int_array' must be initialized at declaration
-warning: array 'unassigned_char_array' must be initialized at declaration
-warning: array 'unassigned_float_array' must be initialized at declaration
-warning: array 'unassigned_ptr_array' must be initialized at declaration
-warning: array 'unassigned_void_ptr_array' must be initialized at declaration
-warning: array 'unassigned_matrix' must be initialized at declaration
-warning: array 'unassigned_3d_array' must be initialized at declaration
-warning: array 'unassigned_struct_ptr_array' must be initialized at declaration
-warning: array of pointers 'assigned_struct_ptr_3_array' must explicitly initialize every element, 1 of 3 missing
-warning: NULL used in pointer array initializer for 'assigned_struct_ptr_array_with_null'
-warning: array of pointers 'assigned_struct_ptr_array_with_null' must explicitly initialize every element, 10 of 11 missing
-warning: array of pointers 'partial_pointer_matrix' must explicitly initialize every element, 1 of 2 missing
-warning: array of pointers 'missing_row_pointer_matrix' must explicitly initialize every element, 1 of 2 missing
-warning: NULL used in pointer array initializer for 'explicit_null_pointer_array'
-warning: NULL used in pointer array initializer for 'all_null_pointer_array'
-warning: NULL used in pointer array initializer for 'all_null_pointer_array'
-warning: array of pointers 'designated_pointer_array' must explicitly initialize every element, 1 of 3 missing
+warning: variable 'global_unassigned_int' must be initialized at declaration [CCW0601]
+warning: variable 'unassigned' must be initialized at declaration [CCW0601]
+warning: variable 'unassigned_ptr' must be initialized at declaration [CCW0601]
+warning: pointer 'ptr' cannot be assigned NULL [CCW0608]
+warning: pointer 'ptr' cannot be assigned NULL [CCW0608]
+warning: pointer 'ptr' cannot be assigned NULL [CCW0608]
+warning: pointer 'ptr' cannot be assigned NULL [CCW0608]
+warning: pointer field 'ptr' cannot be assigned NULL [CCW0609]
+warning: pointer field 'ptr' cannot be assigned NULL [CCW0609]
+warning: pointer field 'ptr' cannot be assigned NULL [CCW0609]
+warning: pointer field 'ptr' cannot be assigned NULL [CCW0609]
+warning: NULL passed as argument to function 'takes_mut_int' [CCW0612]
+warning: NULL passed as argument to function 'takes_mut_int' [CCW0612]
+warning: NULL passed as argument to function 'takes_mut_int' [CCW0612]
+warning: NULL passed as argument to function 'takes_mut_int' [CCW0612]
+warning: function argument 'arg' reassignment is forbidden [CCW0610]
+warning: function argument 'ptrArg' reassignment is forbidden [CCW0610]
+warning: fields of by-value argument 'dataArg' may not be modified [CCW0611]
+warning: the address of argument 'arg' may only be taken as a pointer to const [CCW0607]
+warning: the address of argument 'arg' may only be taken as a pointer to const [CCW0607]
+warning: the address of argument 'const_arg' may only be taken as a pointer to const [CCW0607]
+warning: the address of argument 'arg' may only be taken as a pointer to const [CCW0607]
+warning: the address of argument 'arg' may only be taken as a pointer to const [CCW0607]
+warning: the address of argument 'dataArg' may only be taken as a pointer to const [CCW0607]
+warning: the address of argument 'ptrArg' may only be taken as a pointer to const [CCW0607]
+warning: the address of argument 'arg' may only be taken as a pointer to const [CCW0607]
+warning: object 'zero_init_ptr' containing pointers may not be initialized with {0} [CCW0603]
+warning: object 'struct_with_ptr' containing pointers may not be initialized with {0} [CCW0603]
+warning: NULL used in pointer field initializer for 'init_data_with_null.ptr' [CCW0604]
+warning: array 'global_unassigned_array' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_int_array' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_char_array' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_float_array' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_ptr_array' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_void_ptr_array' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_matrix' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_3d_array' must be initialized at declaration [CCW0602]
+warning: array 'unassigned_struct_ptr_array' must be initialized at declaration [CCW0602]
+warning: array of pointers 'assigned_struct_ptr_3_array' must explicitly initialize every element, 1 of 3 missing [CCW0606]
+warning: NULL used in pointer array initializer for 'assigned_struct_ptr_array_with_null' [CCW0605]
+warning: array of pointers 'assigned_struct_ptr_array_with_null' must explicitly initialize every element, 10 of 11 missing [CCW0606]
+warning: array of pointers 'partial_pointer_matrix' must explicitly initialize every element, 1 of 2 missing [CCW0606]
+warning: array of pointers 'missing_row_pointer_matrix' must explicitly initialize every element, 1 of 2 missing [CCW0606]
+warning: NULL used in pointer array initializer for 'explicit_null_pointer_array' [CCW0605]
+warning: NULL used in pointer array initializer for 'all_null_pointer_array' [CCW0605]
+warning: NULL used in pointer array initializer for 'all_null_pointer_array' [CCW0605]
+warning: array of pointers 'designated_pointer_array' must explicitly initialize every element, 1 of 3 missing [CCW0606]

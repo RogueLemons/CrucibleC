@@ -1,12 +1,12 @@
-warning: global variable 'global_header_state' may not be static in a header, every file that includes the header would get its own copy of it
-warning: static local variable 's_header_calls' may not be static in a header, every file that includes the header would get its own copy of it
-warning: global variable 'counter' must start with the prefix 'global_'
-warning: global variable 'global_exported' must be static
-warning: global variable 'exported' must start with the prefix 'global_'
-warning: global variable 'exported' must be static
-warning: global variable 'global_tentative' must be static
-warning: global variable 'global_defined_elsewhere' must be static
-warning: global variable 'shared_value' must start with the prefix 'global_'
-warning: global variable 'shared_value' must be static
-warning: static local variable 'calls' must start with the prefix 's_'
-warning: static local variable 'global_calls' must start with the prefix 's_'
+warning: global variable 'global_header_state' may not be static in a header, every file that includes the header would get its own copy of it [CCW1905]
+warning: static local variable 's_header_calls' may not be static in a header, every file that includes the header would get its own copy of it [CCW1905]
+warning: global variable 'counter' must start with the prefix 'global_' [CCW1901]
+warning: global variable 'global_exported' must be static [CCW1903]
+warning: global variable 'exported' must start with the prefix 'global_' [CCW1901]
+warning: global variable 'exported' must be static [CCW1903]
+warning: global variable 'global_tentative' must be static [CCW1903]
+warning: global variable 'global_defined_elsewhere' must be static [CCW1903]
+warning: global variable 'shared_value' must start with the prefix 'global_' [CCW1901]
+warning: global variable 'shared_value' must be static [CCW1903]
+warning: static local variable 'calls' must start with the prefix 's_' [CCW1901]
+warning: static local variable 'global_calls' must start with the prefix 's_' [CCW1901]

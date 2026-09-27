@@ -33,6 +33,7 @@ void SuppressionReasonRule::run(const MatchFinder::MatchResult &result) {
         for (const auto &missing : suppressions.findMissingReasons(path)) {
             diagnostics.report(
                 config.suppressionReasonRule.level,
+                DiagCode::SuppressionMissingReason,
                 path,
                 missing.line,
                 missing.column,

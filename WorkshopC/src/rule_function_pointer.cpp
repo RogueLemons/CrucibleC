@@ -167,16 +167,17 @@ void FunctionPointerRule::run(const MatchFinder::MatchResult &result) {
     else if (pd)
         name = pd->getNameAsString();
 
-    std::string msg = "function pointer usage is not allowed";
-
-    if (!name.empty())
-        msg += " (" + name + ")";
+    std::string msg =
+        name.empty()
+            ? std::string("function pointer must be declared using a typedef")
+            : "function pointer '" + name + "' must be declared using a typedef";
 
     if (fromMacro)
         msg += " (macro expansion)";
 
     diagnostics.report(
         config.functionPointerRule.level,
+        DiagCode::FunctionPointerMissingTypedef,
         sm,
         expansionLoc,
         msg

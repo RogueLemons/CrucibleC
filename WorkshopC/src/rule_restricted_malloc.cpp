@@ -126,6 +126,7 @@ void RestrictedMallocRule::run(const MatchFinder::MatchResult &result) {
 
     diagnostics.report(
         config.restrictedMallocRule.level,
+        DiagCode::RestrictedMalloc,
         sm,
         expansionLoc,
         message

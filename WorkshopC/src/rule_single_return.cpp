@@ -156,6 +156,7 @@ void SingleReturnRule::run(const MatchFinder::MatchResult &result) {
 
         diagnostics.report(
             cfg.level,
+            DiagCode::MultipleReturns,
             sm,
             sm.getExpansionLoc(ret->getReturnLoc()),
             "function '" + name + "' has more than a single return, " +
@@ -170,6 +171,7 @@ void SingleReturnRule::run(const MatchFinder::MatchResult &result) {
     {
         diagnostics.report(
             cfg.level,
+            DiagCode::MissingFinalReturn,
             sm,
             sm.getExpansionLoc(body->getRBracLoc()),
             "function '" + name + "' must end with a return statement"

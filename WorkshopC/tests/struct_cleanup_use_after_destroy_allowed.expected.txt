@@ -1,1 +1,1 @@
-error: struct variable 'vec' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii)
+error: struct variable 'vec' of type 'int_vector' must be destroyed with 'int_vector_destroy' before scope exit (raii) [CCW1201]

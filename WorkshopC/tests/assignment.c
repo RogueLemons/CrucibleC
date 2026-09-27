@@ -65,7 +65,7 @@ void test(
     ptrArg = &x; // bad
     dataArg.value = 123; // bad
     int* ptr_to_arg = &arg; // bad
-    const int* const_ptr_to_arg = (const int*)&arg; // bad
+    const int* const_ptr_to_arg = (const int*)&arg; // good: pointer to const
 
     x = 100; // good
     ptr = &y; // good
@@ -84,6 +84,39 @@ void test(
     struct DataNoPtrs simple_data_obj = {0}; // good
 
     struct Data init_data_with_null = { .ptr = NULL, .value = 5}; // bad
+}
+
+void argument_address_test(
+    int arg,
+    const int const_arg,
+    int *ptrArg,
+    struct Data dataArg
+)
+{
+    int x = 1; // good
+
+    int* mut_ptr = &arg; // bad: pointer to non-const
+    const int* const_ptr = &arg; // good: pointer to const
+    int* cast_away_const = (int*)&const_arg; // bad: cast to pointer to non-const
+    int* reassigned_ptr = &x; // good
+    reassigned_ptr = &arg; // bad: pointer to non-const, in an assignment
+    takes_mut_int(&arg); // bad: pointer to non-const, as a call argument
+    takes_const_int(&arg); // good: pointer to const, as a call argument
+    int* field_ptr = &dataArg.value; // bad: field of a by-value argument
+    const int* const_field_ptr = &dataArg.value; // good: pointer to const
+    int** ptr_arg_address = &ptrArg; // bad: the pointer argument itself could be changed
+    int* const* const_ptr_arg_address = &ptrArg; // good: pointer to const pointer
+    int* pointee_ptr = &*ptrArg; // good: points at the pointee, not the argument
+    int* field_behind_ptr = &dataArg.ptr[0]; // good: points behind the argument
+    int copy = arg; // good: a copy, no address taken
+    int* ptr_copy = ptrArg; // good: a copy of the pointer value
+    size_t address_size = sizeof(&arg); // good: never evaluated
+    (void)&arg; // good: discarded
+}
+
+int* return_argument_address(int arg)
+{
+    return &arg; // bad: returned as pointer to non-const
 }
 
 static int global_unassigned_array[4]; // bad

@@ -110,6 +110,7 @@ private:
     bool exprIsNonPointerStructValue(const Expr *expr, std::string *structName = nullptr) const;
 
     void reportUsageIssue(
+        DiagCode code,
         SourceLocation loc,
         const std::string &message) const;
 
@@ -181,6 +182,7 @@ private:
         const FunctionDecl *enclosingFunction,
         const std::string &suffix,
         const std::string &kind,
+        DiagCode code,
         bool allowFreeStructFields) const;
 
     /*

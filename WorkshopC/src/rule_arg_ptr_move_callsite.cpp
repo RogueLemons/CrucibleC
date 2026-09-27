@@ -208,6 +208,7 @@ void ArgumentPointerCallsiteRule::checkMoveOfBorrowedParam(
             continue;
 
         report(
+            DiagCode::BorrowedPointerMoved,
             std::string(ownTag == kModTag ? "modify" : "out") +
             " parameter '" + param->getNameAsString() +
             "' may not be moved to parameter '" +
@@ -220,12 +221,14 @@ void ArgumentPointerCallsiteRule::checkMoveOfBorrowedParam(
     }
 }
 
-void ArgumentPointerCallsiteRule::report(const std::string &msg,
+void ArgumentPointerCallsiteRule::report(DiagCode code,
+            const std::string &msg,
             const SourceManager &sm,
             SourceLocation loc)
 {
     diagnostics.report(
         config.argumentPointerMovementRule.level,
+        code,
         sm,
         loc,
         msg
@@ -348,6 +351,7 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                 }
 
                 report(
+                    DiagCode::OperatorOnUntaggedParameter,
                     operatorName +
                     "(...) used for parameter '" +
                     P->getNameAsString() +
@@ -374,6 +378,7 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                 if (hasWrapper) {
 
                     report(
+                        DiagCode::OperatorDisabled,
                         "modify_operator(...) used for parameter '" +
                         P->getNameAsString() +
                         "' in function '" +
@@ -399,6 +404,7 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                 if (hasWrapper) {
 
                     report(
+                        DiagCode::OperatorDisabled,
                         "move_operator(...) used for parameter '" +
                         P->getNameAsString() +
                         "' in function '" +
@@ -424,6 +430,7 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                 if (hasWrapper) {
 
                     report(
+                        DiagCode::OperatorDisabled,
                         "out_operator(...) used for parameter '" +
                         P->getNameAsString() +
                         "' in function '" +
@@ -463,6 +470,7 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                 operatorName = "out_operator";
 
             report(
+                DiagCode::OperatorMissing,
                 "missing " +
                 operatorName +
                 "(...) at call site for parameter '" +

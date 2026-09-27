@@ -89,6 +89,7 @@ private:
         const MatchFinder::MatchResult &result);
 
     void reportAt(
+        DiagCode code,
         const SourceManager &sm,
         SourceLocation loc,
         const std::string &message);

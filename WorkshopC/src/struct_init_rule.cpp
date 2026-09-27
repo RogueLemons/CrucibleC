@@ -381,6 +381,7 @@ void StructInitRule::checkReturnFunctionUsage(
         return;
 
     reportUsageIssue(
+        DiagCode::RaiiReturnFunctionOutsideReturn,
         call->getExprLoc(),
         "RAII return function '" +
         call->getDirectCallee()->getNameAsString() +
@@ -554,6 +555,7 @@ bool StructInitRule::exprIsNonPointerStructValue(const Expr *expr, std::string *
 }
 
 void StructInitRule::reportUsageIssue(
+    DiagCode code,
     SourceLocation loc,
     const std::string &message) const
 {
@@ -562,6 +564,7 @@ void StructInitRule::reportUsageIssue(
 
     diagnostics.report(
         config.structResourceManagementRule.level,
+        code,
         *sourceManager,
         loc,
         message);
@@ -656,6 +659,7 @@ void StructInitRule::checkVarDecl(
                     false))
             {
                 reportUsageIssue(
+                    DiagCode::PodArrayInit,
                     varDecl->getLocation(),
                     "array variable '" + variableName + "' of type '" + structName +
                     "' must initialize every element from a function return value or "
@@ -678,6 +682,7 @@ void StructInitRule::checkVarDecl(
 
             if (arrayType && arrayType->getElementType()->isArrayType()) {
                 reportUsageIssue(
+                    DiagCode::RaiiArrayMultidimensional,
                     varDecl->getLocation(),
                     "array variable '" + variableName + "' of raii type '" + structName +
                     "' must be one-dimensional, arrays of arrays of raii structs are only "
@@ -691,6 +696,7 @@ void StructInitRule::checkVarDecl(
                 !isFullyInitializedArray(init, varDecl->getType(), context, true))
             {
                 reportUsageIssue(
+                    DiagCode::RaiiArrayInit,
                     varDecl->getLocation(),
                     "array variable '" + variableName + "' of raii type '" + structName +
                     "' must initialize every element from a function return value "
@@ -699,6 +705,7 @@ void StructInitRule::checkVarDecl(
 
             if (!arrayInfo->hasArrayDestroy) {
                 reportUsageIssue(
+                    DiagCode::RaiiArrayMissingDestroyArray,
                     varDecl->getLocation(),
                     "array variable '" + variableName + "' of raii type '" + structName +
                     "' requires the function 'void " + structName + arrayDestroySuffix +
@@ -709,6 +716,7 @@ void StructInitRule::checkVarDecl(
         }
 
         reportUsageIssue(
+            DiagCode::StructArrayNotAllowed,
             varDecl->getLocation(),
             "array variable '" + variableName + "' of type '" + structName + "' is not allowed outside of structs");
         return;
@@ -726,6 +734,7 @@ void StructInitRule::checkVarDecl(
     if (info->kind == StructDatabase::Kind::Pod) {
         if (!init) {
             reportUsageIssue(
+                DiagCode::PodInit,
                 varDecl->getLocation(),
                 "struct variable '" + variableName +
                     "' of type '" + structName +
@@ -733,6 +742,7 @@ void StructInitRule::checkVarDecl(
         }
         else if (!exprIsStructValue(init)) {
             reportUsageIssue(
+                DiagCode::PodInit,
                 varDecl->getLocation(),
                 "struct variable '" + variableName +
                     "' of type '" + structName +
@@ -742,6 +752,7 @@ void StructInitRule::checkVarDecl(
     else if (info->kind == StructDatabase::Kind::Raii) {
         if (!init) {
             reportUsageIssue(
+                DiagCode::RaiiInit,
                 varDecl->getLocation(),
                 "struct variable '" + variableName +
                     "' of type '" + structName +
@@ -749,6 +760,7 @@ void StructInitRule::checkVarDecl(
         }
         else if (!exprIsStructReturnValue(init)) {
             reportUsageIssue(
+                DiagCode::RaiiInit,
                 varDecl->getLocation(),
                 "struct variable '" + variableName +
                     "' of type '" + structName +
@@ -907,6 +919,7 @@ void StructInitRule::checkAssignment(
 
     if (isPointerDereference(lhs)) {
         reportUsageIssue(
+            DiagCode::RaiiReassigned,
             assignment->getOperatorLoc(),
             "pointer dereference '" + targetName +
                 "' of struct '" + structName +
@@ -914,6 +927,7 @@ void StructInitRule::checkAssignment(
     }
     else if (isa<ArraySubscriptExpr>(lhs)) {
         reportUsageIssue(
+            DiagCode::RaiiReassigned,
             assignment->getOperatorLoc(),
             "struct '" + structName +
                 "' array element '" + targetName +
@@ -921,6 +935,7 @@ void StructInitRule::checkAssignment(
     }
     else if (isa<MemberExpr>(lhs)) {
         reportUsageIssue(
+            DiagCode::RaiiReassigned,
             assignment->getOperatorLoc(),
             "struct field '" + targetName +
                 "' of type '" + structName +
@@ -928,6 +943,7 @@ void StructInitRule::checkAssignment(
     }
     else {
         reportUsageIssue(
+            DiagCode::RaiiReassigned,
             assignment->getOperatorLoc(),
             "variable '" + targetName +
                 "' of type struct '" + structName +
@@ -969,7 +985,7 @@ void StructInitRule::checkMoveArgument(
     if (!config.structResourceManagementRule.raiiMayOnlyMoveValueRef)
         return;
 
-    checkValueRefArgument(call, enclosingFunction, moveSuffix, "move", false);
+    checkValueRefArgument(call, enclosingFunction, moveSuffix, "move", DiagCode::MoveNotValueRef, false);
 }
 
 void StructInitRule::checkDestroyArgument(
@@ -979,7 +995,7 @@ void StructInitRule::checkDestroyArgument(
     if (!config.structResourceManagementRule.raiiMayOnlyDestroyValueRef)
         return;
 
-    checkValueRefArgument(call, enclosingFunction, destroySuffix, "destroy", true);
+    checkValueRefArgument(call, enclosingFunction, destroySuffix, "destroy", DiagCode::DestroyNotValueRef, true);
 }
 
 bool StructInitRule::isFreeStructField(const Expr *expr) const
@@ -1019,6 +1035,7 @@ void StructInitRule::checkValueRefArgument(
     const FunctionDecl *enclosingFunction,
     const std::string &suffix,
     const std::string &kind,
+    DiagCode code,
     bool allowFreeStructFields) const
 {
     if (!call || suffix.empty())
@@ -1074,6 +1091,7 @@ void StructInitRule::checkValueRefArgument(
     }
 
     reportUsageIssue(
+        code,
         call->getArg(0)->getExprLoc(),
         kind + " function '" + calleeName +
         "' may only be given the address of a variable ('" + calleeName +
@@ -1124,6 +1142,7 @@ void StructInitRule::checkArrayDestroyArguments(
 
     if (!arrayType) {
         reportUsageIssue(
+            DiagCode::DestroyArrayFirstArgument,
             call->getArg(0)->getExprLoc(),
             "the first argument of '" + calleeName +
             "' must be the array itself, not a pointer (raii)");
@@ -1140,6 +1159,7 @@ void StructInitRule::checkArrayDestroyArguments(
         count.Val.getInt().getZExtValue() != size)
     {
         reportUsageIssue(
+            DiagCode::DestroyArraySize,
             countArg->getExprLoc(),
             "the second argument of '" + calleeName +
             "' must be the size of the array (" + std::to_string(size) +
@@ -1228,6 +1248,7 @@ void StructInitRule::checkCallArguments(
             if (!exprIsStructValue(arg)) {
 
                 reportUsageIssue(
+                    DiagCode::PodArgument,
                     arg->getExprLoc(),
                     "struct '" +
                     structName +
@@ -1244,6 +1265,7 @@ void StructInitRule::checkCallArguments(
             if (!exprIsStructReturnValue(arg)) {
 
                 reportUsageIssue(
+                    DiagCode::RaiiArgument,
                     arg->getExprLoc(),
                     "struct '" +
                     structName +
@@ -1287,6 +1309,7 @@ void StructInitRule::checkReturnStmt(
     if (!returnValue) {
         if (info->kind == StructDatabase::Kind::Pod) {
             reportUsageIssue(
+                DiagCode::PodReturn,
                 returnStmt->getReturnLoc(),
                 "function '" +
                 enclosingFunction->getNameAsString() +
@@ -1296,6 +1319,7 @@ void StructInitRule::checkReturnStmt(
         }
         else if (info->kind == StructDatabase::Kind::Raii) {
             reportUsageIssue(
+                DiagCode::RaiiReturn,
                 returnStmt->getReturnLoc(),
                 "function '" +
                 enclosingFunction->getNameAsString() +
@@ -1322,6 +1346,7 @@ void StructInitRule::checkReturnStmt(
         //
         if (!exprIsStructValue(returnValue)) {
             reportUsageIssue(
+                DiagCode::PodReturn,
                 returnValue->getExprLoc(),
                 "function '" +
                 enclosingFunction->getNameAsString() +
@@ -1346,6 +1371,7 @@ void StructInitRule::checkReturnStmt(
         //
         if (!exprIsStructReturnValue(returnValue)) {
             reportUsageIssue(
+                DiagCode::RaiiReturn,
                 returnValue->getExprLoc(),
                 "function '" +
                 enclosingFunction->getNameAsString() +
@@ -1385,6 +1411,7 @@ void StructInitRule::checkRecordDecl(const RecordDecl *recordDecl) const
         const auto *fieldInfo = database.find(fieldStructName);
         if (fieldInfo && fieldInfo->kind != StructDatabase::Kind::Pod) {
             reportUsageIssue(
+                DiagCode::PodFieldNotPod,
                 field->getLocation(),
                 "struct field '" + field->getNameAsString() + "' inside pod struct '" + recordDecl->getNameAsString() + "' must be a pod struct");
         }

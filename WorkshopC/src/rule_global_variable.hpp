@@ -47,6 +47,7 @@ private:
     bool isDeepConst(QualType type, const ASTContext &context) const;
 
     void report(
+        DiagCode code,
         const SourceManager &sm,
         const VarDecl *var,
         const std::string &kind,

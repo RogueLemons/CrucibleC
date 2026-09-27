@@ -337,3 +337,9 @@ int get_count_suppressed(const Container_t* self)
 }
 // WorkshopC on
 
+
+// -------------------------------------------------------------
+// Bad: file scope, outside of any function, a private field may
+// never be accessed, not even inside sizeof.
+// -------------------------------------------------------------
+static char g_count_bytes[sizeof(((Container_t*)0)->count)]; // bad: private field accessed outside of a function

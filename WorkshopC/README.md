@@ -3,6 +3,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
 
 ## Contents
 - [How to use](#how-to-use)
+- [Diagnostic codes](#diagnostic-codes)
 - [Config behavior](#config-behavior)
   - [Enum rule](#enum-rule)
   - [Private rule](#private-rule)
@@ -29,20 +30,38 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
 - [TODO](#todo)
 
 ## How to use
-The tool requires three arguments:
+```bash
+workshopc [options] <files or folders...>
+```
+
+Put a `workshopc.config.yaml` in the root of your project with `compile_commands_dir` pointing at the folder containing `compile_commands.json` (typically the CMake build folder), and then all that is needed is:
 
 ```bash
-workshopc <config.yaml> <source-file.c> <compdb-dir>
+workshopc src/
 ```
 
 **Arguments:**
-- `<config.yaml>` — Path to the YAML rule configuration file
-- `<source-file.c>` — Path to the C source file to analyze
-- `<compdb-dir>` — Directory containing `compile_commands.json` (typically the CMake build directory)
+- `<files or folders...>` — The C files to analyze. Folders are searched recursively for `.c` files, skipping `third_party_includes` folders and the compilation database folder. Headers are checked through the files that include them, and a problem in a header included by several files is only reported once.
+- `--config <file>` — The config file. Without it, `workshopc.config.yaml` is searched for in the current folder and then its parents.
+- `-p, --build-path <folder>` — The folder containing `compile_commands.json`. Overrides `compile_commands_dir` from the config.
+- `--text <file>` — Also write the diagnostics as text to a file, the same lines as printed to the terminal.
+- `--json <file>` — Also write the diagnostics as JSON to a file: the warning and error counts and a list of diagnostics, each with its file, line, column, level, code, name and message.
+- `--sarif <file>` — Also write the diagnostics as SARIF 2.1.0 to a file, the standard format read by e.g. GitHub code scanning and many IDEs.
+- `-q, --quiet` — Print nothing to the terminal: no diagnostics and no warning and error summary. Clang's compile errors and problems that stop the analysis (e.g. a missing config) are still printed, and the exit code is unaffected.
+- `-h, --help` — Show the help.
 
-Example:
+The diagnostics are always printed to the terminal (stderr) unless `--quiet` is given, and `--text`, `--json` and `--sarif` can be combined freely to write any set of files in a single run. Give `-` as the file to write that format to stdout instead (only one format can use stdout). Compile errors from clang are always printed as text and never appear in the files, the exit code tells when they happened.
+
+Each diagnostic is printed as `file:line:column: level: message [code]`, see [Diagnostic codes](#diagnostic-codes).
+
+Examples:
 ```bash
-workshopc workshopc.config.yaml tests/enum.c build/
+workshopc src/                                  # everything under src/, config found automatically
+workshopc src/main.c src/parser.c               # only these files
+workshopc --config ci.config.yaml -p out/ src/  # another config and build folder
+workshopc -q --sarif results.sarif src/         # only a SARIF file, e.g. for CI
+workshopc --text out.txt --json out.json src/   # terminal output plus a text and a JSON file
+workshopc -q --json - src/ | jq .errors         # JSON to stdout, for piping
 ```
 
 **Exit codes:**
@@ -55,7 +74,7 @@ The exit code reports the result of the analysis. Codes 0-3 form a bitmask (`1` 
 | `1` | Errors found |
 | `2` | Warnings found, no errors |
 | `3` | Both errors and warnings found |
-| `64` | Bad usage (missing arguments) |
+| `64` | Bad usage (unknown option, no files given, a file or folder that does not exist, no `.c` files found) |
 | `65` | The config file could not be loaded |
 | `66` | The compilation database could not be loaded |
 | `67` | Clang failed to process the source file (e.g. it does not compile), so the analysis result is not reliable |
@@ -68,8 +87,119 @@ The tool runs the file through clang, but only WorkshopC's own rules produce war
 
 [Here is a premade config.yaml file ready for use as is and provide a base to easily edit](./default/workshopc.config.yaml).
 
+## Diagnostic codes
+Every diagnostic ends with a code, e.g. `[CCW0101]`, which identifies exactly which check reported it. The JSON and SARIF files carry the code and a readable name as separate fields (`code` and `name` in JSON, `ruleId` in SARIF, whose rule list describes every code).
+
+The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered in the order of the default config, with `00` for WorkshopC itself and `14`-`15` reserved for future rules) and `cc` the check within that rule, starting at `01`. The code says nothing about the severity, since every rule's level is set in the config. Codes are never renumbered or reused: a removed check leaves its code unused, and a new check gets the next free number of its rule.
+
+| Code | Name | Reported when |
+|------|------|---------------|
+| | **00 — [WorkshopC](#disable-section)** | |
+| `CCW0001` | `suppression-not-turned-back-on` | 'WorkshopC off' is never turned back on with 'WorkshopC on' in the same file |
+| `CCW0002` | `suppression-missing-reason` | 'WorkshopC off' is not followed on the next line by a comment starting with 'Reason: ' |
+| `CCW0003` | `suppression-on-without-off` | 'WorkshopC on' without a preceding 'WorkshopC off' in the same file |
+| `CCW0004` | `suppression-nested` | 'WorkshopC off' while already turned off, suppressions can not be nested |
+| | **01 — [Enum](#enum-rule)** | |
+| `CCW0101` | `enum-not-allowed` | Enums are not allowed |
+| `CCW0102` | `enum-missing-typedef` | An enum must have a typedef |
+| `CCW0103` | `enum-init-not-member` | An enum variable must be initialized with a member of its enum or an explicit cast |
+| `CCW0104` | `enum-assignment-not-member` | An enum value must be assigned a member of its enum or an explicit cast |
+| `CCW0105` | `enum-arithmetic` | An enum value may not be modified with arithmetic (compound assignment, ++ or --) |
+| `CCW0106` | `enum-argument-not-member` | An enum argument must be a member of its enum or an explicit cast |
+| | **02 — [Private](#private-rule)** | |
+| `CCW0201` | `private-access-outside-function` | A private field is accessed outside of any function |
+| `CCW0202` | `private-access` | A private field is accessed from a function that is not a static getter or setter in a .c file |
+| | **03 — [Private alternative](#private-alternative-rule)** | |
+| `CCW0301` | `private-alternative-access-outside-function` | A private field is accessed outside of any function |
+| `CCW0302` | `private-alternative-access` | A private field is accessed from a function that is not named after its struct and does not take 'self' |
+| | **04 — [Function pointer](#function-pointer-rule)** | |
+| `CCW0401` | `function-pointer-missing-typedef` | A function pointer variable or parameter is declared without a typedef |
+| | **05 — [Typedef struct](#typedef-struct-rule)** | |
+| `CCW0501` | `struct-missing-typedef` | A struct must have a typedef |
+| | **06 — [Assignment](#assignment-rule)** | |
+| `CCW0601` | `variable-uninitialized` | A variable must be initialized at declaration |
+| `CCW0602` | `array-uninitialized` | An array must be initialized at declaration |
+| `CCW0603` | `pointer-object-zero-initialized` | An object containing pointers may not be initialized with {0} |
+| `CCW0604` | `null-pointer-field-initializer` | NULL is used in the initializer of a pointer field |
+| `CCW0605` | `null-pointer-array-initializer` | NULL is used in the initializer of an array of pointers |
+| `CCW0606` | `pointer-array-partially-initialized` | An array of pointers must explicitly initialize every element |
+| `CCW0607` | `mutable-argument-pointer` | The address of an argument is taken as a pointer to non-const |
+| `CCW0608` | `pointer-assigned-null` | A pointer is assigned NULL |
+| `CCW0609` | `pointer-field-assigned-null` | A pointer field is assigned NULL |
+| `CCW0610` | `argument-reassigned` | A function argument is reassigned |
+| `CCW0611` | `by-value-argument-modified` | A field of a by-value argument is modified |
+| `CCW0612` | `null-argument` | NULL is passed as an argument |
+| | **07 — [Prefix namespace](#prefix-namespace-rule)** | |
+| `CCW0701` | `missing-namespace-prefix` | A name does not start with the namespace prefix of its file |
+| `CCW0702` | `missing-include-guard` | A header does not have the expected include guard |
+| | **08 — [Null check](#null-check-rule)** | |
+| `CCW0801` | `dereference-before-null-check` | A pointer parameter is dereferenced before it is checked for null |
+| | **09 — [Argument pointer movement](#argument-pointer-movement-rule)** | |
+| `CCW0901` | `movement-tag-missing` | A non-const pointer parameter has no movement attribute |
+| `CCW0902` | `movement-tag-mismatch` | The movement attribute of a parameter differs between declaration and definition |
+| `CCW0903` | `movement-tag-not-on-parameter` | A movement attribute is used on something other than a function parameter |
+| `CCW0904` | `borrowed-pointer-moved` | A modify or out parameter is moved to another function |
+| `CCW0905` | `operator-on-untagged-parameter` | A callsite operator is used for a parameter without a movement attribute |
+| `CCW0906` | `operator-disabled` | A callsite operator is used while that kind of callsite operator is disabled |
+| `CCW0907` | `operator-missing` | A callsite operator is missing for a parameter with a movement attribute |
+| `CCW0908` | `use-after-move` | A pointer is used after it may have been moved |
+| `CCW0909` | `movement-tag-on-function-pointer` | A movement attribute is used on a parameter of a function pointer type |
+| | **10 — [Struct resource management: struct definitions](#raii-and-struct-resource-management)** | |
+| `CCW1001` | `struct-invalid-constructor` | A struct does not have exactly one pod, raii or free constructor function |
+| `CCW1002` | `struct-missing-destroy` | A raii struct is missing its destroy function |
+| `CCW1003` | `struct-missing-copy` | A raii struct is missing its copy function |
+| `CCW1004` | `struct-missing-move` | A raii struct is missing its move function |
+| `CCW1005` | `struct-missing-return` | A raii struct is missing its return function |
+| `CCW1006` | `struct-missing-valid` | A raii struct is missing its validation function |
+| | **11 — [Struct resource management: initialization and assignment](#raii-and-struct-resource-management)** | |
+| `CCW1101` | `pod-init` | A pod struct variable is not initialized from a function return value or another struct variable |
+| `CCW1102` | `raii-init` | A raii struct variable is not initialized from a function return value |
+| `CCW1103` | `pod-array-init` | A pod struct array does not initialize every element from a function return value or another struct variable |
+| `CCW1104` | `raii-array-multidimensional` | A raii struct array outside of a struct has more than one dimension |
+| `CCW1105` | `raii-array-init` | A raii struct array does not initialize every element from a function return value |
+| `CCW1106` | `raii-array-missing-destroy-array` | A raii struct array is used but the struct has no array destroy function |
+| `CCW1107` | `struct-array-not-allowed` | An array of this kind of struct is only allowed inside structs |
+| `CCW1108` | `raii-reassigned` | A raii struct is reassigned with another struct value |
+| `CCW1109` | `pod-argument` | A pod struct argument is not a function return value or another struct variable |
+| `CCW1110` | `raii-argument` | A raii struct argument is not a function return value |
+| `CCW1111` | `pod-field-not-pod` | A struct field inside a pod struct is not a pod struct |
+| `CCW1112` | `move-not-value-ref` | A raii move function is given something other than the address of a variable |
+| | **12 — [Struct resource management: destruction](#raii-and-struct-resource-management)** | |
+| `CCW1201` | `raii-not-destroyed` | A raii struct variable or array is not destroyed before scope exit |
+| `CCW1202` | `raii-parameter-not-destroyed` | A raii struct parameter is not destroyed before scope exit |
+| `CCW1203` | `raii-use-after-destroy` | A raii struct is used after being destroyed |
+| `CCW1204` | `destroy-not-value-ref` | A raii destroy function is given something other than the address of a variable |
+| `CCW1205` | `destroy-array-first-argument` | The first argument of an array destroy function is not the array itself |
+| `CCW1206` | `destroy-array-size` | The second argument of an array destroy function is not the size of the array |
+| | **13 — [Struct resource management: return values](#raii-and-struct-resource-management)** | |
+| `CCW1301` | `raii-return-function-outside-return` | A raii return function is used outside of a return statement |
+| `CCW1302` | `pod-return` | A function returning a pod struct does not return a function return value or another struct variable |
+| `CCW1303` | `raii-return` | A function returning a raii struct does not return a function call |
+| `CCW1304` | `raii-return-member-access` | A member is accessed directly on a raii struct returned by a function |
+| `CCW1305` | `raii-return-discarded` | A raii struct returned by a function is discarded |
+| | **16 — [Restricted malloc](#restricted-malloc-rule)** | |
+| `CCW1601` | `restricted-malloc` | A memory function is used outside of the allowed functions |
+| | **17 — [Single return](#single-return-rule)** | |
+| `CCW1701` | `multiple-returns` | A function has more than a single return |
+| `CCW1702` | `missing-final-return` | A function does not end with a return statement |
+| | **18 — [Strict switch](#strict-switch-rule)** | |
+| `CCW1801` | `switch-fallthrough` | A switch case does not end with a break or return |
+| `CCW1802` | `switch-missing-default` | A switch statement has no default case |
+| | **19 — [Global variable](#global-variable-rule)** | |
+| `CCW1901` | `global-missing-prefix` | A global variable does not start with the required prefix |
+| `CCW1902` | `global-not-capitals` | A global variable is not written in capital letters |
+| `CCW1903` | `global-not-static` | A global variable is not static |
+| `CCW1904` | `global-not-const` | A global variable is not const |
+| `CCW1905` | `global-static-in-header` | A static variable is defined in a header |
+| | **20 — [Reference pointer](#reference-pointer-rule)** | |
+| `CCW2001` | `reference-invalid-argument` | The argument for a reference parameter is not the address of an object or another reference |
+| `CCW2002` | `reference-reassigned` | A reference pointer is reassigned |
+| `CCW2003` | `reference-tag-on-non-pointer` | A reference tag is used on a parameter that is not a pointer |
+| `CCW2004` | `reference-tag-not-on-parameter` | A reference tag is used on something other than a function parameter |
+| `CCW2005` | `reference-tag-on-function-pointer` | A reference tag is used on a parameter of a function pointer type |
+
 ## Config behavior
-The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
+The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
 
 ### Enum rule
 An `enum` argument can take any kind of integer which easily creates bugs and mistakes. This rule either forbids enums completely or, with `allow_enum_typedef: true`, allows them under strict rules.
@@ -336,11 +466,16 @@ void foo(const char* name, int x, RGB* rgb)
   name = "New string";  // Not OK with forbid_arg_reassign: true
   x = 5;                // Not OK with forbid_arg_reassign: true
   int* x_ptr = &x;      // Not OK with forbid_mut_arg_pointer: true
+  set_int(&x);          // Not OK with forbid_mut_arg_pointer: true (void set_int(int* out))
 
-  int y = x;            // OK
-  rgb->r = x;           // OK
+  const int* x_view = &x; // OK, the argument can not be modified through it
+  print_int(&x);          // OK (void print_int(const int* value))
+  int y = x;              // OK
+  rgb->r = x;             // OK
 }
 ```
+
+With `forbid_mut_arg_pointer: true` the address of an argument, or of a field of a by-value argument, may only be taken as a pointer to const, wherever it is taken: in a declaration, an assignment, a function call or a return. A cast decides the type, so `(const int*)&x` is OK while `(int*)&x` is not.
 
 ### Prefix namespace rule
 This rule enforces various components in a codebase to to require the folder path as a prefix in its naming, which mimics namespaces in other languages such as C++. This prevents naming collisions in large projects, makes it obvious which module code belongs to at a glance, and enables simulation of C++ namespace organization in pure C.
@@ -1057,7 +1192,7 @@ After building, use the tool with the compilation database from the build direct
 
 ```bash
 ### Example: analyze a test file
-./build/workshopc tests/enum.config.yaml tests/enum.c build-tests/
+./build/workshopc --config tests/enum.config.yaml -p build-tests/ tests/enum.c
 ```
 
 The tool requires access to the compilation database to understand compiler flags and include paths. The database must describe the code being analyzed, not the tool itself, so the test files have their own (see below).
@@ -1071,6 +1206,8 @@ python run_tests.py
 ```
 
 The files in `tests/` are a standalone project described by `tests/CMakeLists.txt`. They are never built: `run_tests.py` only **configures** that project into `build-tests/` (with clang and Ninja), which writes a `compile_commands.json` for the test files, and then passes that directory to the tool for every test. New test files are picked up automatically, since the project is configured again on every run.
+
+The expected files list every diagnostic with its code. One more test writes the diagnostics of `tests/suppression_balance.c` to a text, a JSON and a SARIF file in a single `--quiet` run, into `tests/output/` (ignored by git), and checks that nothing was printed and that all three files hold exactly the expected diagnostics.
 
 #### What makes this CMake portable
 
@@ -1163,7 +1300,6 @@ This ensures:
 
 For Beta V1 it shall
 - Verify build for Linux
-- Add ability to take folder of source code instead of single file
 - Reorganize README and documentation
 
 For Beta V1.1 it shall
@@ -1172,10 +1308,7 @@ For Beta V1.1 it shall
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 
 For Beta V1.2 it shall
-- Add .sarif file output support
 - Add LSP support
-- Improved exe arguments (writing e.g. workshopc --config conf.yaml)
-- Provide output to txt or json file if provided as argument
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
 - Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 - Add rule that all arrays of pointers must end with NULL pointer

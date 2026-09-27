@@ -53,3 +53,9 @@ x86/
 # =========================
 .DS_Store
 Thumbs.db
+
+# =========================
+# WorkshopC output
+# =========================
+# Text, JSON and SARIF files written by the output files test
+tests/output/

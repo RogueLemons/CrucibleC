@@ -375,6 +375,7 @@ void NullCheckRule::run(const MatchFinder::MatchResult &result) {
 
         diagnostics.report(
             config.nullCheckRule.level,
+            DiagCode::DereferenceBeforeNullCheck,
             sm,
             st.violation->getBeginLoc(),
             "pointer parameter '" + name +

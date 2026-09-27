@@ -28,6 +28,7 @@ void SuppressionBalanceRule::run(const MatchFinder::MatchResult &result) {
         for (const auto &problem : suppressions.findUnbalanced(path)) {
             diagnostics.report(
                 RuleLevel::Error,
+                problem.code,
                 path,
                 problem.line,
                 problem.column,

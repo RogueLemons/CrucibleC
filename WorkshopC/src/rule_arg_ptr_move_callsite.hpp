@@ -56,7 +56,8 @@ private:
                                   const FunctionDecl *FD,
                                   const SourceManager &sm);
 
-    void report(const std::string &msg,
+    void report(DiagCode code,
+                const std::string &msg,
                 const SourceManager &sm,
                 SourceLocation loc);
 

@@ -1,11 +1,11 @@
-warning: missing modify_operator(...) at call site for parameter 'mutable_char_ptr' in function 'func_that_modifies'
-warning: missing modify_operator(...) at call site for parameter 'mutable_char_ptr' in function 'func_that_modifies'
-warning: missing move_operator(...) at call site for parameter 'moved_int_ptr' in function 'func_that_takes_move'
-warning: missing move_operator(...) at call site for parameter 'moved_int_ptr' in function 'func_that_takes_move'
-warning: missing out_operator(...) at call site for parameter 'out_float_ptr' in function 'func_that_gives_out'
-warning: missing out_operator(...) at call site for parameter 'out_float_ptr' in function 'func_that_gives_out'
-warning: move_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
-warning: out_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
-warning: modify_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged
-warning: pointer 'i_ptr' may have been moved to 'func_that_takes_move' and can not be used until it is reassigned
-warning: pointer 'i_ptr' may have been moved to 'func_that_takes_move' and can not be used until it is reassigned
+warning: missing modify_operator(...) at call site for parameter 'mutable_char_ptr' in function 'func_that_modifies' [CCW0907]
+warning: missing modify_operator(...) at call site for parameter 'mutable_char_ptr' in function 'func_that_modifies' [CCW0907]
+warning: missing move_operator(...) at call site for parameter 'moved_int_ptr' in function 'func_that_takes_move' [CCW0907]
+warning: missing move_operator(...) at call site for parameter 'moved_int_ptr' in function 'func_that_takes_move' [CCW0907]
+warning: missing out_operator(...) at call site for parameter 'out_float_ptr' in function 'func_that_gives_out' [CCW0907]
+warning: missing out_operator(...) at call site for parameter 'out_float_ptr' in function 'func_that_gives_out' [CCW0907]
+warning: move_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged [CCW0905]
+warning: out_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged [CCW0905]
+warning: modify_operator(...) used for parameter 'bad_arg' in function 'declared_in_external_header', but the parameter is not tagged [CCW0905]
+warning: pointer 'i_ptr' may have been moved to 'func_that_takes_move' and can not be used until it is reassigned [CCW0908]
+warning: pointer 'i_ptr' may have been moved to 'func_that_takes_move' and can not be used until it is reassigned [CCW0908]

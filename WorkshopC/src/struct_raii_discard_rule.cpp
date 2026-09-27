@@ -243,6 +243,7 @@ void StructRaiiDiscardRule::finalize()
 
         diagnostics.report(
             config.structResourceManagementRule.level,
+            pending.use == Use::MemberAccess ? DiagCode::RaiiReturnMemberAccess : DiagCode::RaiiReturnDiscarded,
             *sourceManager,
             loc,
             message);

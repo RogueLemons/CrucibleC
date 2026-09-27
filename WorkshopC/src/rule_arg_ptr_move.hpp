@@ -46,7 +46,8 @@ private:
 
     std::string makeKey(const FunctionDecl *FD) const;
 
-    void report(const std::string &msg,
+    void report(DiagCode code,
+                const std::string &msg,
                 const ParmVarDecl *P,
                 const SourceManager &sm,
                 SourceLocation loc);

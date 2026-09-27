@@ -1,2 +1,2 @@
-warning: function pointer usage is not allowed (math_func)
-warning: function pointer usage is not allowed (add_func)
+warning: function pointer 'math_func' must be declared using a typedef [CCW0401]
+warning: function pointer 'add_func' must be declared using a typedef [CCW0401]

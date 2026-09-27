@@ -1,7 +1,7 @@
-warning: static local variable 'calls' must start with the prefix 's_'
-warning: static local variable 'G_LIKE_GLOBAL' must start with the prefix 's_'
-warning: global variable 'limit' must start with the prefix 'G_'
-warning: global variable 'limit' must be written in capital letters
-warning: global variable 'limit' must be const
-warning: global variable 'G_COUNTER' must be static
-warning: global variable 'G_COUNTER' must be const
+warning: static local variable 'calls' must start with the prefix 's_' [CCW1901]
+warning: static local variable 'G_LIKE_GLOBAL' must start with the prefix 's_' [CCW1901]
+warning: global variable 'limit' must start with the prefix 'G_' [CCW1901]
+warning: global variable 'limit' must be written in capital letters [CCW1902]
+warning: global variable 'limit' must be const [CCW1904]
+warning: global variable 'G_COUNTER' must be static [CCW1903]
+warning: global variable 'G_COUNTER' must be const [CCW1904]

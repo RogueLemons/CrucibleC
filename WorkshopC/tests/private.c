@@ -32,3 +32,7 @@ void bad_set(Color* c, int r, int g, int b)
     c->_private.g = g;
     c->_private.b = b;
 }
+
+// bad: file scope, outside of any function, a private field may never be accessed
+static Color g_color;
+static int* g_red = &g_color._private.r;

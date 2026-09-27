@@ -171,6 +171,7 @@ std::vector<UnbalancedSuppression> SuppressionManager::findUnbalanced(
         if (offPos != std::string::npos) {
             if (disabled) {
                 found.push_back({
+                    DiagCode::SuppressionNested,
                     currentLine,
                     static_cast<unsigned>(offPos + 1),
                     "'WorkshopC off' while already turned off at line " +
@@ -190,6 +191,7 @@ std::vector<UnbalancedSuppression> SuppressionManager::findUnbalanced(
         if (onPos != std::string::npos) {
             if (!disabled) {
                 found.push_back({
+                    DiagCode::SuppressionOnWithoutOff,
                     currentLine,
                     static_cast<unsigned>(onPos + 1),
                     "'WorkshopC on' without a preceding 'WorkshopC off' "
@@ -203,6 +205,7 @@ std::vector<UnbalancedSuppression> SuppressionManager::findUnbalanced(
 
     if (disabled) {
         found.push_back({
+            DiagCode::SuppressionNotTurnedBackOn,
             offLine,
             offColumn,
             "'WorkshopC off' is never turned back on with 'WorkshopC on' "

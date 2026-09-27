@@ -141,6 +141,7 @@ std::string EnumRule::describe(const Expr *expr) const {
 }
 
 void EnumRule::reportAt(
+    DiagCode code,
     const SourceManager &sm,
     SourceLocation loc,
     const std::string &message)
@@ -152,6 +153,7 @@ void EnumRule::reportAt(
 
     diagnostics.report(
         config.enumRule.level,
+        code,
         sm,
         expansionLoc,
         message
@@ -310,6 +312,7 @@ void EnumRule::checkEnumDeclaration(
 
     diagnostics.report(
         config.enumRule.level,
+        config.enumRule.allowEnumTypedef ? DiagCode::EnumMissingTypedef : DiagCode::EnumNotAllowed,
         sm,
         expansionLoc,
         msg
@@ -344,6 +347,7 @@ void EnumRule::checkVariableInit(
         return;
 
     reportAt(
+        DiagCode::EnumInitNotMember,
         sm,
         init->getExprLoc(),
         "variable '" + var->getNameAsString() +
@@ -375,6 +379,7 @@ void EnumRule::checkAssignment(
             return;
 
         reportAt(
+            DiagCode::EnumAssignmentNotMember,
             sm,
             op->getRHS()->getExprLoc(),
             "'" + describe(lhs) +
@@ -388,6 +393,7 @@ void EnumRule::checkAssignment(
     // Compound assignment (+=, |=, ...) can produce values that are not
     // members of the enum whatever the right hand side is.
     reportAt(
+        DiagCode::EnumArithmetic,
         sm,
         op->getOperatorLoc(),
         "'" + describe(lhs) +
@@ -416,6 +422,7 @@ void EnumRule::checkIncrementDecrement(
         return;
 
     reportAt(
+        DiagCode::EnumArithmetic,
         sm,
         op->getOperatorLoc(),
         "'" + describe(operand) +
@@ -462,6 +469,7 @@ void EnumRule::checkCall(
                 : "'" + param->getNameAsString() + "'";
 
         reportAt(
+            DiagCode::EnumArgumentNotMember,
             sm,
             arg->getExprLoc(),
             "argument " + argName +

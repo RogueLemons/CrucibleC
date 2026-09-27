@@ -51,6 +51,16 @@ private:
         SourceManager &sm,
         ASTContext &context) const;
 
+    /*
+     * When pointers to arguments must not be mutable: the address of an
+     * argument, or of a field of a by-value argument, may only become a
+     * pointer to const, wherever it is taken.
+     */
+    void checkArgumentAddress(
+        const UnaryOperator *addressOf,
+        SourceManager &sm,
+        ASTContext &context) const;
+
 public:
     AssignmentRule(
         const Config &cfg,

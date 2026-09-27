@@ -33,11 +33,17 @@
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/Options/OptionUtils.h>
 
+#include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
 
+#include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <string>
+#include <vector>
 
 using namespace clang;
 using namespace clang::tooling;
@@ -51,10 +57,7 @@ private:
     MatchFinder finder{};
     const Config &config;
 
-    int &warnings;
-    int &errors;
-
-    std::unique_ptr<Diagnostics> diagnostics{};
+    Diagnostics &diagnostics;
     SuppressionManager suppressions{};
 
     std::unique_ptr<SuppressionReasonRule> suppressionReasonRule{};
@@ -83,24 +86,18 @@ private:
     std::unique_ptr<StructRaiiDiscardRule> structRaiiDiscardRule{};
 
 public:
-    WorkshopFrontendAction(const Config &cfg, int &w, int &e)
-        : config(cfg), warnings(w), errors(e) {}
+    WorkshopFrontendAction(const Config &cfg, Diagnostics &diag)
+        : config(cfg), diagnostics(diag) {}
 
     std::unique_ptr<ASTConsumer> CreateASTConsumer(
         CompilerInstance &CI,
         StringRef) override
     {
-        // Diagnostics
-        diagnostics = std::make_unique<Diagnostics>(
-            warnings,
-            errors
-        );
-
         // Every 'WorkshopC off' must be turned back on, always enabled
         suppressionBalanceRule = std::make_unique<SuppressionBalanceRule>(
             config,
             suppressions,
-            *diagnostics
+            diagnostics
         );
 
         suppressionBalanceRule->bindFinder(finder);
@@ -110,7 +107,7 @@ public:
             suppressionReasonRule = std::make_unique<SuppressionReasonRule>(
                 config,
                 suppressions,
-                *diagnostics
+                diagnostics
             );
 
             suppressionReasonRule->bindFinder(finder);
@@ -121,7 +118,7 @@ public:
             enumRule = std::make_unique<EnumRule>(
                 config,
                 suppressions,
-                *diagnostics
+                diagnostics
             );
 
             enumRule->bindFinder(finder);
@@ -132,7 +129,7 @@ public:
             privateRule = std::make_unique<PrivateRule>(
                 config,
                 suppressions,
-                *diagnostics
+                diagnostics
             );
 
             privateRule->bindFinder(finder);
@@ -143,7 +140,7 @@ public:
             privateAlternativeRule = std::make_unique<PrivateAlternativeRule>(
                 config,
                 suppressions,
-                *diagnostics
+                diagnostics
             );
 
             privateAlternativeRule->bindFinder(finder);
@@ -154,7 +151,7 @@ public:
             functionPointerRule = std::make_unique<FunctionPointerRule>(
                 config,
                 suppressions,
-                *diagnostics
+                diagnostics
             );
 
             functionPointerRule->bindFinder(finder);
@@ -167,7 +164,7 @@ public:
                 std::make_unique<TypedefStructRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             typedefStructRule->bindFinder(finder);
@@ -178,7 +175,7 @@ public:
             assignmentRule = std::make_unique<AssignmentRule>(
                 config,
                 suppressions,
-                *diagnostics
+                diagnostics
             );
 
             assignmentRule->bindFinder(finder);
@@ -191,7 +188,7 @@ public:
                 std::make_unique<PrefixNamespaceRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             prefixNamespaceRule->bindFinder(finder);
@@ -204,7 +201,7 @@ public:
                 std::make_unique<NullCheckRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             nullCheckRule->bindFinder(finder);
@@ -218,7 +215,7 @@ public:
                     ArgumentPointerMovementRule>(
                         config,
                         suppressions,
-                        *diagnostics
+                        diagnostics
                     );
 
             argumentPointerMovementRule->bindFinder(finder);
@@ -231,7 +228,7 @@ public:
                 std::make_unique<ArgumentPointerCallsiteRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             argumentPointerCallsiteRule->bindFinder(finder);
@@ -241,7 +238,7 @@ public:
                 std::make_unique<ArgumentPointerUseAfterMoveRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             argumentPointerUseAfterMoveRule->bindFinder(finder);
@@ -254,7 +251,7 @@ public:
                 std::make_unique<RestrictedMallocRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             restrictedMallocRule->bindFinder(finder);
@@ -267,7 +264,7 @@ public:
                 std::make_unique<SingleReturnRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             singleReturnRule->bindFinder(finder);
@@ -280,7 +277,7 @@ public:
                 std::make_unique<StrictSwitchRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             strictSwitchRule->bindFinder(finder);
@@ -293,7 +290,7 @@ public:
                 std::make_unique<GlobalVariableRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             globalVariableRule->bindFinder(finder);
@@ -306,7 +303,7 @@ public:
                 std::make_unique<ReferencePointerRule>(
                     config,
                     suppressions,
-                    *diagnostics
+                    diagnostics
                 );
 
             referencePointerRule->bindFinder(finder);
@@ -320,7 +317,7 @@ public:
                 std::make_unique<StructDatabaseRule>(
                     config,
                     suppressions,
-                    *diagnostics,
+                    diagnostics,
                     structDatabase
                 );
 
@@ -331,7 +328,7 @@ public:
                 std::make_unique<StructInitRule>(
                     config,
                     suppressions,
-                    *diagnostics,
+                    diagnostics,
                     structDatabase
                 );
 
@@ -342,7 +339,7 @@ public:
                 std::make_unique<StructCleanupRule>(
                     config,
                     suppressions,
-                    *diagnostics,
+                    diagnostics,
                     structDatabase
                 );
 
@@ -353,7 +350,7 @@ public:
                 std::make_unique<StructRaiiDiscardRule>(
                     config,
                     suppressions,
-                    *diagnostics,
+                    diagnostics,
                     structDatabase
                 );
 
@@ -377,21 +374,17 @@ public:
 class WorkshopActionFactory : public FrontendActionFactory {
 private:
     const Config &config;
-    int warnings = 0;
-    int errors = 0;
+    Diagnostics &diagnostics;
 
 public:
-    WorkshopActionFactory(const Config &cfg)
-        : config(cfg) {}
+    WorkshopActionFactory(const Config &cfg, Diagnostics &diag)
+        : config(cfg), diagnostics(diag) {}
 
     std::unique_ptr<FrontendAction> create() override {
         return std::make_unique<WorkshopFrontendAction>(
-            config, warnings, errors
+            config, diagnostics
         );
     }
-
-    int getWarnings() const { return warnings; }
-    int getErrors() const { return errors; }
 };
 
 // -------------------------
@@ -440,29 +433,336 @@ static std::string findResourceDirArgument(const char *argv0) {
 }
 
 // -------------------------
+// Command line
+// -------------------------
+static const char *kDefaultConfigName = "workshopc.config.yaml";
+
+static const char *kUsage =
+    "Usage: workshopc [options] <files or folders...>\n"
+    "\n"
+    "Analyzes the given C files, and every .c file found in the given folders.\n"
+    "\n"
+    "Options:\n"
+    "  --config <file>                   The config file. Without it, workshopc.config.yaml\n"
+    "                                    is searched for in the current folder and its parents.\n"
+    "  -p, --build-path <folder>         The folder containing compile_commands.json.\n"
+    "                                    Overrides compile_commands_dir from the config.\n"
+    "  --text <file>                     Also write the diagnostics as text to a file.\n"
+    "  --json <file>                     Also write the diagnostics as JSON to a file.\n"
+    "  --sarif <file>                    Also write the diagnostics as SARIF to a file.\n"
+    "                                    Use - as the file to write to stdout instead.\n"
+    "  -q, --quiet                       Print nothing but clang's compile errors and\n"
+    "                                    problems that stop the analysis.\n"
+    "  -h, --help                        Show this help.\n";
+
+struct Options {
+    std::string configPath;
+    std::string compileCommandsDir;
+    std::string textPath;
+    std::string jsonPath;
+    std::string sarifPath;
+    std::vector<std::string> inputs;
+    bool quiet = false;
+    bool help = false;
+};
+
+// Returns false and prints an error on invalid arguments
+static bool parseArguments(int argc, const char **argv, Options &options) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+
+        // --name value, or --name=value
+        auto valueOf = [&](const std::string &name, std::string &value) {
+            if (arg == name) {
+                if (i + 1 >= argc) {
+                    std::cerr << "Missing value for " << name << "\n";
+                    return -1;
+                }
+
+                value = argv[++i];
+                return 1;
+            }
+
+            if (arg.rfind(name + "=", 0) == 0) {
+                value = arg.substr(name.size() + 1);
+                return 1;
+            }
+
+            return 0;
+        };
+
+        int matched = 0;
+
+        if (arg == "-h" || arg == "--help") {
+            options.help = true;
+            continue;
+        }
+
+        if (arg == "-q" || arg == "--quiet") {
+            options.quiet = true;
+            continue;
+        }
+
+        if ((matched = valueOf("--config", options.configPath)) ||
+            (matched = valueOf("-p", options.compileCommandsDir)) ||
+            (matched = valueOf("--build-path", options.compileCommandsDir)) ||
+            (matched = valueOf("--text", options.textPath)) ||
+            (matched = valueOf("--json", options.jsonPath)) ||
+            (matched = valueOf("--sarif", options.sarifPath)))
+        {
+            if (matched < 0)
+                return false;
+
+            continue;
+        }
+
+        if (arg.size() > 1 && arg[0] == '-') {
+            std::cerr << "Unknown option: " << arg << "\n";
+            return false;
+        }
+
+        options.inputs.push_back(arg);
+    }
+
+    const int toStdout =
+        (options.textPath == "-") +
+        (options.jsonPath == "-") +
+        (options.sarifPath == "-");
+
+    if (toStdout > 1) {
+        std::cerr << "Only one of --text, --json and --sarif can write to stdout (-)\n";
+        return false;
+    }
+
+    return true;
+}
+
+// An output file given with --text, --json or --sarif, '-' being stdout
+class OutputFile {
+private:
+    std::string path;
+    std::ofstream file;
+
+public:
+    // Returns false and prints an error when the file can not be written
+    bool open(const std::string &outputPath) {
+        path = outputPath;
+
+        if (path.empty() || path == "-")
+            return true;
+
+        file.open(path);
+
+        if (!file) {
+            std::cerr << "Failed to write " << path << "\n";
+            return false;
+        }
+
+        return true;
+    }
+
+    bool isWanted() const {
+        return !path.empty();
+    }
+
+    std::ostream &stream() {
+        return path == "-" ? std::cout : file;
+    }
+};
+
+// Looks for the default config file in the current folder and its parents
+static std::string findConfigFile() {
+    llvm::SmallString<256> dir;
+
+    if (llvm::sys::fs::current_path(dir))
+        return "";
+
+    while (!dir.empty()) {
+        llvm::SmallString<256> candidate(dir);
+        llvm::sys::path::append(candidate, kDefaultConfigName);
+
+        if (llvm::sys::fs::is_regular_file(candidate))
+            return std::string(candidate);
+
+        const llvm::StringRef parent = llvm::sys::path::parent_path(dir);
+
+        if (parent == dir)
+            break;
+
+        dir = parent;
+    }
+
+    return "";
+}
+
+static std::string realPathOf(const std::string &path) {
+    llvm::SmallString<256> real;
+
+    if (!llvm::sys::fs::real_path(path, real))
+        return std::string(real);
+
+    llvm::SmallString<256> absolute(path);
+    llvm::sys::fs::make_absolute(absolute);
+    return std::string(absolute);
+}
+
+static bool isInside(const std::string &path, const std::string &folder) {
+    if (folder.empty() || path.size() <= folder.size())
+        return false;
+
+    if (path.compare(0, folder.size(), folder) != 0)
+        return false;
+
+    const char next = path[folder.size()];
+    return next == '/' || next == '\\';
+}
+
+/*
+ * Expands the inputs into the list of source files to analyze. Folders are
+ * searched recursively for .c files, skipping third party folders and the
+ * compilation database folder (which contains CMake's own test sources).
+ */
+static bool collectSources(
+    const std::vector<std::string> &inputs,
+    const Config &config,
+    const std::string &compileCommandsDir,
+    std::vector<std::string> &sources)
+{
+    const std::string skipDir = realPathOf(compileCommandsDir);
+
+    auto isThirdParty = [&](const std::string &path) {
+        for (const auto &p : config.thirdPartyIncludes) {
+            if (!p.empty() && path.find(p) != std::string::npos)
+                return true;
+        }
+
+        return false;
+    };
+
+    std::set<std::string> unique;
+
+    for (const auto &input : inputs) {
+        if (llvm::sys::fs::is_regular_file(input)) {
+            const std::string path = realPathOf(input);
+
+            if (unique.insert(path).second)
+                sources.push_back(path);
+
+            continue;
+        }
+
+        if (!llvm::sys::fs::is_directory(input)) {
+            std::cerr << "No such file or folder: " << input << "\n";
+            return false;
+        }
+
+        std::vector<std::string> found;
+        std::error_code ec;
+
+        for (llvm::sys::fs::recursive_directory_iterator it(input, ec), end;
+             it != end && !ec;
+             it.increment(ec))
+        {
+            const std::string path = realPathOf(it->path());
+
+            if (llvm::sys::fs::is_directory(it->path())) {
+                if (path == skipDir || isThirdParty(path + "/"))
+                    it.no_push();
+
+                continue;
+            }
+
+            if (llvm::sys::path::extension(path) != ".c" ||
+                isThirdParty(path) ||
+                isInside(path, skipDir))
+                continue;
+
+            found.push_back(path);
+        }
+
+        if (ec) {
+            std::cerr << "Failed to read folder " << input << ": "
+                      << ec.message() << "\n";
+            return false;
+        }
+
+        std::sort(found.begin(), found.end());
+
+        for (const auto &path : found) {
+            if (unique.insert(path).second)
+                sources.push_back(path);
+        }
+    }
+
+    return true;
+}
+
+// -------------------------
 // MAIN
 // -------------------------
 int main(int argc, const char **argv) {
-    if (argc < 4) {
-        std::cerr << "Usage: workshopc <config.yaml> <source-file> <compdb-dir>\n";
+    Options options;
+
+    if (!parseArguments(argc, argv, options)) {
+        std::cerr << "\n" << kUsage;
+        return ExitBadUsage;
+    }
+
+    if (options.help) {
+        std::cout << kUsage;
+        return ExitClean;
+    }
+
+    if (options.inputs.empty()) {
+        std::cerr << "No files or folders to analyze\n\n" << kUsage;
         return ExitBadUsage;
     }
 
     // -------------------------
     // Load config
     // -------------------------
+    if (options.configPath.empty()) {
+        options.configPath = findConfigFile();
+
+        if (options.configPath.empty()) {
+            std::cerr << "No " << kDefaultConfigName
+                      << " found in the current folder or its parents, "
+                         "use --config to point at one\n";
+            return ExitConfigFailed;
+        }
+    }
+
     Config config;
-    if (!ConfigParser::loadFromFile(argv[1], config)) {
-        std::cerr << "Failed to load config\n";
+    if (!ConfigParser::loadFromFile(options.configPath, config)) {
+        std::cerr << "Failed to load config: " << options.configPath << "\n";
         return ExitConfigFailed;
     }
 
-    std::string file = argv[2];
-    std::string compdbDir = argv[3];
+    // -------------------------
+    // Locate the compilation database: -p, or the config setting which
+    // is relative to the config file
+    // -------------------------
+    std::string compdbDir = options.compileCommandsDir;
 
-    // -------------------------
-    // Load compilation database
-    // -------------------------
+    if (compdbDir.empty() && !config.compileCommandsDir.empty()) {
+        llvm::SmallString<256> dir(config.compileCommandsDir);
+
+        if (llvm::sys::path::is_relative(dir)) {
+            llvm::SmallString<256> base(
+                llvm::sys::path::parent_path(realPathOf(options.configPath)));
+            llvm::sys::path::append(base, dir);
+            dir = base;
+        }
+
+        compdbDir = std::string(dir);
+    }
+
+    if (compdbDir.empty()) {
+        std::cerr << "No compilation database: pass -p/--build-path <folder> or set "
+                     "compile_commands_dir in the config\n";
+        return ExitCompilationDatabaseFailed;
+    }
+
     std::string errorMsg;
     auto compilationDB =
         CompilationDatabase::loadFromDirectory(compdbDir, errorMsg);
@@ -474,70 +774,119 @@ int main(int argc, const char **argv) {
     }
 
     // -------------------------
+    // Collect the source files
+    // -------------------------
+    std::vector<std::string> sources;
+
+    if (!collectSources(options.inputs, config, compdbDir, sources))
+        return ExitBadUsage;
+
+    if (sources.empty()) {
+        std::cerr << "No .c files found in the given folders\n";
+        return ExitBadUsage;
+    }
+
+    // -------------------------
     // Run tool
     // -------------------------
-    std::vector<std::string> sources = { file };
 
-    ClangTool tool(*compilationDB, sources);
+    // Opened before the analysis so that a bad path fails right away
+    OutputFile textOutput;
+    OutputFile jsonOutput;
+    OutputFile sarifOutput;
 
-    // Force C mode for .c files
-    tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster(
-            {"-x", "c"},
-            ArgumentInsertPosition::BEGIN
-        )
-    );
+    if (!textOutput.open(options.textPath) ||
+        !jsonOutput.open(options.jsonPath) ||
+        !sarifOutput.open(options.sarifPath))
+        return ExitBadUsage;
 
-    // Provide WorkshopC macro tag
-    tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster(
-            {"-DWORKSHOPC_PARSING=1"},
-            ArgumentInsertPosition::BEGIN
-        )
-    );
+    // Diagnostics are printed to the terminal (stderr) as they are found,
+    // unless quiet or the text already goes to stdout. The output files
+    // are written all at once at the end.
+    Diagnostics diagnostics;
 
-    // Make clang's builtin headers findable
+    diagnostics.setStreamText(!options.quiet && options.textPath != "-");
+
+    WorkshopActionFactory factory(config, diagnostics);
+
     const std::string resourceDirArgument = findResourceDirArgument(argv[0]);
 
-    if (!resourceDirArgument.empty()) {
+    // One file at a time: clang's tooling prints progress lines on stderr
+    // when it is given several files, which would mix with the diagnostics
+    int result = 0;
+
+    for (const auto &source : sources) {
+        ClangTool tool(*compilationDB, {source});
+
+        // Force C mode for .c files
         tool.appendArgumentsAdjuster(
             getInsertArgumentAdjuster(
-                resourceDirArgument.c_str(),
+                {"-x", "c"},
+                ArgumentInsertPosition::BEGIN
+            )
+        );
+
+        // Provide WorkshopC macro tag
+        tool.appendArgumentsAdjuster(
+            getInsertArgumentAdjuster(
+                {"-DWORKSHOPC_PARSING=1"},
+                ArgumentInsertPosition::BEGIN
+            )
+        );
+
+        // Make clang's builtin headers findable
+        if (!resourceDirArgument.empty()) {
+            tool.appendArgumentsAdjuster(
+                getInsertArgumentAdjuster(
+                    resourceDirArgument.c_str(),
+                    ArgumentInsertPosition::END
+                )
+            );
+        }
+
+        // Only WorkshopC's own rules should report warnings. Clang's warnings
+        // are dropped (they belong to the project's normal build) but real
+        // compile errors are still printed. Added last so it overrides any
+        // -W flags and -Werror from the compilation database.
+        tool.appendArgumentsAdjuster(
+            getInsertArgumentAdjuster(
+                {"-w"},
                 ArgumentInsertPosition::END
             )
         );
+
+        if (tool.run(&factory) != 0)
+            result = 1;
     }
 
-    // Only WorkshopC's own rules should report warnings. Clang's warnings
-    // are dropped (they belong to the project's normal build) but real
-    // compile errors are still printed. Added last so it overrides any
-    // -W flags and -Werror from the compilation database.
-    tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster(
-            {"-w"},
-            ArgumentInsertPosition::END
-        )
-    );
-
-    WorkshopActionFactory factory(config);
-
-    int result = tool.run(&factory);
-
     // -------------------------
-    // Final reporting
+    // Output
     // -------------------------
-    std::cout << "\nWarnings: " << factory.getWarnings() << "\n";
-    std::cout << "Errors: " << factory.getErrors() << "\n";
+    if (textOutput.isWanted())
+        diagnostics.writeText(textOutput.stream());
+
+    if (jsonOutput.isWanted())
+        diagnostics.writeJson(jsonOutput.stream());
+
+    if (sarifOutput.isWanted())
+        diagnostics.writeSarif(sarifOutput.stream());
+
+    // On stderr, next to the diagnostics, so stdout only carries an output
+    // file written to '-'
+    if (!options.quiet) {
+        std::cerr << "\nWarnings: " << diagnostics.getWarnings() << "\n";
+        std::cerr << "Errors: " << diagnostics.getErrors() << "\n";
+    }
 
     if (result != 0)
         return ExitAnalysisFailed;
 
     int exitCode = ExitClean;
 
-    if (factory.getErrors() > 0)
+    if (diagnostics.getErrors() > 0)
         exitCode |= ExitErrors;
 
-    if (factory.getWarnings() > 0)
+    if (diagnostics.getWarnings() > 0)
         exitCode |= ExitWarnings;
 
     return exitCode;

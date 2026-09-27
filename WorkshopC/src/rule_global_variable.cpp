@@ -53,6 +53,7 @@ bool GlobalVariableRule::isDeepConst(
 }
 
 void GlobalVariableRule::report(
+    DiagCode code,
     const SourceManager &sm,
     const VarDecl *var,
     const std::string &kind,
@@ -60,6 +61,7 @@ void GlobalVariableRule::report(
 {
     diagnostics.report(
         config.globalVariableRule.level,
+        code,
         sm,
         sm.getExpansionLoc(var->getLocation()),
         kind + " '" + var->getNameAsString() + "' " + message
@@ -149,7 +151,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
 
     if (prefixRequired) {
         if (name.rfind(prefix, 0) != 0) {
-            report(sm, var, kind,
+            report(DiagCode::GlobalMissingPrefix, sm, var, kind,
                 "must start with the prefix '" + prefix + "'");
         }
         else {
@@ -167,7 +169,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
         }
 
         if (hasLowercase) {
-            report(sm, var, kind,
+            report(DiagCode::GlobalNotCapitals, sm, var, kind,
                 hasPrefix
                     ? "must be written in capital letters after the prefix '" +
                       prefix + "'"
@@ -180,7 +182,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
         cfg.mustBeStatic &&
         var->getStorageClass() != SC_Static)
     {
-        report(sm, var, kind, "must be static");
+        report(DiagCode::GlobalNotStatic, sm, var, kind, "must be static");
     }
 
     if (followsGlobalRules &&
@@ -191,7 +193,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
             var->getType()->isPointerType() ||
             result.Context->getBaseElementType(var->getType())->isPointerType();
 
-        report(sm, var, kind,
+        report(DiagCode::GlobalNotConst, sm, var, kind,
             involvesPointer
                 ? "must be const, and so must everything it points to "
                   "(e.g. 'const int* const')"
@@ -207,7 +209,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
         var->getStorageClass() == SC_Static &&
         !sm.isInMainFile(sm.getExpansionLoc(var->getLocation())))
     {
-        report(sm, var, kind,
+        report(DiagCode::GlobalStaticInHeader, sm, var, kind,
             "may not be static in a header, every file that includes "
             "the header would get its own copy of it");
     }

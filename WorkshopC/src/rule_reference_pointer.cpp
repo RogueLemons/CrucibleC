@@ -123,6 +123,7 @@ bool ReferencePointerRule::isValidArgument(const Expr *arg) const {
 }
 
 void ReferencePointerRule::report(
+    DiagCode code,
     const SourceManager &sm,
     SourceLocation loc,
     const std::string &message)
@@ -132,6 +133,7 @@ void ReferencePointerRule::report(
 
     diagnostics.report(
         config.referencePointerRule.level,
+        code,
         sm,
         sm.getExpansionLoc(loc),
         message
@@ -157,7 +159,7 @@ void ReferencePointerRule::checkCall(const CallExpr *call, const SourceManager &
         if (isValidArgument(arg))
             continue;
 
-        report(sm, arg->getExprLoc(),
+        report(DiagCode::ReferenceInvalidArgument, sm, arg->getExprLoc(),
             "argument for reference parameter '" + param->getNameAsString() +
             "' of function '" + callee->getNameAsString() +
             "' must be the address of an object (e.g. '&variable') or "
@@ -178,7 +180,7 @@ void ReferencePointerRule::checkReassignment(
     if (!hasReferenceTag(param))
         return;
 
-    report(sm, loc,
+    report(DiagCode::ReferenceReassigned, sm, loc,
         "reference pointer '" + param->getNameAsString() +
         "' may not be reassigned");
 }
@@ -205,7 +207,7 @@ void ReferencePointerRule::checkFunction(
         if (!writtenHere)
             continue;
 
-        report(sm, param->getLocation(),
+        report(DiagCode::ReferenceTagOnNonPointer, sm, param->getLocation(),
             "reference tag on parameter '" + param->getNameAsString() +
             "' of function '" + function->getNameAsString() +
             "' may only be used on a pointer");
@@ -240,7 +242,11 @@ void ReferencePointerRule::checkTagPlacement(
                 name = named->getNameAsString();
         }
 
-        report(sm, decl->getLocation(),
+        report(
+            param
+                ? DiagCode::ReferenceTagOnFunctionPointer
+                : DiagCode::ReferenceTagNotOnParameter,
+            sm, decl->getLocation(),
             param
                 ? "reference tag on '" + name +
                   "' may not be used on a parameter of a function pointer "

@@ -45,6 +45,7 @@ bool TypedefStructRule::shouldIgnore(const SourceManager &sm, SourceLocation loc
 void TypedefStructRule::report(const RecordDecl *RD, const SourceManager &sm) {
     diagnostics.report(
         config.typedefStructRule.level,
+        DiagCode::StructMissingTypedef,
         sm,
         RD->getLocation(),
         "struct '" + RD->getNameAsString() + "' must have a typedef"

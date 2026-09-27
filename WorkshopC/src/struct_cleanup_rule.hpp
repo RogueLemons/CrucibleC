@@ -267,6 +267,7 @@ private:
         const std::string &structName) const;
 
     void reportUsageIssue(
+        DiagCode code,
         SourceLocation loc,
         const std::string &message) const;
 

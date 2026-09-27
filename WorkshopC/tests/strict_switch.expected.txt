@@ -1,6 +1,6 @@
-warning: switch statement must have a default case
-warning: switch statement must have a default case
-warning: switch default case must end with a break or return (fallthrough is not allowed)
-warning: switch case must end with a break or return (fallthrough is not allowed)
-warning: switch case must end with a break or return (fallthrough is not allowed)
-warning: switch case must end with a break or return (fallthrough is not allowed)
+warning: switch statement must have a default case [CCW1802]
+warning: switch statement must have a default case [CCW1802]
+warning: switch default case must end with a break or return (fallthrough is not allowed) [CCW1801]
+warning: switch case must end with a break or return (fallthrough is not allowed) [CCW1801]
+warning: switch case must end with a break or return (fallthrough is not allowed) [CCW1801]
+warning: switch case must end with a break or return (fallthrough is not allowed) [CCW1801]

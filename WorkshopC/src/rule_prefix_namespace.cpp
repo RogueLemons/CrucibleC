@@ -270,6 +270,7 @@ void PrefixNamespaceRule::checkName(SourceManager &sm,
 
     diagnostics.report(
         config.prefixNamespaceRule.level,
+        DiagCode::MissingNamespacePrefix,
         sm,
         loc,
         kind + " '" + name +
@@ -340,6 +341,7 @@ void PrefixNamespaceRule::checkIncludeGuard(SourceManager &sm,
 
             diagnostics.report(
                 config.prefixNamespaceRule.level,
+                DiagCode::MissingIncludeGuard,
                 sm,
                 loc,
                 "missing include guard '" +
@@ -352,6 +354,7 @@ void PrefixNamespaceRule::checkIncludeGuard(SourceManager &sm,
 
     diagnostics.report(
         config.prefixNamespaceRule.level,
+        DiagCode::MissingIncludeGuard,
         sm,
         loc,
         "missing include guard '" +

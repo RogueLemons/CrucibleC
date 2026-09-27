@@ -1,12 +1,12 @@
-error: array variable 'uninitialized' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'zeroed' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'zeroed_elements' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'literal_elements' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'compound_elements' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'missing' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'designated' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'grid_missing_element' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'grid_missing_row' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'cube_zeroed' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
-error: array variable 'vectors' of type 'int_vector' is not allowed outside of structs
-error: array variable 'matrix_missing' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed)
+error: array variable 'uninitialized' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'zeroed' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'zeroed_elements' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'literal_elements' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'compound_elements' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'missing' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'designated' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'grid_missing_element' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'grid_missing_row' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'cube_zeroed' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]
+error: array variable 'vectors' of type 'int_vector' is not allowed outside of structs [CCW1107]
+error: array variable 'matrix_missing' of type 'pos' must initialize every element from a function return value or another struct variable (missing elements, '{0}' and brace literals are not allowed) [CCW1103]

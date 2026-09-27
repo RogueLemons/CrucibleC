@@ -1,4 +1,6 @@
 import sys
+import json
+import re
 from pathlib import Path
 import subprocess
 from collections import Counter
@@ -11,6 +13,14 @@ TESTS = ROOT / "tests"
 # Compilation database for the test files, generated from
 # tests/CMakeLists.txt. The test files are never built.
 TESTS_COMPDB = ROOT / "build-tests"
+
+# Where the output files test writes its text, JSON and SARIF files
+TESTS_OUTPUT = TESTS / "output"
+
+# The test whose diagnostics are written to every output format at once
+OUTPUT_FILES_TEST = TESTS / "suppression_balance.c"
+
+CODE_PATTERN = re.compile(r" \[(CCW\d{4})\]$")
 
 
 def generate_tests_compdb():
@@ -104,6 +114,122 @@ def collect_messages(output: str):
     return messages
 
 
+def check(condition, problem, problems):
+    if not condition:
+        problems.append(problem)
+
+
+def run_output_files_test(exe):
+    """
+    Writes the diagnostics of one test as text, JSON and SARIF in a single
+    quiet run, and checks every file against the test's expected file.
+    """
+    print("\n==============================")
+    print("Running: output files (--quiet --text --json --sarif)")
+    print("==============================")
+
+    TESTS_OUTPUT.mkdir(exist_ok=True)
+
+    text_file = TESTS_OUTPUT / "results.txt"
+    json_file = TESTS_OUTPUT / "results.json"
+    sarif_file = TESTS_OUTPUT / "results.sarif"
+
+    for file in (text_file, json_file, sarif_file):
+        file.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [
+            str(exe),
+            "--quiet",
+            "--config", str(OUTPUT_FILES_TEST.with_suffix(".config.yaml")),
+            "-p", str(TESTS_COMPDB),
+            "--text", str(text_file),
+            "--json", str(json_file),
+            "--sarif", str(sarif_file),
+            str(OUTPUT_FILES_TEST)
+        ],
+        text=True,
+        capture_output=True
+    )
+
+    problems = []
+
+    expected = Counter(
+        normalize(x)
+        for x in load_expected(OUTPUT_FILES_TEST)
+        if normalize(x) is not None
+    )
+
+    expected_warnings = sum(n for msg, n in expected.items() if msg.startswith("warning:"))
+    expected_errors = sum(n for msg, n in expected.items() if msg.startswith("error:"))
+
+    check(not (result.stdout + result.stderr).strip(),
+          "--quiet printed output:\n" + result.stdout + result.stderr, problems)
+
+    expected_exit = (1 if expected_errors else 0) | (2 if expected_warnings else 0)
+    check(result.returncode == expected_exit,
+          f"exit code {result.returncode}, expected {expected_exit}", problems)
+
+    for file in (text_file, json_file, sarif_file):
+        check(file.exists(), f"{file.name} was not written", problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    # Text: the same lines as the terminal
+    text = Counter(collect_messages(text_file.read_text()))
+    check(text == expected, "results.txt does not match the expected diagnostics", problems)
+
+    # JSON: code and name as their own fields, message without the code
+    data = json.loads(json_file.read_text())
+    check(data["warnings"] == expected_warnings, "wrong warning count in results.json", problems)
+    check(data["errors"] == expected_errors, "wrong error count in results.json", problems)
+
+    from_json = Counter(
+        f"{d['level']}: {d['message']} [{d['code']}]"
+        for d in data["diagnostics"]
+    )
+    check(from_json == expected, "results.json does not match the expected diagnostics", problems)
+    check(all(d["name"] for d in data["diagnostics"]), "a diagnostic in results.json has no name", problems)
+
+    # SARIF: ruleId on every result, described by the tool's rule list
+    sarif = json.loads(sarif_file.read_text())
+    check(sarif["version"] == "2.1.0", "results.sarif is not SARIF 2.1.0", problems)
+
+    run = sarif["runs"][0]
+    rules = run["tool"]["driver"]["rules"]
+
+    from_sarif = Counter(
+        f"{r['level']}: {r['message']['text']} [{r['ruleId']}]"
+        for r in run["results"]
+    )
+    check(from_sarif == expected, "results.sarif does not match the expected diagnostics", problems)
+
+    for r in run["results"]:
+        check(rules[r["ruleIndex"]]["id"] == r["ruleId"],
+              f"ruleIndex of {r['ruleId']} points at the wrong rule", problems)
+
+    ids = [rule["id"] for rule in rules]
+    check(len(ids) == len(set(ids)), "results.sarif lists a code twice", problems)
+    check(all(CODE_PATTERN.match(" [" + i + "]") for i in ids),
+          "results.sarif lists a code that is not CCWrrcc", problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    print("--PASSED--")
+    return True
+
+
+def report_output_problems(problems):
+    print("--FAILED--")
+
+    for problem in problems:
+        print(f"  {problem}")
+
+    return False
+
+
 def main():
     exe = get_exe()
 
@@ -138,9 +264,9 @@ def main():
         result = subprocess.run(
             [
                 str(exe),
-                str(config_file),
-                str(test),
-                str(TESTS_COMPDB)
+                "--config", str(config_file),
+                "-p", str(TESTS_COMPDB),
+                str(test)
             ],
             text=True,
             capture_output=True
@@ -197,10 +323,15 @@ def main():
 
             failed += 1
 
+    if run_output_files_test(exe):
+        passed += 1
+    else:
+        failed += 1
+
     print("\n===================")
     print("Test Summary")
     print("===================")
-    print(f"Total : {len(test_files)}")
+    print(f"Total : {len(test_files) + 1}")
     print(f"Passed: {passed}")
     print(f"Failed: {failed}")
 

@@ -87,6 +87,7 @@ void StrictSwitchRule::checkSection(
 
     diagnostics.report(
         config.strictSwitchRule.level,
+        DiagCode::SwitchFallthrough,
         sm,
         sm.getExpansionLoc(loc),
         "switch " + kind + " must end with a break or return "
@@ -138,6 +139,7 @@ void StrictSwitchRule::run(const MatchFinder::MatchResult &result) {
     if (!hasDefault && !shouldIgnore(sm, switchStmt->getSwitchLoc())) {
         diagnostics.report(
             config.strictSwitchRule.level,
+            DiagCode::SwitchMissingDefault,
             sm,
             sm.getExpansionLoc(switchStmt->getSwitchLoc()),
             "switch statement must have a default case"

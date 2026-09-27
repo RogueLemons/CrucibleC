@@ -51,13 +51,15 @@ std::string ArgumentPointerMovementRule::makeKey(const FunctionDecl *FD) const {
     return oss.str();
 }
 
-void ArgumentPointerMovementRule::report(const std::string &msg,
+void ArgumentPointerMovementRule::report(DiagCode code,
+            const std::string &msg,
             const ParmVarDecl *P,
             const SourceManager &sm,
             SourceLocation loc)
 {
     diagnostics.report(
         config.argumentPointerMovementRule.level,
+        code,
         sm,
         loc,
         msg
@@ -129,6 +131,7 @@ void ArgumentPointerMovementRule::checkTagPlacement(
 
         diagnostics.report(
             config.argumentPointerMovementRule.level,
+            param ? DiagCode::MovementTagOnFunctionPointer : DiagCode::MovementTagNotOnParameter,
             sm,
             expansionLoc,
             param
@@ -235,6 +238,7 @@ void ArgumentPointerMovementRule::run(const MatchFinder::MatchResult &result) {
 
             if (tag.empty()) {
                 report(
+                    DiagCode::MovementTagMissing,
                     "function '" + FD->getNameAsString() +
                     "' parameter '" + P->getNameAsString() +
                     "' uses non-const pointer; movement attribute required "
@@ -277,6 +281,7 @@ void ArgumentPointerMovementRule::run(const MatchFinder::MatchResult &result) {
             const ParmVarDecl *P = FD->parameters()[i];
 
             report(
+                DiagCode::MovementTagMismatch,
                 "function '" + FD->getNameAsString() +
                 "' parameter '" + P->getNameAsString() +
                 "' movement attribute mismatch between declaration and definition",

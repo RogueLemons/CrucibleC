@@ -9,6 +9,9 @@ third_party_includes:
   - libs/
   - dependencies/
 
+# Folder containing compile_commands.json, relative to this file (-p overrides it)
+compile_commands_dir: build
+
 # Rules section
 # Rules can be: Off, Warning, Error
 rules:

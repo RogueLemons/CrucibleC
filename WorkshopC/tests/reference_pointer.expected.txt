@@ -1,19 +1,19 @@
-warning: pointer parameter 'value' is dereferenced before null check
-warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
-warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
-warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
-warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
-warning: argument for reference parameter 'value' of function 'read_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
-warning: argument for reference parameter 'value' of function 'read_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
-warning: reference pointer 'reference' may not be reassigned
-warning: reference pointer 'reference' may not be reassigned
-warning: reference pointer 'reference' may not be reassigned
-warning: reference pointer 'reference' may not be reassigned
-warning: reference tag on parameter 'value' of function 'tag_on_value' may only be used on a pointer
-warning: reference tag on 'tagged_global' may only be used on function parameters
-warning: reference tag on 'tagged_function' may only be used on function parameters
-warning: reference tag on 'field' may only be used on function parameters
-warning: reference tag on 'local' may only be used on function parameters
-warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked
-warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked
-warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked
+warning: pointer parameter 'value' is dereferenced before null check [CCW0801]
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'value' of function 'read_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'value' of function 'read_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null [CCW2001]
+warning: reference pointer 'reference' may not be reassigned [CCW2002]
+warning: reference pointer 'reference' may not be reassigned [CCW2002]
+warning: reference pointer 'reference' may not be reassigned [CCW2002]
+warning: reference pointer 'reference' may not be reassigned [CCW2002]
+warning: reference tag on parameter 'value' of function 'tag_on_value' may only be used on a pointer [CCW2003]
+warning: reference tag on 'tagged_global' may only be used on function parameters [CCW2004]
+warning: reference tag on 'tagged_function' may only be used on function parameters [CCW2004]
+warning: reference tag on 'field' may only be used on function parameters [CCW2004]
+warning: reference tag on 'local' may only be used on function parameters [CCW2004]
+warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW2005]
+warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW2005]
+warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW2005]

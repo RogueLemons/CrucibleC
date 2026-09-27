@@ -99,7 +99,9 @@ PrivateAlternativeRule::PrivateAlternativeRule(const Config &cfg,
 void PrivateAlternativeRule::bindFinder(MatchFinder &finder) {
     finder.addMatcher(
         ast_matchers::memberExpr(
-            hasAncestor(functionDecl().bind("parentFunction"))
+            // Optional: accesses at file scope, outside of any function,
+            // are matched too and are never allowed
+            optionally(hasAncestor(functionDecl().bind("parentFunction")))
         ).bind("privateAccess"),
         this
     );
@@ -161,6 +163,7 @@ void PrivateAlternativeRule::run(const MatchFinder::MatchResult &result) {
     if (!func) {
         diagnostics.report(
             config.privateAlternativeRule.level,
+            DiagCode::PrivateAlternativeAccessOutsideFunction,
             sm,
             expansionLoc,
             "direct access to private field '" +
@@ -182,6 +185,7 @@ void PrivateAlternativeRule::run(const MatchFinder::MatchResult &result) {
 
     diagnostics.report(
         config.privateAlternativeRule.level,
+        DiagCode::PrivateAlternativeAccess,
         sm,
         expansionLoc,
         "private field '" +

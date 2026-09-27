@@ -566,8 +566,22 @@ bool ConfigParser::loadFromFile(
             continue;
         }
 
-        // rule settings
+        // top level settings, outside of the rules section
         size_t colon = line.find(':');
+
+        if (currentSection != "rules" && colon != std::string::npos) {
+            const std::string key = trim(line.substr(0, colon));
+            const std::string value = unquote(trim(line.substr(colon + 1)));
+
+            inThirdPartyIncludes = false;
+
+            if (key == "compile_commands_dir")
+                config.compileCommandsDir = value;
+
+            continue;
+        }
+
+        // rule settings
 
         if (colon != std::string::npos && !currentRule.empty()) {
             currentListKey.clear();
