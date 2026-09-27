@@ -29,6 +29,7 @@ private:
     const std::string moveSuffix;
     const std::string returnSuffix;
     const std::string validSuffix;
+    const std::string arrayDestroySuffix;
 
     SuppressionManager &suppressions;
     Diagnostics &diagnostics;
@@ -113,14 +114,25 @@ private:
         const std::string &message) const;
 
     /*
-     * True if every element of a pod struct array, at every level of a
-     * multi-dimensional array, is explicitly initialized from a function
-     * return value or another struct variable. Missing elements, '{0}',
-     * brace literals and compound literals are not allowed.
+     * True if every element of a struct array, at every level of a
+     * multi-dimensional array, is explicitly initialized: from a function
+     * return value, or also from another struct variable unless
+     * 'returnValuesOnly' is set. Missing elements, '{0}', brace literals
+     * and compound literals are not allowed.
      */
-    bool isFullyInitializedPodArray(
+    bool isFullyInitializedArray(
         const Expr *init,
         QualType type,
+        ASTContext &context,
+        bool returnValuesOnly) const;
+
+    /*
+     * Checks a call to a raii array destroy function: the first argument
+     * must be the array itself and the second its size.
+     */
+    void checkArrayDestroyArguments(
+        const CallExpr *call,
+        const FunctionDecl *enclosingFunction,
         ASTContext &context) const;
 
     void checkVarDecl(

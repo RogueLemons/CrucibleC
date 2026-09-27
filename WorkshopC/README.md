@@ -486,9 +486,11 @@ struct_resource_management:
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false
     free_struct_creator_suffix: _init
+    raii_struct_array_destroyer_suffix: _destroy_array
 ```
 
 - `raii_use_after_destroy` (default `true`): when `false`, a raii struct that has been destroyed with its destroy function may not be referenced again, neither passed to a function nor accessed through a field.
+- `raii_struct_array_destroyer_suffix` (default empty): enables arrays of raii structs outside of structs, see [arrays of raii structs](#arrays-of-raii-structs). When empty, arrays of raii structs are only allowed inside structs.
 - `raii_may_only_move_value_ref` (default `false`): when `true`, a raii move function may only be given the address of a variable, e.g. `dynamic_string_move(&name)`, so that only an object owned by the calling scope can be moved from. A pointer (`dynamic_string_move(name_ptr)`), a struct field (`&holder.name`, `&holder->name`) or anything behind a pointer (`&*name_ptr`) is reported. The struct's own helper functions, such as its return function, may still move through their `self` pointer.
 #### POD structs
 Plain Old Data (POD) structs come with only one rule: they must always be initialized. A pod struct requires a create function of signature `struct <structname> <structname>_pod(...)` and must always be initialized. They are used to avoid uninitialized variables and make sure they are always initialized correctly. The initial assignment must come from this function or another variable. 
@@ -519,7 +521,7 @@ void foo()
 }
 ```
 
-Arrays of pod structs are allowed outside of structs when every element, at every level of an array of arrays, is explicitly initialized from a function return value or another struct variable, e.g. `position_t line[2] = { position_pod(0, 0, 0), pos };`, so `{0}`, brace literals and missing elements are not allowed. Arrays of raii structs are still only allowed inside structs.
+Arrays of pod structs are allowed outside of structs when every element, at every level of an array of arrays, is explicitly initialized from a function return value or another struct variable, e.g. `position_t line[2] = { position_pod(0, 0, 0), pos };`, so `{0}`, brace literals and missing elements are not allowed. Arrays of raii structs follow their own rules, see [arrays of raii structs](#arrays-of-raii-structs).
 
 #### RAII struct
 Resource Acquisition Is Initialization (raii) structs are more powerful but also come with a lot more rules. They can only be assigned *once* and must be so through function calls (they can however still be edited). Furthermore, the rule ensures that no scope exit occurs without either a destroy function call or a return function call. They also require a set of functions to be declared (definition is optional):
@@ -579,6 +581,22 @@ void print_big_greeting()
 ```
 
 This rule works better when combined with the [private members rule](#private-rule) or the [private alternative rule](#private-alternative-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled.
+
+##### Arrays of raii structs
+With `raii_struct_array_destroyer_suffix` set (e.g. `_destroy_array`), one-dimensional arrays of raii structs are allowed outside of structs. Every element must be initialized from a function return value, and the array must be destroyed before every scope exit with the array destroy function, whose first argument must be the array itself and whose second argument must be the size of the array. The function is not required for a raii struct in general, only once an array of it is declared, and it must have the signature `void <struct name><suffix>(<struct name>* self, size_t n)`.
+
+```c
+void dynamic_string_destroy_array(d_str* self, size_t n);
+
+void foo()
+{
+  d_str names[2] = { dynamic_string_make("a"), dynamic_string_make("b") };     // OK
+
+  dynamic_string_destroy_array(names, sizeof(names) / sizeof(names[0]));         // OK, any expression with the right value works, e.g. 2
+}
+```
+
+An array destroyed element by element, with the wrong size, or through a pointer is reported, as is an array of arrays of raii structs.
 
 #### Free struct
 Finally, there is also a free struct supported where no rules apply to how the struct is used. The pod struct and raii struct work on a safety-first rule and the assumption that the compilers can handle copy elision and `static inline` functions effectively. The free struct is instead about complete freedom for the programmer with no restrictions, other than needing a function called `<void or any> <struct name>_init(<struct name>* self, ...);`. This allows users to optimize without restriction when needed. Here is an example:

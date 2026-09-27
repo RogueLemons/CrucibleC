@@ -37,6 +37,7 @@ private:
     const std::string moveSuffix;
     const std::string returnSuffix;
     const std::string validSuffix;
+    const std::string arrayDestroySuffix;
 
 private:
     bool endsWith(
@@ -87,6 +88,13 @@ private:
         const std::string &structName) const;
 
     bool matchesReturn(
+        const FunctionDecl *FD,
+        const std::string &structName) const;
+
+    /*
+     * void <struct name><array destroy suffix>(<struct name>* self, size_t n)
+     */
+    bool matchesArrayDestroy(
         const FunctionDecl *FD,
         const std::string &structName) const;
 

@@ -103,7 +103,9 @@ bool StructInitRule::isInsideHelperFunction(
         name == structName + moveSuffix ||
         name == structName + destroySuffix ||
         name == structName + returnSuffix ||
-        name == structName + validSuffix;
+        name == structName + validSuffix ||
+        (!arrayDestroySuffix.empty() &&
+         name == structName + arrayDestroySuffix);
 }
 
 bool StructInitRule::isOwnMemberOfFreeCreator(
@@ -565,19 +567,22 @@ void StructInitRule::reportUsageIssue(
         message);
 }
 
-bool StructInitRule::isFullyInitializedPodArray(
+bool StructInitRule::isFullyInitializedArray(
     const Expr *init,
     QualType type,
-    ASTContext &context) const
+    ASTContext &context,
+    bool returnValuesOnly) const
 {
     if (!init || isa<ImplicitValueInitExpr>(init))
         return false;
 
     const ArrayType *arrayType = context.getAsArrayType(type);
 
-    // An element: initialized like a pod variable
+    // An element: initialized like a single struct variable
     if (!arrayType)
-        return exprIsStructValue(init);
+        return returnValuesOnly
+            ? exprIsStructReturnValue(init)
+            : exprIsStructValue(init);
 
     const auto *list = dyn_cast<InitListExpr>(init->IgnoreImplicit());
 
@@ -598,10 +603,11 @@ bool StructInitRule::isFullyInitializedPodArray(
         return false;
 
     for (uint64_t i = 0; i < size; ++i) {
-        if (!isFullyInitializedPodArray(
+        if (!isFullyInitializedArray(
                 list->getInit(static_cast<unsigned>(i)),
                 arrayType->getElementType(),
-                context))
+                context,
+                returnValuesOnly))
             return false;
     }
 
@@ -643,10 +649,11 @@ void StructInitRule::checkVarDecl(
             const Expr *init = varDecl->getInit();
 
             if (!init ||
-                !isFullyInitializedPodArray(
+                !isFullyInitializedArray(
                     init,
                     varDecl->getType(),
-                    varDecl->getASTContext()))
+                    varDecl->getASTContext(),
+                    false))
             {
                 reportUsageIssue(
                     varDecl->getLocation(),
@@ -654,6 +661,48 @@ void StructInitRule::checkVarDecl(
                     "' must initialize every element from a function return value or "
                     "another struct variable (missing elements, '{0}' and brace "
                     "literals are not allowed)");
+            }
+
+            return;
+        }
+
+        // Raii arrays are allowed once an array destroy suffix is
+        // configured, one-dimensional only, since the destroy function
+        // takes a pointer to the first element and a count
+        if (arrayInfo &&
+            arrayInfo->kind == StructDatabase::Kind::Raii &&
+            !arrayDestroySuffix.empty())
+        {
+            ASTContext &context = varDecl->getASTContext();
+            const ArrayType *arrayType = context.getAsArrayType(varDecl->getType());
+
+            if (arrayType && arrayType->getElementType()->isArrayType()) {
+                reportUsageIssue(
+                    varDecl->getLocation(),
+                    "array variable '" + variableName + "' of raii type '" + structName +
+                    "' must be one-dimensional, arrays of arrays of raii structs are only "
+                    "allowed inside structs");
+                return;
+            }
+
+            const Expr *init = varDecl->getInit();
+
+            if (!init ||
+                !isFullyInitializedArray(init, varDecl->getType(), context, true))
+            {
+                reportUsageIssue(
+                    varDecl->getLocation(),
+                    "array variable '" + variableName + "' of raii type '" + structName +
+                    "' must initialize every element from a function return value "
+                    "(missing elements, variables, '{0}' and brace literals are not allowed)");
+            }
+
+            if (!arrayInfo->hasArrayDestroy) {
+                reportUsageIssue(
+                    varDecl->getLocation(),
+                    "array variable '" + variableName + "' of raii type '" + structName +
+                    "' requires the function 'void " + structName + arrayDestroySuffix +
+                    "(" + structName + "* self, size_t n)'");
             }
 
             return;
@@ -946,6 +995,73 @@ void StructInitRule::checkMoveArgument(
         "(&variable)'), not a pointer, a struct field or an array element (raii)");
 }
 
+void StructInitRule::checkArrayDestroyArguments(
+    const CallExpr *call,
+    const FunctionDecl *enclosingFunction,
+    ASTContext &context) const
+{
+    if (!call || arrayDestroySuffix.empty() || call->getNumArgs() != 2)
+        return;
+
+    const FunctionDecl *callee = call->getDirectCallee();
+
+    if (!callee)
+        return;
+
+    const std::string calleeName = callee->getNameAsString();
+
+    if (calleeName.size() <= arrayDestroySuffix.size() ||
+        calleeName.compare(
+            calleeName.size() - arrayDestroySuffix.size(),
+            arrayDestroySuffix.size(),
+            arrayDestroySuffix) != 0)
+        return;
+
+    const std::string structName =
+        calleeName.substr(0, calleeName.size() - arrayDestroySuffix.size());
+
+    const auto *info = database.find(structName);
+
+    if (!info || info->kind != StructDatabase::Kind::Raii)
+        return;
+
+    // The struct's own helper functions may pass on their pointers
+    if (enclosingFunction &&
+        isInsideHelperFunction(enclosingFunction, structName))
+        return;
+
+    // The first argument must be the array itself (a variable or a struct
+    // field), not a pointer, so its size is known
+    const Expr *arrayArg = call->getArg(0)->IgnoreParenImpCasts();
+
+    const auto *arrayType =
+        dyn_cast_or_null<ConstantArrayType>(context.getAsArrayType(arrayArg->getType()));
+
+    if (!arrayType) {
+        reportUsageIssue(
+            call->getArg(0)->getExprLoc(),
+            "the first argument of '" + calleeName +
+            "' must be the array itself, not a pointer (raii)");
+        return;
+    }
+
+    // The second argument must be the size of that array
+    const uint64_t size = arrayType->getSize().getZExtValue();
+    const Expr *countArg = call->getArg(1);
+
+    Expr::EvalResult count;
+
+    if (!countArg->EvaluateAsInt(count, context) ||
+        count.Val.getInt().getZExtValue() != size)
+    {
+        reportUsageIssue(
+            countArg->getExprLoc(),
+            "the second argument of '" + calleeName +
+            "' must be the size of the array (" + std::to_string(size) +
+            "), e.g. 'sizeof(array) / sizeof(array[0])' (raii)");
+    }
+}
+
 void StructInitRule::checkCallArguments(
     const CallExpr *call,
     const FunctionDecl *enclosingFunction) const
@@ -1204,6 +1320,7 @@ StructInitRule::StructInitRule(
       moveSuffix(cfg.structResourceManagementRule.raiiStructMoveSuffix),
       returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
       validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix),
+      arrayDestroySuffix(cfg.structResourceManagementRule.raiiStructArrayDestroyerSuffix),
       suppressions(sup),
       diagnostics(diag),
       database(db)
@@ -1304,6 +1421,13 @@ void StructInitRule::finalize()
         checkMoveArgument(
             pending.call,
             pending.function);
+
+        if (pending.context) {
+            checkArrayDestroyArguments(
+                pending.call,
+                pending.function,
+                *pending.context);
+        }
 
         if (pending.context) {
             checkReturnFunctionUsage(

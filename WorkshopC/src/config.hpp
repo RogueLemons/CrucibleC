@@ -88,6 +88,7 @@ struct StructResourceManagementRuleConfig {
     std::string raiiStructReturnSuffix;
     std::string raiiStructValidSuffix;
     std::string freeStructCreatorSuffix;
+    std::string raiiStructArrayDestroyerSuffix;
 
     bool raiiUseAfterDestroy = true;
     bool raiiMayOnlyMoveValueRef = false;

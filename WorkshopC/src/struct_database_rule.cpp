@@ -277,6 +277,30 @@ bool StructDatabaseRule::matchesDestroy(
         isPointerToStructType(selfParam->getType(), &structName);
 }
 
+bool StructDatabaseRule::matchesArrayDestroy(
+    const FunctionDecl *FD,
+    const std::string &structName) const
+{
+    if (FD->getNumParams() != 2)
+        return false;
+
+    const auto *selfParam = FD->getParamDecl(0);
+    const auto *countParam = FD->getParamDecl(1);
+
+    if (!selfParam || !countParam)
+        return false;
+
+    if (selfParam->getNameAsString() != "self")
+        return false;
+
+    const QualType sizeType =
+        FD->getASTContext().getSizeType().getCanonicalType();
+
+    return FD->getReturnType().getCanonicalType()->isVoidType() &&
+        isPointerToStructType(selfParam->getType(), &structName) &&
+        countParam->getType().getCanonicalType().getUnqualifiedType() == sizeType;
+}
+
 bool StructDatabaseRule::matchesValid(
     const FunctionDecl *FD,
     const std::string &structName) const
@@ -430,6 +454,16 @@ void StructDatabaseRule::registerFunction(
         return true;
     };
 
+    // Checked first, since it may end with one of the other suffixes
+    if (!arrayDestroySuffix.empty() &&
+        matchSuffix(
+            arrayDestroySuffix,
+            StructDatabase::FunctionKind::ArrayDestroy,
+            [this](const FunctionDecl *fn, const std::string &structName) {
+                return matchesArrayDestroy(fn, structName);
+            }))
+        return;
+
     if (matchSuffix(
             freeSuffix,
             StructDatabase::FunctionKind::FreeCreator,
@@ -512,7 +546,8 @@ StructDatabaseRule::StructDatabaseRule(
     copySuffix(cfg.structResourceManagementRule.raiiStructCopySuffix),
     moveSuffix(cfg.structResourceManagementRule.raiiStructMoveSuffix),
     returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
-    validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix)
+    validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix),
+    arrayDestroySuffix(cfg.structResourceManagementRule.raiiStructArrayDestroyerSuffix)
 {
 }
 

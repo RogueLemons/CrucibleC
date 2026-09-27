@@ -45,6 +45,10 @@ StructDatabase::StructInfo &StructDatabase::registerFunction(
     case FunctionKind::Valid:
         info.hasValid = true;
         break;
+
+    case FunctionKind::ArrayDestroy:
+        info.hasArrayDestroy = true;
+        break;
     }
 
     return info;

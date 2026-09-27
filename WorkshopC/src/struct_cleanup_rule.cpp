@@ -779,12 +779,13 @@ void StructCleanupRule::CleanupAnalyzer::markDestroyedIfNeeded(const CallExpr *c
             &structName))
         return;
 
-    if (!owner.isDestroyCall(
-            calleeName,
-            structName) &&
-        !owner.isReturnCall(
-            calleeName,
-            structName))
+    const bool destroys =
+        target->getType()->isArrayType()
+            ? owner.isArrayDestroyCall(calleeName, structName)
+            : (owner.isDestroyCall(calleeName, structName) ||
+               owner.isReturnCall(calleeName, structName));
+
+    if (!destroys)
         return;
 
     for (auto &scope :
@@ -1229,6 +1230,12 @@ const RecordDecl *StructCleanupRule::getStructDecl(
             current.getCanonicalType()
                 .getUnqualifiedType();
 
+        // An array of structs: its element struct
+        if (const ArrayType *array = current->getAsArrayTypeUnsafe()) {
+            current = array->getElementType();
+            continue;
+        }
+
         if (current->isRecordType()) {
 
             const auto *recordType =
@@ -1317,7 +1324,8 @@ bool StructCleanupRule::isInsideHelperFunction(
         matches(copySuffix) ||
         matches(moveSuffix) ||
         matches(returnSuffix) ||
-        matches(validSuffix);
+        matches(validSuffix) ||
+        matches(arrayDestroySuffix);
 }
 
 const VarDecl *StructCleanupRule::getReferencedVarDecl(
@@ -1393,6 +1401,27 @@ bool StructCleanupRule::shouldTrackVar(
     if (type->isPointerType())
         return false;
 
+    // A one-dimensional array of raii structs is tracked as a whole once
+    // an array destroy function exists for it
+    if (type->isArrayType()) {
+        const ArrayType *array = type->getAsArrayTypeUnsafe();
+
+        if (arrayDestroySuffix.empty() ||
+            !isa<ConstantArrayType>(array) ||
+            array->getElementType()->isArrayType())
+            return false;
+
+        std::string elementName;
+
+        if (!isStructType(array->getElementType(), &elementName))
+            return false;
+
+        const auto *elementInfo = database.find(elementName);
+
+        if (!elementInfo || !elementInfo->hasArrayDestroy)
+            return false;
+    }
+
     std::string structName;
 
     if (!isStructType(
@@ -1441,6 +1470,25 @@ bool StructCleanupRule::isDestroyCall(
 
     return name ==
         structName + destroySuffix;
+}
+
+bool StructCleanupRule::isArrayDestroyCall(
+    const std::string &name,
+    const std::string &structName) const
+{
+    return !arrayDestroySuffix.empty() &&
+        !structName.empty() &&
+        name == structName + arrayDestroySuffix;
+}
+
+std::string StructCleanupRule::destroyFunctionFor(
+    const VarDecl *var,
+    const std::string &structName) const
+{
+    if (var && var->getType()->isArrayType())
+        return structName + arrayDestroySuffix;
+
+    return structName + destroySuffix;
 }
 
 bool StructCleanupRule::isReturnCall(
@@ -1501,13 +1549,14 @@ void StructCleanupRule::reportPendingVarsForScopeExit(
 
         reportUsageIssue(
             loc,
-            "struct variable '" +
+            std::string(tracked.decl->getType()->isArrayType()
+                ? "struct array '"
+                : "struct variable '") +
             tracked.decl->getNameAsString() +
             "' of type '" +
             tracked.structName +
             "' must be destroyed with '" +
-            tracked.structName +
-            destroySuffix +
+            destroyFunctionFor(tracked.decl, tracked.structName) +
             "' before scope exit (raii)");
     }
 }
@@ -1616,7 +1665,9 @@ void StructCleanupRule::reportUseAfterDestroy(
         return;
 
     const char *kind =
-        isa<ParmVarDecl>(target) ? "parameter" : "variable";
+        isa<ParmVarDecl>(target)
+            ? "parameter"
+            : target->getType()->isArrayType() ? "array" : "variable";
 
     reportUsageIssue(
         loc,
@@ -1627,8 +1678,7 @@ void StructCleanupRule::reportUseAfterDestroy(
         "' of type '" +
         structName +
         "' must not be used after being destroyed with '" +
-        structName +
-        destroySuffix +
+        destroyFunctionFor(target, structName) +
         "' (raii)");
 }
 
@@ -1648,7 +1698,8 @@ StructCleanupRule::StructCleanupRule(
       moveSuffix(cfg.structResourceManagementRule.raiiStructMoveSuffix),
       returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
       validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix),
-      freeSuffix(cfg.structResourceManagementRule.freeStructCreatorSuffix)
+      freeSuffix(cfg.structResourceManagementRule.freeStructCreatorSuffix),
+      arrayDestroySuffix(cfg.structResourceManagementRule.raiiStructArrayDestroyerSuffix)
 {
 }
 

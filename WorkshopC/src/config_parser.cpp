@@ -261,6 +261,9 @@ void ConfigParser::applySetting(
     else if (key == "free_struct_creator_suffix") {
         cfg.freeStructCreatorSuffix = value;
     }
+    else if (key == "raii_struct_array_destroyer_suffix") {
+        cfg.raiiStructArrayDestroyerSuffix = value;
+    }
     else if (key == "raii_use_after_destroy") {
         cfg.raiiUseAfterDestroy = parseBool(value);
     }

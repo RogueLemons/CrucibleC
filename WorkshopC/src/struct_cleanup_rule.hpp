@@ -215,6 +215,7 @@ private:
     const std::string returnSuffix;
     const std::string validSuffix;
     const std::string freeSuffix;
+    const std::string arrayDestroySuffix;
 
 private:
     bool isThirdParty(
@@ -247,6 +248,18 @@ private:
 
     bool isDestroyCall(
         const std::string &name,
+        const std::string &structName) const;
+
+    bool isArrayDestroyCall(
+        const std::string &name,
+        const std::string &structName) const;
+
+    /*
+     * The destroy function for 'var': the array destroy function for an
+     * array, otherwise the normal destroy function.
+     */
+    std::string destroyFunctionFor(
+        const VarDecl *var,
         const std::string &structName) const;
 
     bool isReturnCall(

@@ -1,0 +1,15 @@
+error: array variable 'vectors' of raii type 'int_vector' must initialize every element from a function return value (missing elements, variables, '{0}' and brace literals are not allowed)
+error: array variable 'vectors' of raii type 'int_vector' must initialize every element from a function return value (missing elements, variables, '{0}' and brace literals are not allowed)
+error: array variable 'vectors' of raii type 'int_vector' must initialize every element from a function return value (missing elements, variables, '{0}' and brace literals are not allowed)
+error: array variable 'grid' of raii type 'int_vector' must be one-dimensional, arrays of arrays of raii structs are only allowed inside structs
+error: array variable 'buffers' of raii type 'buffer' requires the function 'void buffer_destroy_array(buffer* self, size_t n)'
+error: the second argument of 'int_vector_destroy_array' must be the size of the array (3), e.g. 'sizeof(array) / sizeof(array[0])' (raii)
+error: the second argument of 'int_vector_destroy_array' must be the size of the array (2), e.g. 'sizeof(array) / sizeof(array[0])' (raii)
+error: the first argument of 'int_vector_destroy_array' must be the array itself, not a pointer (raii)
+error: struct field 'vecs' inside pod struct 'pod_with_raii_array' must be a pod struct
+error: struct field 'grid' inside pod struct 'pod_with_raii_matrix' must be a pod struct
+error: struct array 'vectors' of type 'int_vector' must be destroyed with 'int_vector_destroy_array' before scope exit (raii)
+error: struct array 'vectors' of type 'int_vector' must be destroyed with 'int_vector_destroy_array' before scope exit (raii)
+error: struct array 'vectors' of type 'int_vector' must be destroyed with 'int_vector_destroy_array' before scope exit (raii)
+error: struct array 'vectors' of type 'int_vector' must be destroyed with 'int_vector_destroy_array' before scope exit (raii)
+error: struct array 'vectors' of type 'int_vector' must not be used after being destroyed with 'int_vector_destroy_array' (raii)

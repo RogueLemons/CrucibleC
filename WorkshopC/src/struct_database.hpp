@@ -22,7 +22,8 @@ public:
         Copy,
         Move,
         Return,
-        Valid
+        Valid,
+        ArrayDestroy
     };
 
     struct StructInfo {
@@ -37,6 +38,9 @@ public:
         bool hasMove = false;
         bool hasReturn = false;
         bool hasValid = false;
+
+        // Optional, only required when an array of the struct is declared
+        bool hasArrayDestroy = false;
 
         Kind kind = Kind::Invalid;
     };
