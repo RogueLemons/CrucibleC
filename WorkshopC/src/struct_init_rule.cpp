@@ -565,6 +565,49 @@ void StructInitRule::reportUsageIssue(
         message);
 }
 
+bool StructInitRule::isFullyInitializedPodArray(
+    const Expr *init,
+    QualType type,
+    ASTContext &context) const
+{
+    if (!init || isa<ImplicitValueInitExpr>(init))
+        return false;
+
+    const ArrayType *arrayType = context.getAsArrayType(type);
+
+    // An element: initialized like a pod variable
+    if (!arrayType)
+        return exprIsStructValue(init);
+
+    const auto *list = dyn_cast<InitListExpr>(init->IgnoreImplicit());
+
+    if (!list)
+        return false;
+
+    // 'Type array[] = {...}' already has its size from the list, so a
+    // constant size is always known here
+    const auto *constantArray = dyn_cast<ConstantArrayType>(arrayType);
+
+    if (!constantArray)
+        return false;
+
+    const uint64_t size = constantArray->getSize().getZExtValue();
+
+    // Elements left out are filled in implicitly
+    if (list->getNumInits() < size)
+        return false;
+
+    for (uint64_t i = 0; i < size; ++i) {
+        if (!isFullyInitializedPodArray(
+                list->getInit(static_cast<unsigned>(i)),
+                arrayType->getElementType(),
+                context))
+            return false;
+    }
+
+    return true;
+}
+
 void StructInitRule::checkVarDecl(
     const VarDecl *varDecl,
     const FunctionDecl *enclosingFunction) const
@@ -591,6 +634,30 @@ void StructInitRule::checkVarDecl(
     if (isArray) {
         const std::string variableName =
             varDecl->getNameAsString();
+
+        const auto *arrayInfo = database.find(structName);
+
+        // Pod arrays are allowed when every element is initialized like a
+        // pod variable, all other struct arrays only inside structs
+        if (arrayInfo && arrayInfo->kind == StructDatabase::Kind::Pod) {
+            const Expr *init = varDecl->getInit();
+
+            if (!init ||
+                !isFullyInitializedPodArray(
+                    init,
+                    varDecl->getType(),
+                    varDecl->getASTContext()))
+            {
+                reportUsageIssue(
+                    varDecl->getLocation(),
+                    "array variable '" + variableName + "' of type '" + structName +
+                    "' must initialize every element from a function return value or "
+                    "another struct variable (missing elements, '{0}' and brace "
+                    "literals are not allowed)");
+            }
+
+            return;
+        }
 
         reportUsageIssue(
             varDecl->getLocation(),

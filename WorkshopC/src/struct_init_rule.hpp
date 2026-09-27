@@ -112,6 +112,17 @@ private:
         SourceLocation loc,
         const std::string &message) const;
 
+    /*
+     * True if every element of a pod struct array, at every level of a
+     * multi-dimensional array, is explicitly initialized from a function
+     * return value or another struct variable. Missing elements, '{0}',
+     * brace literals and compound literals are not allowed.
+     */
+    bool isFullyInitializedPodArray(
+        const Expr *init,
+        QualType type,
+        ASTContext &context) const;
+
     void checkVarDecl(
         const VarDecl *varDecl,
         const FunctionDecl *enclosingFunction) const;

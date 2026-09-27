@@ -232,7 +232,7 @@ struct pos_array pos_array_pod();
 void pod_array_testing()
 {
     pos_t positions[3];                                        // bad
-    pos_t positions2[2] = {pos_pod(1, 2), pos_pod(3, 4)};      // bad
+    pos_t positions2[2] = {pos_pod(1, 2), pos_pod(3, 4)};      // good: every element is initialized
 
     struct pos_array pos_array = pos_array_pod();              // good
     pos_t pos_1 = pos_pod(5, 6);                               // good
