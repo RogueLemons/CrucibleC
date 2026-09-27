@@ -149,6 +149,5 @@ struct Config {
     GlobalVariableRuleConfig globalVariableRule;
     ReferencePointerRuleConfig referencePointerRule;
 
-    std::vector<std::string> projectIncludes;
     std::vector<std::string> thirdPartyIncludes;
 };

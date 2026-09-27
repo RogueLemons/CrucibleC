@@ -1143,7 +1143,6 @@ For Beta V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
 - Reorganize README and documentation
-- Check if "project_includes" can be removed from config
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces, including support for the argument pointer tags (move, out, mutable) and the reference tag on the parameters of function pointer types: a function assigned or passed to a function pointer must have the same tags as the function pointer type, parameter by parameter, and calls through a function pointer must follow the tags of its type (callsite operators, use after move, reference arguments). Until then the tags are not allowed on function pointer parameters

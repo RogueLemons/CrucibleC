@@ -496,7 +496,6 @@ bool ConfigParser::loadFromFile(
     // The list valued rule setting that "- item" lines belong to.
     std::string currentListKey;
 
-    bool inProjectIncludes = false;
     bool inThirdPartyIncludes = false;
 
     while (std::getline(file, line)) {
@@ -513,21 +512,20 @@ bool ConfigParser::loadFromFile(
             currentSection = line.substr(0, line.size() - 1);
             currentRule.clear();
             currentListKey.clear();
-            inProjectIncludes = false;
-            inThirdPartyIncludes = false;
-            continue;
-        }
-
-        // include lists
-        if (line == "project_includes:") {
-            inProjectIncludes = true;
             inThirdPartyIncludes = false;
             continue;
         }
 
         if (line == "third_party_includes:") {
-            inProjectIncludes = false;
             inThirdPartyIncludes = true;
+            continue;
+        }
+
+        // Any other key outside the rules section ends the list above, so
+        // the items of an unknown list are ignored instead of being added
+        // to third_party_includes
+        if (currentSection != "rules" && line.back() == ':') {
+            inThirdPartyIncludes = false;
             continue;
         }
 
@@ -537,9 +535,6 @@ bool ConfigParser::loadFromFile(
 
             if (!currentListKey.empty()) {
                 applyRuleListItem(config, currentRule, currentListKey, value);
-            }
-            else if (inProjectIncludes) {
-                config.projectIncludes.push_back(value);
             }
             else if (inThirdPartyIncludes) {
                 config.thirdPartyIncludes.push_back(value);
