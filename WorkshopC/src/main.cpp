@@ -17,6 +17,7 @@
 #include "rule_single_return.hpp"
 #include "rule_strict_switch.hpp"
 #include "rule_global_variable.hpp"
+#include "rule_reference_pointer.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -71,6 +72,7 @@ private:
     std::unique_ptr<SingleReturnRule> singleReturnRule{};
     std::unique_ptr<StrictSwitchRule> strictSwitchRule{};
     std::unique_ptr<GlobalVariableRule> globalVariableRule{};
+    std::unique_ptr<ReferencePointerRule> referencePointerRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -284,6 +286,19 @@ public:
                 );
 
             globalVariableRule->bindFinder(finder);
+        }
+
+        // Reference pointer rule
+        if (config.referencePointerRule.level != RuleLevel::Off) {
+
+            referencePointerRule =
+                std::make_unique<ReferencePointerRule>(
+                    config,
+                    suppressions,
+                    *diagnostics
+                );
+
+            referencePointerRule->bindFinder(finder);
         }
 
         // struct resource management rule

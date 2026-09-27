@@ -1,5 +1,7 @@
 #include "rule_null_check.hpp"
 
+#include "reference_tag.hpp"
+
 #include <functional>
 
 bool NullCheckRule::isThirdParty(const std::string &path) const {
@@ -183,9 +185,20 @@ void NullCheckRule::run(const MatchFinder::MatchResult &result) {
 
     std::unordered_map<const ParmVarDecl*, ParamState> states;
 
+    // A reference pointer always points to a real object, so it does not
+    // need a null check when the reference pointer rule enforces that
+    const bool skipReferencePointers =
+        config.referencePointerRule.level != RuleLevel::Off &&
+        config.referencePointerRule.disableNullCheckRuleForReferencePointers;
+
     for (const auto *p : fn->parameters()) {
-        if (isPointerParam(p))
-            states[p] = {};
+        if (!isPointerParam(p))
+            continue;
+
+        if (skipReferencePointers && hasReferenceTag(p))
+            continue;
+
+        states[p] = {};
     }
 
     if (states.empty())

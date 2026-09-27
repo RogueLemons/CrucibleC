@@ -75,6 +75,7 @@ set(SOURCES
     src/rule_single_return.cpp
     src/rule_strict_switch.cpp
     src/rule_global_variable.cpp
+    src/rule_reference_pointer.cpp
 )
 
 add_executable(workshopc ${SOURCES})

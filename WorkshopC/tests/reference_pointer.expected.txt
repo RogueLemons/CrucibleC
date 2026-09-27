@@ -1,0 +1,12 @@
+warning: pointer parameter 'value' is dereferenced before null check
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
+warning: argument for reference parameter 'value' of function 'set_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
+warning: argument for reference parameter 'value' of function 'read_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
+warning: argument for reference parameter 'value' of function 'read_value' must be the address of an object (e.g. '&variable') or another reference pointer, since a reference can never be null
+warning: reference pointer 'reference' may not be reassigned
+warning: reference pointer 'reference' may not be reassigned
+warning: reference pointer 'reference' may not be reassigned
+warning: reference pointer 'reference' may not be reassigned
+warning: reference tag on parameter 'value' of function 'tag_on_value' may only be used on a pointer

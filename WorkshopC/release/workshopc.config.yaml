@@ -118,3 +118,8 @@ rules:
     require_local_static_prefix: true
     local_static_prefix: s_
     forbid_static_in_header: true
+
+  # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
+  reference_pointer:
+    level: Warning
+    disable_null_check_rule_for_reference_pointers: true

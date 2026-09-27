@@ -18,6 +18,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
   - [Single return rule](#single-return-rule)
   - [Strict switch rule](#strict-switch-rule)
   - [Global variable rule](#global-variable-rule)
+  - [Reference pointer rule](#reference-pointer-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -751,6 +752,41 @@ int COUNTER = 0;                        // Triggers parser, not const
 
 Local variables that are not static are never checked. A variable declared more than once (e.g. `extern` in a header and the definition in the source file) is only checked once, at its definition.
 
+### Reference pointer rule
+A reference pointer is a pointer parameter that always points to a real object, so it can never be null. It is marked with a tag, a macro that the parser sees as an annotation. [Here is a premade tag file](./default/ref_tag.h), and the macro name can be changed freely.
+
+```yaml
+reference_pointer:
+    level: Warning
+    disable_null_check_rule_for_reference_pointers: true
+```
+
+```c
+void set_value(REF int* value, int new_value);
+
+void example(REF int* reference, int* pointer)
+{
+  int local = 1;
+  int numbers[3] = {1, 2, 3};
+
+  set_value(&local, 2);         // OK, the address of a variable
+  set_value(&numbers[1], 2);    // OK, the address of an array element
+  set_value(reference, 2);      // OK, a reference passed on
+
+  set_value(pointer, 2);        // Triggers parser, a normal pointer may be null
+  set_value(NULL, 2);           // Triggers parser
+
+  reference = pointer;          // Triggers parser, a reference may not be reassigned
+  *reference = 5;               // OK, writing through a reference is fine
+}
+```
+
+The argument for a reference parameter must be the address of an object: a variable, a field of a variable (`&point.x`), an array element (`&numbers[1]`) or a field reached through another reference (`&reference->field`). An array or a string literal is accepted too, since it decays to a pointer to its first element, and so is another reference parameter passed on. A pointer variable, `NULL`, a pointer returned from a function, or anything reached through a normal pointer is reported. A reference parameter may not be reassigned (`=`, `+=`, `++`, ...), and the tag may only be used on pointers.
+
+With `disable_null_check_rule_for_reference_pointers: true`, the [null check rule](#null-check-rule) does not require a null check for reference parameters, since they can never be null.
+
+The tag works side by side with the [argument pointer movement rule](#argument-pointer-movement-rule), in any order, e.g. `void scale(mutable REF float* value, float factor);` called as `scale(mut(&value), 2.0f);`. The reference tag is not a movement tag, so a non-const reference still needs one of the movement tags when that rule is enabled.
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -1100,12 +1136,12 @@ For Beta V1 it shall
 - Add ability to take folder of source code instead of single file
 - Reorganize README and documentation
 - Suppression must always, in file, end manually
+- Check if "project_includes" can be removed from config
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces
 - Allow pod struct arrays (outside of structs) if properly initialized all elements
 - Optionally enforce raii struct destroy calls in reverse init order
-- Add ref tag system where a function argument that takes a ref pointer must be either given another ref pointer or a direct dereference to a local object (this must be compatible with move/owenrship rule and the nullcheck rule shall then never require a ref pointer to be nullchecked)
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 
 For Beta V1.2 it shall

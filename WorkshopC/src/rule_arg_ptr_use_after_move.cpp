@@ -33,8 +33,13 @@ std::string ArgumentPointerUseAfterMoveRule::getParamTag(const ParmVarDecl *para
         return "";
 
     for (const auto *attr : param->attrs()) {
-        if (const auto *annotate = dyn_cast<AnnotateAttr>(attr))
-            return annotate->getAnnotation().str();
+        if (const auto *annotate = dyn_cast<AnnotateAttr>(attr)) {
+            const StringRef tag = annotate->getAnnotation();
+
+            // Other annotations, e.g. the reference tag, can come first
+            if (tag == kMoveTag || tag == kOutTag)
+                return tag.str();
+        }
     }
 
     return "";

@@ -125,6 +125,12 @@ struct GlobalVariableRuleConfig {
     bool forbidStaticInHeader = false;
 };
 
+struct ReferencePointerRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool disableNullCheckRuleForReferencePointers = true;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -141,6 +147,7 @@ struct Config {
     SingleReturnRuleConfig singleReturnRule;
     StrictSwitchRuleConfig strictSwitchRule;
     GlobalVariableRuleConfig globalVariableRule;
+    ReferencePointerRuleConfig referencePointerRule;
 
     std::vector<std::string> projectIncludes;
     std::vector<std::string> thirdPartyIncludes;

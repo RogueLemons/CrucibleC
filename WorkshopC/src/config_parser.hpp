@@ -81,6 +81,12 @@ private:
     );
 
     static void applySetting(
+        ReferencePointerRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    static void applySetting(
         GlobalVariableRuleConfig &cfg,
         const std::string &key,
         const std::string &value

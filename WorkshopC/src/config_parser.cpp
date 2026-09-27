@@ -311,6 +311,19 @@ std::vector<std::string> ConfigParser::parseInlineList(const std::string &value)
 }
 
 void ConfigParser::applySetting(
+    ReferencePointerRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+    else if (key == "disable_null_check_rule_for_reference_pointers") {
+        cfg.disableNullCheckRuleForReferencePointers = parseBool(value);
+    }
+}
+
+void ConfigParser::applySetting(
     GlobalVariableRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -454,6 +467,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "global_variable") {
         applySetting(config.globalVariableRule, key, value);
+    }
+    else if (currentRule == "reference_pointer") {
+        applySetting(config.referencePointerRule, key, value);
     }
 }
 

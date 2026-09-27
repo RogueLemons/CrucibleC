@@ -1,0 +1,12 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  reference_pointer:
+    level: Warning
+    disable_null_check_rule_for_reference_pointers: false
+  null_check:
+    level: Warning
+    allow_direct_ptr_in_if_statement: true
