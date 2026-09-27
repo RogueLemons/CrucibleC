@@ -149,11 +149,11 @@ void int_vector_foo(int_vector_t* const self)
         return;
 
     int_vector_t vec = int_vector_copy(self); // good
-    vec = int_vector_make(15);                // bad
+    vec = int_vector_make(15);                // bad: raii variable reassigned
     self->size = 0;                           // good
-    int_vector_t* vec_ptr = &vec;             // bad
-    *vec_ptr = int_vector_make(5);            // bad
-    *self = vec;                              // bad
+    int_vector_t* vec_ptr = &vec;             // good
+    *vec_ptr = int_vector_make(5);            // bad: raii struct reassigned through a pointer
+    *self = vec;                              // bad: raii struct reassigned through a pointer
 
     int_vector_destroy(&vec);                 // good
 }
@@ -165,11 +165,11 @@ void int_vector_foo_with_supression(int_vector_t* const self)
 
     int_vector_t vec = int_vector_copy(self); // good
     // WorkshopC off
-    vec = int_vector_make(15);                // bad
+    vec = int_vector_make(15);                // bad: raii variable reassigned
     self->size = 0;                           // good
-    int_vector_t* vec_ptr = &vec;             // bad
-    *vec_ptr = int_vector_make(5);            // bad
-    *self = vec;                              // bad
+    int_vector_t* vec_ptr = &vec;             // good
+    *vec_ptr = int_vector_make(5);            // bad: raii struct reassigned through a pointer
+    *self = vec;                              // bad: raii struct reassigned through a pointer
     // WorkshopC on
     int_vector_destroy(&vec);                 // good
 }
@@ -177,15 +177,15 @@ void int_vector_foo_with_supression(int_vector_t* const self)
 void initialization_testing()
 {
     int_vector_t vec = int_vector_make(10);     // good
-    int_vector_t vec2;                          // bad
-    int_vector_t vec3 = vec;                    // bad
+    int_vector_t vec2;                          // bad: raii struct not initialized
+    int_vector_t vec3 = vec;                    // bad: raii struct copied without its copy function
 
     pos_t pos = pos_pod(1, 2);                  // good
-    pos_t pos2;                                 // bad
+    pos_t pos2;                                 // bad: pod struct not initialized
     pos = pos_pod(3, 4);                        // good
     pos_t pos3 = pos;                           // good
-    pos_t pos4 = {0};                           // bad
-    pos_t pos5 = {1, 2};                        // bad
+    pos_t pos4 = {0};                           // bad: pod struct initialized with {0}
+    pos_t pos5 = {1, 2};                        // bad: pod struct initialized with a brace literal
     pos_t* pos_ptr = &pos;                      // good
     pos_t pos6 = *pos_ptr;                      // good
 
@@ -207,14 +207,14 @@ _Bool int_vector_array_valid(const struct int_vector_array* const self);
 
 void raii_array_testing()
 {
-    int_vector_t matrix[3];                                          // bad
-    int_vector_t matrix2[2] = {int_vector_make(10), int_vector_make(10)};      // bad
+    int_vector_t matrix[3];                                          // bad: raii array outside of a struct
+    int_vector_t matrix2[2] = {int_vector_make(10), int_vector_make(10)};      // bad: raii array outside of a struct
 
     struct int_vector_array vec_array = int_vector_array_make();     // good
     int_vector_t vec_1 = int_vector_make(10);                        // good
-    vec_array.vecs[0] = vec_1;                                       // bad
+    vec_array.vecs[0] = vec_1;                                       // bad: raii array element reassigned
     int_vector_t vec_2 = int_vector_copy(&vec_array.vecs[1]);        // good
-    int_vector_t vec_3 = vec_array.vecs[2];                          // bad
+    int_vector_t vec_3 = vec_array.vecs[2];                          // bad: raii struct copied without its copy function
 
     int_vector_destroy(&vec_1);                                      // good
     int_vector_destroy(&vec_2);                                      // good
@@ -231,7 +231,7 @@ struct pos_array pos_array_pod();
 
 void pod_array_testing()
 {
-    pos_t positions[3];                                        // bad
+    pos_t positions[3];                                        // bad: pod array not initialized
     pos_t positions2[2] = {pos_pod(1, 2), pos_pod(3, 4)};      // good: every element is initialized
 
     struct pos_array pos_array = pos_array_pod();              // good
@@ -249,16 +249,16 @@ void take_raii_struct_by_value(int_vector_t raii_value_arg)
 void give_raii_struct_by_value()
 {
     int_vector_t vec = int_vector_make(10);              // good
-    take_raii_struct_by_value(vec);                      // bad
+    take_raii_struct_by_value(vec);                      // bad: raii struct passed without copy or move
     
     int_vector_t* vec_ptr = &vec;                        // good               
-    take_raii_struct_by_value(*vec_ptr);                 // bad
+    take_raii_struct_by_value(*vec_ptr);                 // bad: raii struct passed without copy or move
 
     struct int_vector_array vec_array = int_vector_array_make(); // good
-    take_raii_struct_by_value(vec_array.vecs[0]);         // bad
+    take_raii_struct_by_value(vec_array.vecs[0]);         // bad: raii struct passed without copy or move
 
     int int_arr[5] = {1, 2, 3, 4, 5};                    // good
-    take_raii_struct_by_value((int_vector_t){int_arr, 5, 5}); // bad
+    take_raii_struct_by_value((int_vector_t){int_arr, 5, 5}); // bad: raii struct built from a brace literal
 
     take_raii_struct_by_value(int_vector_make(10));      // good
     take_raii_struct_by_value(int_vector_copy(&vec));    // good
@@ -282,14 +282,14 @@ int give_pod_struct_by_value()
     struct pos_array pos_arr = pos_array_pod();         // good
     int res3 = take_pod_by_value(pos_arr.positions[1]); // good
 
-    int res4 = take_pod_by_value((pos_t){3,4});         // bad
+    int res4 = take_pod_by_value((pos_t){3,4});         // bad: pod struct passed as a brace literal
 
     return res1 + res2 + res3 + res4;
 }
 
 pos_t bad_pod_return()
 {
-    return (pos_t){5, 6}; // bad
+    return (pos_t){5, 6}; // bad: pod struct returned as a brace literal
 }
 
 pos_t good_pod_return()
@@ -499,10 +499,10 @@ void bad_reassignment_of_raii_struct_field(color_wrapper_t* const self)
     if (!self || !color_wrapper_valid(self))
         return;
 
-    self->color = color_make(255, 0, 0, 255); // bad
+    self->color = color_make(255, 0, 0, 255); // bad: raii field reassigned
 
     color_wrapper_t temp = color_wrapper_make(255, 0, 0, 255);
-    temp.color = color_make(0, 255, 0, 255); // bad
+    temp.color = color_make(0, 255, 0, 255); // bad: raii field reassigned
     color_wrapper_destroy(&temp);
 }
 
@@ -523,10 +523,10 @@ void bad_reassignment_of_raii_struct_field_of_field(color_wrapper_wrapper_t* con
     if (!self || !color_wrapper_wrapper_valid(self))
         return;
 
-    self->wrapper_ptr->color = color_make(255, 0, 0, 255); // bad
+    self->wrapper_ptr->color = color_make(255, 0, 0, 255); // bad: raii field reassigned
     
     color_wrapper_wrapper_t temp = color_wrapper_wrapper_make(255, 0, 0, 255);
-    temp.wrapper.color = color_make(0, 255, 0, 255); // bad
+    temp.wrapper.color = color_make(0, 255, 0, 255); // bad: raii field reassigned
     color_wrapper_wrapper_destroy(&temp);
 }
 

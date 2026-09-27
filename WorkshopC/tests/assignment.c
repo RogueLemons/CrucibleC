@@ -1,6 +1,6 @@
 #include <stddef.h>
 
-static int global_unassigned_int; // bad
+static int global_unassigned_int; // bad: not initialized
 static int global_assigned_int = 5; // good
 
 struct Data {
@@ -36,35 +36,35 @@ void test(
     struct Data *dataPtrArg
 )
 {
-    int unassigned; // bad
-    int* unassigned_ptr; // bad
+    int unassigned; // bad: not initialized
+    int* unassigned_ptr; // bad: not initialized
 
     int x = 1; // good
     int y = 2; // good
     int *ptr = &x; // good
     struct Data data; // good
 
-    ptr = 0; // bad
-    ptr = NULL; // bad
-    ptr = (void*)0; // bad
-    ptr = (int*)0; // bad
+    ptr = 0; // bad: pointer assigned NULL
+    ptr = NULL; // bad: pointer assigned NULL
+    ptr = (void*)0; // bad: pointer assigned NULL
+    ptr = (int*)0; // bad: pointer assigned NULL
     int ptr_is_null = ptr == NULL; // good
 
-    data.ptr = 0; // bad
-    data.ptr = NULL; // bad
-    data.ptr = (void*)0; // bad
-    data.ptr = (int*)0; // bad
+    data.ptr = 0; // bad: pointer field assigned NULL
+    data.ptr = NULL; // bad: pointer field assigned NULL
+    data.ptr = (void*)0; // bad: pointer field assigned NULL
+    data.ptr = (int*)0; // bad: pointer field assigned NULL
     int data_ptr_is_null = data.ptr == NULL; // good
 
-    takes_mut_int(0); // bad
-    takes_mut_int(NULL); // bad
-    takes_mut_int((void*)0); // bad
-    takes_mut_int((int*)0); // bad
+    takes_mut_int(0); // bad: NULL passed as argument
+    takes_mut_int(NULL); // bad: NULL passed as argument
+    takes_mut_int((void*)0); // bad: NULL passed as argument
+    takes_mut_int((int*)0); // bad: NULL passed as argument
 
-    arg = 10; // bad
-    ptrArg = &x; // bad
-    dataArg.value = 123; // bad
-    int* ptr_to_arg = &arg; // bad
+    arg = 10; // bad: argument reassigned
+    ptrArg = &x; // bad: argument reassigned
+    dataArg.value = 123; // bad: field of a by-value argument modified
+    int* ptr_to_arg = &arg; // bad: pointer to non-const argument
     const int* const_ptr_to_arg = (const int*)&arg; // good: pointer to const
 
     x = 100; // good
@@ -79,11 +79,11 @@ void test(
     takes_mut_int(ptr); // good
     takes_struct(data); // good
 
-    float* zero_init_ptr = {0}; // bad
-    struct Data struct_with_ptr = {0}; // bad
+    float* zero_init_ptr = {0}; // bad: pointer initialized with {0}
+    struct Data struct_with_ptr = {0}; // bad: object with pointers initialized with {0}
     struct DataNoPtrs simple_data_obj = {0}; // good
 
-    struct Data init_data_with_null = { .ptr = NULL, .value = 5}; // bad
+    struct Data init_data_with_null = { .ptr = NULL, .value = 5}; // bad: NULL in a pointer field initializer
 }
 
 void argument_address_test(
@@ -119,7 +119,7 @@ int* return_argument_address(int arg)
     return &arg; // bad: returned as pointer to non-const
 }
 
-static int global_unassigned_array[4]; // bad
+static int global_unassigned_array[4]; // bad: array not initialized
 static int global_assigned_array[4] = {1, 2, 3, 4}; // good
 
 void array_test(void)
@@ -127,13 +127,13 @@ void array_test(void)
     int a = 1; // good
     int b = 2; // good
 
-    int unassigned_int_array[3]; // bad
-    char unassigned_char_array[16]; // bad
-    float unassigned_float_array[8]; // bad
-    int* unassigned_ptr_array[4]; // bad
-    void* unassigned_void_ptr_array[2]; // bad
-    float unassigned_matrix[2][2]; // bad
-    int unassigned_3d_array[2][3][4]; // bad
+    int unassigned_int_array[3]; // bad: array not initialized
+    char unassigned_char_array[16]; // bad: array not initialized
+    float unassigned_float_array[8]; // bad: array not initialized
+    int* unassigned_ptr_array[4]; // bad: array not initialized
+    void* unassigned_void_ptr_array[2]; // bad: array not initialized
+    float unassigned_matrix[2][2]; // bad: array not initialized
+    int unassigned_3d_array[2][3][4]; // bad: array not initialized
 
     int assigned_int_array[3] = {1, 2, 3}; // good
     int zero_int_array[3] = {0}; // good
@@ -146,7 +146,7 @@ void array_test(void)
     struct Data struct_array[2]; // good
     struct DataNoPtrs simple_struct_array[2]; // good
 
-    struct Data* unassigned_struct_ptr_array[2]; // bad
+    struct Data* unassigned_struct_ptr_array[2]; // bad: array not initialized
     struct Data* assigned_struct_ptr_array[2] = {&struct_array[0], &struct_array[1]}; // good
     struct Data* assigned_struct_ptr_3_array[3] = {&struct_array[0], &struct_array[1]}; // bad because the third element is a pointer made null
     struct Data* assigned_struct_ptr_array_with_null[11] = { 0 }; // bad because the config forbids null assignment to pointers

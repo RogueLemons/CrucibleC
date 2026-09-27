@@ -50,10 +50,10 @@ void takes_int(int value);
 void takes_unnamed(Color);
 
 Color global_good = GREEN; // good
-Color global_bad = 2; // bad
+Color global_bad = 2; // bad: not a member of the enum
 
 HeaderGoodEnum header_good = HEADER_GOOD_B; // good
-HeaderGoodEnum header_bad = 5; // bad
+HeaderGoodEnum header_bad = 5; // bad: not a member of the enum
 ExternalEnum external_not_checked = 5; // good: third party enums are not checked
 
 void initialization_test(int i)
@@ -66,8 +66,8 @@ void initialization_test(int i)
     Direction f = SOUTH; // good
     int g = RED; // good: plain int is not a typedef enum
 
-    Color h = 0; // bad
-    Color j = i; // bad
+    Color h = 0; // bad: not a member of the enum
+    Color j = i; // bad: plain int, not a member of the enum
     Color k = SMALL; // bad: member of a different enum
     Color l = RED | GREEN; // bad: arithmetic
     Color m = i > 0 ? RED : 2; // bad: one branch is not a member
@@ -88,11 +88,11 @@ void assignment_test(int i, Color* color_ptr)
     holder.number = 5; // good: plain int
     *color_ptr = GREEN; // good
 
-    a = 1; // bad
-    a = i; // bad
+    a = 1; // bad: not a member of the enum
+    a = i; // bad: plain int, not a member of the enum
     a = SMALL; // bad: member of a different enum
-    holder.color = 2; // bad
-    *color_ptr = 2; // bad
+    holder.color = 2; // bad: not a member of the enum
+    *color_ptr = 2; // bad: not a member of the enum
     a += 1; // bad: arithmetic
     a |= GREEN; // bad: arithmetic
     a++; // bad: arithmetic
@@ -112,11 +112,11 @@ void argument_test(int i)
     takes_int(i); // good: parameter is a plain int
     takes_unnamed(BLUE); // good
 
-    takes_color(2); // bad
-    takes_color(i); // bad
+    takes_color(2); // bad: not a member of the enum
+    takes_color(i); // bad: plain int, not a member of the enum
     takes_color(SMALL); // bad: member of a different enum
     takes_size(RED); // bad: member of a different enum
-    takes_unnamed(3); // bad
+    takes_unnamed(3); // bad: not a member of the enum
 }
 
 void suppression_test(void)

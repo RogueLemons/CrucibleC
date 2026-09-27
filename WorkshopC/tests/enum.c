@@ -5,7 +5,7 @@
 #include "headers/has_enum.h"
 #include "external/has_enum.h"
 
-// bad
+// bad: enums are not allowed
 enum Color {
     RED,
     GREEN,
@@ -14,7 +14,7 @@ enum Color {
 
 DEFINE_SOME_UNDETECTED_ENUM_VALUE // good
 
-// bad
+// bad: the macro expands to an enum
 DEFINE_SOME_DETECTED_ENUM_VALUE
 
 int main() {

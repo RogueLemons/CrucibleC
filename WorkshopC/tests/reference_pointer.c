@@ -70,8 +70,8 @@ void bad_arguments(int* pointer, point_t* point_pointer)
     int* local_pointer = pointer;
 
     set_value(pointer, 1); // bad: a normal pointer may be null
-    set_value(local_pointer, 1); // bad
-    set_value(NULL, 1); // bad
+    set_value(local_pointer, 1); // bad: a copy of a normal pointer may be null
+    set_value(NULL, 1); // bad: NULL is never a valid reference
     set_value(find_value(), 1); // bad: a returned pointer may be null
     read_value(&point_pointer->x); // bad: reached through a normal pointer
     read_value(&pointer[0]); // bad: indexing a pointer, not an array
@@ -83,10 +83,10 @@ void bad_arguments(int* pointer, point_t* point_pointer)
 
 void reassign_reference(REF int* reference, REF int* other)
 {
-    reference = other; // bad
-    reference++; // bad
-    reference += 1; // bad
-    --reference; // bad
+    reference = other; // bad: reference reassigned
+    reference++; // bad: reference reassigned
+    reference += 1; // bad: reference reassigned
+    --reference; // bad: reference reassigned
 }
 
 // -------------------------------------------------------------

@@ -71,9 +71,9 @@ void member_access_uses(void)
     int_vector_t a = int_vector_make(4);
 
     int size = int_vector_make(4).size;                     // bad: can never be destroyed
-    int capacity = int_vector_copy(&a).capacity;            // bad
-    int* data = produce_vector().data;                      // bad
-    int first = int_vector_make(4).data[0];                 // bad
+    int capacity = int_vector_copy(&a).capacity;            // bad: can never be destroyed
+    int* data = produce_vector().data;                      // bad: can never be destroyed
+    int first = int_vector_make(4).data[0];                 // bad: can never be destroyed
 
     int_vector_destroy(&a);
 }

@@ -106,8 +106,8 @@ PointerWrapper_t PointerWrapper_make(void)
     if (!self.container) // good
     {
         self.container->public_field = 0; // good
-        self.container->count = 0; // bad
-        self.container->total = 0; // bad
+        self.container->count = 0; // bad: private field of another struct
+        self.container->total = 0; // bad: private field of another struct
     }
 
     return self;
@@ -199,12 +199,12 @@ int Container_get_total_other(const Container_t* other)
 // -------------------------------------------------------------
 int Container_get_via_public_wrapper(const Wrapper_t* self)
 {
-    return self->public_inner.count; // bad
+    return self->public_inner.count; // bad: 'self' points at the wrong struct
 }
 
 int Container_get_via_private_wrapper(const Wrapper_t* self)
 {
-    return self->inner.count; // bad
+    return self->inner.count; // bad: 'self' points at the wrong struct
 }
 
 // -------------------------------------------------------------
@@ -263,11 +263,11 @@ void test_pod_struct_field_access(void)
     value.public_field = 1; // good
     int read_public_field = value.public_field; // good
 
-    value.count = 2; // bad
-    int read_count = value.count; // bad
+    value.count = 2; // bad: private field outside of its accessors
+    int read_count = value.count; // bad: private field outside of its accessors
 
-    value.total = 3; // bad
-    int read_total = value.total; // bad
+    value.total = 3; // bad: private field outside of its accessors
+    int read_total = value.total; // bad: private field outside of its accessors
 }
 
 // -------------------------------------------------------------
@@ -283,8 +283,8 @@ void test_raii_struct_field_access(void)
     value.tag = 1; // good
     int read_tag = value.tag; // good
 
-    value.container = create_wrapper(); // bad
-    Container_t* read_container = value.container; // bad
+    value.container = create_wrapper(); // bad: private field outside of its accessors
+    Container_t* read_container = value.container; // bad: private field outside of its accessors
 
     value.container->count = 2; // bad: private field, and a private subfield
     int read_subfield = value.container->count; // bad: private field, and a private subfield

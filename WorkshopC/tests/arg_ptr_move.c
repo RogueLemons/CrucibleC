@@ -23,7 +23,7 @@ int multiple_good_arguments(out float* out_float_ptr, mod char* mutable_char_ptr
 void ignored_function(double* double_ptr);
 // WorkshopC on
 
-// Bad
+// Bad: missing or mismatched movement tags
 void declared_function_5(int* int_ptr_without_tag);
 
 void defined_function_2(float* float_ptr_without_tag)
@@ -53,7 +53,7 @@ void foo(void)
 {
     char c = 'c';
     declared_function_3(&c); // good
-    declared_function_3(mod_cast(&c)); // bad
+    declared_function_3(mod_cast(&c)); // bad: modify operators are disabled
 
     int* i_ptr = NULL;
     declared_function_1(i_ptr); // good
@@ -61,7 +61,7 @@ void foo(void)
 
     float f;
     declared_function_2(&f); // good
-    declared_function_2(out_cast(&f)); // bad
+    declared_function_2(out_cast(&f)); // bad: out operators are disabled
 }
 
 // -------------------------------------------------------------
@@ -97,7 +97,7 @@ void compared_after_move(void)
     take_ownership(value);
 
     if (value != NULL) // bad: comparing is a use too
-        modify_int(value); // bad
+        modify_int(value); // bad: used after being moved
 }
 
 void out_does_not_reassign(void)

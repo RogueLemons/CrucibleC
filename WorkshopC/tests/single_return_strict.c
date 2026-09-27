@@ -78,9 +78,9 @@ int return_in_loop(const int* values, int count)
 int return_in_both_branches(int flag)
 {
     if (flag)
-        return 1; // bad
+        return 1; // bad: only one final return is allowed
     else
-        return 2; // bad
+        return 2; // bad: only one final return is allowed
 } // bad: does not end with a return
 
 void void_without_return(int* value)

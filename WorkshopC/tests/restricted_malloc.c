@@ -51,18 +51,18 @@ void memory_free(void *memory)
 // Any other function may not use them, however the function looks
 void use_memory_directly(void *old, FILE *stream)
 {
-    void *a = malloc(8);                                // bad
-    void *b = calloc(2, 4);                             // bad
-    void *c = realloc(old, 16);                         // bad
-    free(a);                                            // bad
-    char *d = strdup("text");                           // bad
-    char *e = strndup("text", 2);                       // bad
+    void *a = malloc(8);                                // bad: not inside an allowed function
+    void *b = calloc(2, 4);                             // bad: not inside an allowed function
+    void *c = realloc(old, 16);                         // bad: not inside an allowed function
+    free(a);                                            // bad: not inside an allowed function
+    char *d = strdup("text");                           // bad: not inside an allowed function
+    char *e = strndup("text", 2);                       // bad: not inside an allowed function
     char *f = NULL;
-    asprintf(&f, "%d", 5);                              // bad
+    asprintf(&f, "%d", 5);                              // bad: not inside an allowed function
     char *g = NULL;
     size_t capacity = 0;
-    getline(&g, &capacity, stream);                     // bad
-    char *h = realpath(".", NULL);                      // bad
+    getline(&g, &capacity, stream);                     // bad: not inside an allowed function
+    char *h = realpath(".", NULL);                      // bad: not inside an allowed function
 
     (void)b; (void)c; (void)d; (void)e; (void)h;
 }
@@ -88,7 +88,7 @@ void *Memory_alloc(size_t size)
 }
 
 // Outside of any function
-static void *(*global_allocator)(size_t) = malloc;      // bad
+static void *(*global_allocator)(size_t) = malloc;      // bad: outside of any function
 
 // Something else that happens to be called 'free' is not affected
 struct allocator

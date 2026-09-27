@@ -16,8 +16,8 @@ void foo(void)
     // Mod test
     char c = 'c';
     func_that_modifies(mod_cast(&c)); // good
-    func_that_modifies(out_cast(&c)); // bad
-    func_that_modifies(&c); // bad
+    func_that_modifies(out_cast(&c)); // bad: wrong operator, the parameter is mod
+    func_that_modifies(&c); // bad: missing mod_cast
 
     // Move test
     int* i_ptr = NULL;
@@ -28,15 +28,15 @@ void foo(void)
     // Out test
     float f;
     func_that_gives_out(out_cast(&f)); // good
-    func_that_gives_out(move_cast(&f)); // bad
-    func_that_gives_out(&f); // bad
+    func_that_gives_out(move_cast(&f)); // bad: wrong operator, the parameter is out
+    func_that_gives_out(&f); // bad: missing out_cast
 
     // Functions without movement tags should not use operators
     int i = 42;
     declared_in_external_header(&i); // good
-    declared_in_external_header(move_cast(&i)); // bad
-    declared_in_external_header(out_cast(&i)); // bad
-    declared_in_external_header(mod_cast(&i)); // bad
+    declared_in_external_header(move_cast(&i)); // bad: operator on an untagged parameter
+    declared_in_external_header(out_cast(&i)); // bad: operator on an untagged parameter
+    declared_in_external_header(mod_cast(&i)); // bad: operator on an untagged parameter
 
     // System header
     const char* str = "Hello, world!";

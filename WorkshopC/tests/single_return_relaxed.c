@@ -95,9 +95,9 @@ int return_in_nested_if(int* value, int flag)
 int return_in_both_branches(int flag)
 {
     if (flag)
-        return 1; // bad
+        return 1; // bad: an if with an else is not a guard clause
     else
-        return 2; // bad
+        return 2; // bad: return inside an else
 } // bad: non-void functions must still end with a return
 
 void void_return_in_loop(int* values, int count)
