@@ -201,6 +201,25 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
 
+```yaml
+third_party_includes:
+  - external/
+  - vendor/
+
+compile_commands_dir: build
+
+rules:
+  enum:
+    level: Warning
+    allow_enum_typedef: true
+  null_check:
+    level: Error
+```
+
+- A rule that is left out of the config is `Off`. An option that is left out gets its default, which is `false` for the on/off options unless its description below says otherwise. Starting from [the default config](./default/workshopc.config.yaml) is the easiest way to see every option.
+- A file is third party when its path contains one of the `third_party_includes` entries, e.g. `external/` matches `project/external/json/json.h`. Code in third party files and system headers is never reported, but the project's own code that uses it still is.
+- `Warning` and `Error` only differ in how the result is reported (the level in the output and the [exit code](#how-to-use)), the checks are the same.
+
 ### Enum rule
 An `enum` argument can take any kind of integer which easily creates bugs and mistakes. This rule either forbids enums completely or, with `allow_enum_typedef: true`, allows them under strict rules.
 
@@ -284,9 +303,8 @@ Details:
 - The compiler can report its own warning when a member of one enum is used as a different enum (`-Wimplicit-enum-enum-cast`), which comes in addition to this rule's warning.
 
 ### Private rule
-This rule enforces privacy by forbidding access to a member of a given name (e.g. `_private`) unless it is accessed by certain static functions. 
+This rule makes a struct field private by its name: every field named `private_field` (e.g. `_private`), in any struct, may only be accessed from a few accessor functions in a source file. Keeping the private data behind a handful of functions means that the rest of the code can not put the struct in an inconsistent state, and that changing the private layout only affects one file.
 
-For this config
 ```yaml
 private:
     level: Error
@@ -295,7 +313,7 @@ private:
     getter_contains: pget
 ```
 
-this will trigger an error.
+For this config, the following triggers an error.
 
 ```c
 struct Color
@@ -309,41 +327,83 @@ typedef struct Color Color;
 
 void access_color_members(Color* color)
 {
-  int weight = color->weight; // OK
+  int weight = color->weight; // OK, not private
   int r = color->_private.r;  // Triggers Error
 }
 ```
 
-Instead the user must defined static getter and setter functions, ideally in the source file. The functions can be named anything as long as they include the config defined part.
+Instead the private field must be accessed through getter and setter functions. An accessor must meet all three requirements:
+- it is `static`,
+- it is defined in a `.c` file (a static function in a header is copied into every file that includes it, so it is reported there),
+- its name contains `getter_contains` or `setter_contains`, anywhere in the name, e.g. `pget_red` or `color_pset_red`.
 
 ```c
+// color.c
 static int pget_red(const Color* const color)
 {
-  return color->_private.r;
+  return color->_private.r;       // OK
 }
 
 static void pset_red(Color* const color, int new_value)
 {
-  color->_private.r = new_value;
+  color->_private.r = new_value;  // OK
+}
+
+int color_red(const Color* const color)
+{
+  return pget_red(color);         // OK, the public function goes through the accessor
 }
 ```
 
-If the private field is a defined (instead of anonymous as in above example) struct then only two accessors are needed.
+If the private field is a named struct, two accessors are enough, since they can hand out a pointer to the whole private part.
 
 ```c
+struct ColorPrivate
+{
+  int r, g, b;
+};
+typedef struct ColorPrivate ColorPrivate;
+
+struct Color
+{
+  int weight;
+  ColorPrivate _private;
+};
+typedef struct Color Color;
+
 static const ColorPrivate* pget(const Color* const color)
 {
-  return color->_private;
+  return &color->_private;
 }
 
 static ColorPrivate* pset(Color* const color)
 {
-  return color->_private;
+  return &color->_private;
+}
+
+void color_set_red(Color* const color, int red)
+{
+  pset(color)->r = red;           // OK, r is a field of ColorPrivate, which is not private itself
 }
 ```
 
+Details:
+- Only the field with exactly the configured name is private. Its own fields are reached through it, so `color->_private.r` counts as an access of `_private`.
+- An access outside of any function, e.g. in the initializer of a global variable (`static int* g_red = &g_color._private.r;`), is always reported, even inside `sizeof`.
+- Accesses in system headers and `third_party_includes` folders are not checked.
+- Use either this rule or the [private alternative rule](#private-alternative-rule), which marks private fields with a tag instead of a name.
+
 ### Private alternative rule
-This rule is an alternative to the [private rule](#private-rule) that, instead of matching a field by name, matches any field tagged with the privacy tag. [Here is a premade tag header](./default/private_tag.h) that can be used as is. A tagged field may only be accessed from a function that a) has a name starting with the owning struct's actual name (no typedef alias of it) and b) takes a pointer to the owning struct as its first parameter, named `self` (const or not, typedef or not).
+This rule is an alternative to the [private rule](#private-rule) that, instead of matching a field by name, matches any field tagged with the privacy tag. [Here is a premade tag header](./default/private_tag.h) that can be used as is. The tag is a macro that adds an annotation while WorkshopC parses the code and expands to nothing otherwise, so the macro name can be changed freely.
+
+```yaml
+private_alternative:
+    level: Error
+```
+
+A tagged field may only be accessed from a function whose name starts with the owning struct's own name, i.e. the struct tag (`Color` for `struct Color`), not a typedef alias of it. The function must also reach the field in one of two ways:
+- through its first parameter, which must be a pointer to the owning struct named `self` (const or not, typedef or not), e.g. `self->r`,
+- or with `.` directly on a variable or parameter whose type is the owning struct itself (not a pointer to it), e.g. `color.r` on a local `Color_t color`. This is what lets the [pod and raii creator functions](#raii-and-struct-resource-management) set up the struct they return.
 
 > *Note: This rule works really well with* [RAII and struct resource management](#raii-and-struct-resource-management)*, where the constructor functions can also access the private fields.*
 
@@ -363,7 +423,7 @@ typedef struct Color Color_t;
 
 void access_color_members(Color_t* color)
 {
-  int weight = color->weight; // OK
+  int weight = color->weight; // OK, not tagged
   int r = color->r;           // Triggers Error
 }
 ```
@@ -373,12 +433,31 @@ Instead the user must define accessor functions whose name starts with the struc
 ```c
 int Color_get_r(const Color_t* self)
 {
-  return self->r;
+  return self->r;             // OK
 }
 
 void Color_set_r(Color_t* self, int value)
 {
-  self->r = value;
+  self->r = value;            // OK
+}
+
+Color_t Color_pod(int r, int g, int b)
+{
+  Color_t color = {0};
+  color.r = r;                // OK, a local value of the struct itself in a function named after it
+  color.g = g;
+  color.b = b;
+  return color;
+}
+
+int Color_get_other_r(const Color_t* other)
+{
+  return other->r;            // Triggers Error, the pointer is not named self
+}
+
+int get_r(const Color_t* self)
+{
+  return self->r;             // Triggers Error, the name does not start with Color
 }
 ```
 
@@ -398,60 +477,148 @@ void Wrapper_bad(Wrapper_t* self)
 }
 ```
 
+As with the private rule, an access outside of any function is always reported, and accesses in system headers and `third_party_includes` folders are not checked.
+
 ### Function pointer rule
-This rule gets triggered when variables or arguments for function pointers are created without using a typedef. Using a typedef makes function signatures clearer, reduces errors when the signature changes (you only need to update it in one place), and is less error-prone since it's harder to accidentally mistype the function signature.
+This rule gets triggered when a variable or parameter holding a function pointer is declared without a typedef. Using a typedef makes function signatures clearer, reduces errors when the signature changes (you only need to update it in one place), and is less error-prone since it's harder to accidentally mistype the function signature.
+
+```yaml
+function_pointer:
+    level: Warning
+```
 
 ```c
-// This will trigger the parser
+typedef int (*math_function)(int, int);
+
+// Triggers parser, the parameter is spelled out without a typedef
 void bad_perform_math(int (*math_func)(int, int), int a, int b, int* out_res)
 {
   *out_res = math_func(a, b);
 }
 
-typedef int (*math_function)(int, int);
 // OK
 void perform_math(math_function math_func, int a, int b, int* out_res)
 {
   *out_res = math_func(a, b);
 }
+
+int add(int a, int b);
+
+void foo(void)
+{
+  int (*raw)(int, int) = add;           // Triggers parser
+  math_function typed = add;            // OK
+}
 ```
 
+Details:
+- Global, static and local variables and function parameters are checked. Struct fields, arrays of function pointers and return types are not checked yet.
+- Any typedef works, whatever its name, as long as the declaration uses it.
+- Declarations in system headers and `third_party_includes` folders are not checked, and a macro that expands to a function pointer declaration is reported with `(macro expansion)` added to the message.
+
 ### Typedef struct rule
-This rule gets triggered when a struct is declared but has no typedef. Requiring a typedef ensures consistency across the codebase, reduces repetition by eliminating the need to write `struct` every time you use the type, and improves code clarity by enforcing a uniform naming pattern.
+This rule gets triggered when a struct is defined but has no typedef. Requiring a typedef ensures consistency across the codebase, reduces repetition by eliminating the need to write `struct` every time you use the type, and improves code clarity by enforcing a uniform naming pattern.
+
+```yaml
+typedef_struct:
+    level: Warning
+```
 
 ```c
-// This triggers parser if no typedef is found
-struct Position
+struct Position                 // Triggers parser, no typedef
 {
   int x, y, z;
 };
+
+typedef struct Size             // OK
+{
+  int width, height;
+} Size;
+
+struct Point                    // OK, the typedef can come later in the file
+{
+  int x, y;
+};
+typedef struct Point Point_t;   // Any name works
+
+typedef struct                  // OK, anonymous struct with a typedef
+{
+  int r, g, b;
+} Color;
+
+typedef struct Line             // OK
+{
+  struct Segment                // Triggers parser, a named nested struct needs its own typedef
+  {
+    int start, end;
+  } segment;
+} Line;
 ```
+
+Details:
+- Only struct definitions are checked, a forward declaration (`struct Position;`) alone is not reported.
+- The typedef may come before or after the definition, anywhere at file scope in the same translation unit, and may have any name.
+- Anonymous structs are never reported, since they can not be named anyway (e.g. an anonymous nested struct or a single `struct { ... } instance;`).
+- A struct defined by a macro is checked where the macro is used, even when the macro itself comes from a third party header. Structs defined in system headers and `third_party_includes` folders are not checked.
 
 ### Assignment rule
-This rule gets triggered whenever a primitive type, e.g. a pointer or integer, is declared but not initialized in the same statement. It does however allow unintitialized structs. Requiring initialization prevents use-before-initialization bugs and makes developer intent clearer (a variable that's initialized is ready to use).
+This rule gets triggered whenever a variable of a basic type (e.g. `int`, `float`, `char`, `_Bool`) or a pointer is declared but not initialized in the same statement, and the same goes for arrays of them. Requiring initialization prevents use-before-initialization bugs and makes developer intent clearer (a variable that's initialized is ready to use). Structs and unions are not required to be initialized by this rule, see [RAII and struct resource management](#raii-and-struct-resource-management) for that.
 
-```c
-int a;      // Triggers parser
-int b = 5;  // OK
+```yaml
+assignment:
+    level: Warning
+    forbid_null_assign: true
+    forbid_null_as_arg: true
+    forbid_zero_init_for_objects_with_pointers: true
+    forbid_arg_reassign: true
+    forbid_mut_arg_pointer: true
 ```
 
-It also comes with extra settings. The first three help forbid null assignment for codebases that follow a strict "nothing may be null" rule to make sure no null dereferences occur. 
+```c
+static int g_count;         // Triggers parser, globals and statics too, even though C sets them to 0
+int a;                      // Triggers parser
+int b = 5;                  // OK
+int* ptr;                   // Triggers parser
+int values[4];              // Triggers parser
+int values_2[4] = {0};      // OK
+Position position;          // OK, structs are not checked by this rule
+```
+
+The extra settings are all `false` unless enabled.
+
+#### Null assignment
+The first three settings help forbid null for codebases that follow a strict "nothing may be null" rule, to make sure no null dereferences occur. `NULL`, `0` and casts of `0` such as `(void*)0` all count as null.
 
 ```c
-int* i_ptr = NULL;  // Not OK with forbid_null_assign: true
-foo(NULL, 3, 7);    // Not OK with forbid_null_as_arg: true
-
 struct Setting
 {
   const char* name;
   int x, y, z;
-}
+};
 typedef struct Setting Setting;
 
-Setting setting = {0}; // Not OK with forbid_zero_init_for_objects_with_pointers: true
+void example(int* a, int* b)
+{
+  int* ptr = a;
+  ptr = NULL;                                 // Not OK with forbid_null_assign: true
+  foo(NULL, 3, 7);                            // Not OK with forbid_null_as_arg: true
+
+  Setting setting = {0};                      // Not OK with forbid_zero_init_for_objects_with_pointers: true
+  Setting named = { .name = NULL, .x = 1 };   // Not OK with forbid_null_assign: true, NULL in a pointer field
+  named.name = 0;                             // Not OK with forbid_null_assign: true
+
+  int* pair[2] = { a, b };                    // OK
+  int* partial[3] = { a, b };                 // Not OK with forbid_null_assign: true, the third element is left null
+  int* explicit_null[2] = { a, NULL };        // Not OK with forbid_null_assign: true
+}
 ```
 
-Many programmers are not fond of const correctness when it comes to arguments, but that does not mean it is not important for code clarity. Instead of enforcing const correctness for argument values, rules can be enabled to simply forbid modifying argument values. Note that this does not affect reassignment of the data a pointer points to.
+- `forbid_null_assign`: a pointer or a pointer field may not be assigned null, a pointer field in an initializer list may not be given null, and an array of pointers must explicitly initialize every element (at every level of an array of arrays) with a non-null value, since elements left out become null pointers.
+- `forbid_null_as_arg`: null may not be passed as an argument to any function.
+- `forbid_zero_init_for_objects_with_pointers`: an object that contains a pointer, directly or in a field of a field, may not be initialized with `{0}`, since that silently makes every pointer in it null. Objects without pointers may still use `{0}`.
+
+#### Argument modification
+Many programmers are not fond of const correctness when it comes to arguments, but that does not mean it is not important for code clarity. Instead of enforcing const correctness for argument values, rules can be enabled to simply forbid modifying argument values. Note that this does not affect the data a pointer argument points to.
 
 > *Note: For const correctness across all variables, a tool like clang-tidy can be used.*
 
@@ -461,30 +628,33 @@ typedef struct RGB
   int r, g, b;
 } RGB;
 
-void foo(const char* name, int x, RGB* rgb)
+void foo(const char* name, int x, RGB color, RGB* rgb)
 {
   name = "New string";  // Not OK with forbid_arg_reassign: true
   x = 5;                // Not OK with forbid_arg_reassign: true
+  x += 1;               // Not OK with forbid_arg_reassign: true
+  color.r = 0;          // Not OK with forbid_arg_reassign: true, a field of a struct passed by value
   int* x_ptr = &x;      // Not OK with forbid_mut_arg_pointer: true
   set_int(&x);          // Not OK with forbid_mut_arg_pointer: true (void set_int(int* out))
 
   const int* x_view = &x; // OK, the argument can not be modified through it
   print_int(&x);          // OK (void print_int(const int* value))
   int y = x;              // OK
-  rgb->r = x;             // OK
+  rgb->r = x;             // OK, writing through a pointer argument is fine
 }
 ```
 
-With `forbid_mut_arg_pointer: true` the address of an argument, or of a field of a by-value argument, may only be taken as a pointer to const, wherever it is taken: in a declaration, an assignment, a function call or a return. A cast decides the type, so `(const int*)&x` is OK while `(int*)&x` is not.
+- `forbid_arg_reassign`: an argument may not be assigned a new value (`=`, `+=`, `|=`, ...), and neither may the fields of a struct passed by value, since the change would only affect the local copy.
+- `forbid_mut_arg_pointer`: the address of an argument, or of a field of a by-value argument, may only be taken as a pointer to const, wherever it is taken: in a declaration, an assignment, a function call or a return. A cast decides the type, so `(const int*)&x` is OK while `(int*)&x` is not. Without this, `forbid_arg_reassign` could be worked around by writing through a pointer to the argument.
 
 ### Prefix namespace rule
-This rule enforces various components in a codebase to to require the folder path as a prefix in its naming, which mimics namespaces in other languages such as C++. This prevents naming collisions in large projects, makes it obvious which module code belongs to at a glance, and enables simulation of C++ namespace organization in pure C.
+This rule requires the names declared in a header to start with a prefix built from the header's folder path, which mimics namespaces in other languages such as C++. This prevents naming collisions in large projects, makes it obvious which module code belongs to at a glance, and enables simulation of C++ namespace organization in pure C. Optionally the header must also have an include guard built from its path.
 
 ```yaml
-# Example
 prefix_namespace:
     level: Warning
-    stop_at_dir: src
+    top_dir: src
+    work_from_top: true
     stop_at_count: 10
     use_seperator: true
     seperator: __
@@ -494,7 +664,15 @@ prefix_namespace:
     require_ifndef_for_filepath: true
 ```
 
-For the above example, the folder prefix naming will not require `src` to be in the name. It will also not require more than 10 folders for the prefix naming. If `use_seperator` is `true` then all folder names must be divided be the `seperator`. The `apply_to_` settings set the naming need for their targets, e.g. functions might require namespace prefixing but not structs. Finally, a setting for making sure the file starts with an include guard that is the filepath can be used. Here is an example of what the above settings expect from the code.
+- `top_dir` (default `src`): the folder the namespaces start in. The prefix is built from the folders after the first folder with this name in the header's path, not including it. A header that is not inside such a folder is not checked.
+- `stop_at_count` (default `10`) and `work_from_top` (default `false`): at most `stop_at_count` folders are used. With `work_from_top: true` these are the folders closest to `top_dir`, otherwise the folders closest to the file.
+- `use_seperator` and `seperator` (note the spelling of the keys): the separator is written between the folder names and after the last one. Without it the folder names are joined directly, e.g. `appchrono`.
+- `apply_to_functions`, `apply_to_structs` and `apply_to_typedefs`: which names must have the prefix. Static functions never need it, since they are not visible outside the file.
+- `require_ifndef_for_filepath`: the first `#ifndef` in the first 10 lines of the header must be the path after `top_dir`, including the file name, in capital letters and joined with `_`, whatever the separator setting.
+
+Folder names are written in lowercase, and every character that is not a letter or digit becomes `_`, so a folder `My-Lib` becomes `my_lib` in the prefix and `MY_LIB` in the include guard. Only headers (`.h`, `.hpp`, `.hh`, `.hxx`) are checked, since their names are the ones other files see, and headers in `third_party_includes` folders are skipped.
+
+Here is what the above settings expect from a header.
 
 ```c
 // This file is in c/workspace/repos/project/src/app/chrono/timer.h
@@ -506,15 +684,27 @@ struct app__chrono__timer;
 typedef struct app__chrono__timer app__chrono__timer_t;
 typedef int (*app__chrono__callback)(void);
 
-void app__chrono__start_timer_with_callback(app__chrono__timer_t* timer, 
+void app__chrono__start_timer_with_callback(app__chrono__timer_t* timer,
                                             app__chrono__callback callback,
                                             int seconds);
+
+void start_timer(app__chrono__timer_t* timer);      // Triggers parser, missing the app__chrono__ prefix
+
+static inline int timer_helper(void) { return 0; }  // OK, static functions are not checked
 
 #endif
 ```
 
+With `work_from_top: false` and `stop_at_count: 1`, only the folder closest to the file is used, so the prefix for the same header would be `chrono__`.
+
 ### Null check rule
-This rule gets triggered whenever the first usage of a pointer argument in a function is used without first checking if it is null. 
+Every pointer parameter must be checked for null before it is dereferenced. A function can then never crash on a null argument, and the check documents that null is an input the function handles.
+
+```yaml
+null_check:
+    level: Error
+    allow_direct_ptr_in_if_statement: true
+```
 
 ```c
 int dereference_without_check(int* i_ptr)
@@ -528,16 +718,45 @@ int dereference_safely(int* i_ptr)
   {
     return -1;
   }
-  return *i_ptr;
+  return *i_ptr;  // OK
 }
 ```
 
-Note that many more options are valid for checking null, including `if (i_ptr) { ... }` if `allow_direct_ptr_in_if_statement` is true in config. A comparison with null (`i_ptr == NULL`, also through macros and `assert`) or a call to a function with "null" in its name that is given the pointer counts as a check anywhere, while a plain `i_ptr` or `!i_ptr` only counts as a check when used as a condition (`if`, `while`, `for`, `?:`, `&&`, `||`). Passing the pointer on to another function is not a check. `*i_ptr`, `i_ptr->field` and `i_ptr[index]` all count as dereferences.
+`*i_ptr`, `i_ptr->field` and `i_ptr[index]` all count as dereferences. The following count as a null check:
+- A comparison with null anywhere, e.g. `i_ptr == NULL`, `NULL != i_ptr`, a comparison inside a macro such as `IS_NULL(i_ptr)`, a comparison stored in a variable (`bool valid = i_ptr != NULL; if (valid) ...`) or `assert(i_ptr != NULL)`.
+- A call to a function with `null` or `NULL` in its name that is given the pointer, e.g. `if (is_null(i_ptr)) return;`.
+- With `allow_direct_ptr_in_if_statement: true`, a plain `i_ptr` or `!i_ptr` used as a condition (`if`, `while`, `for`, `?:`, `&&`, `||`), e.g. `if (!i_ptr) return;` or `return i_ptr ? *i_ptr : 0;`. When it is `false`, the comparison must be written out.
+
+Passing the pointer on to another function is not a check. A check only counts in the scope it was made in and the scopes nested inside it, following the control flow of the function:
+
+```c
+int sum(int* a, int* b, int flag)
+{
+  if (a == NULL)
+    return 0;
+
+  if (flag)
+  {
+    if (!b)
+      return *a;      // OK, a was checked in an enclosing scope
+    return *a + *b;   // OK, b was checked in this scope
+  }
+
+  return *a + *b;     // Triggers parser for b, its check was inside the if above
+}
+```
+
+Likewise a check in one branch of an `if` does not count in the other branch, and a check inside a loop does not count after the loop, since the loop may not run at all. Each parameter is checked on its own and reported at most once, at its first unchecked dereference. Reference parameters of the [reference pointer rule](#reference-pointer-rule) can be exempted, since they can never be null.
 
 ### Argument pointer movement rule
-This rule enforces user defined macro tags and "operators" for handling ownership of pointers, and making sure both the callsite and function match their "operator" and tag. [Here is a premade document for tags](./default/move_tags.h) that can be used as is, but all macro definitions can be changed as well.  
+This rule makes the ownership of pointers visible. Every non-const pointer parameter must be tagged with how the function uses it, and the call sites can be required to mark the argument with a matching "operator", so both the function and the callsite show what happens to the pointer. [Here is a premade tag header](./default/move_tags.h) that can be used as is, but all macro names can be changed as well.
 
-For these settings
+There are three tags:
+- **move**: the function takes ownership of the pointer, e.g. it stores it or frees it. The caller may not use the pointer again until it has been given a new value.
+- **out**: the function writes a result through the pointer, typically a `Data**` it points at newly created data, or a value it fills in.
+- **modify**: the function changes the data the pointer points to, but the caller keeps ownership.
+
+A pointer to const needs no tag, since the function can only read through it.
 
 ```yaml
 argument_pointer_movement:
@@ -547,7 +766,9 @@ argument_pointer_movement:
     require_operator_for_modify_callsite: false
 ```
 
-and the following tags `moved`, `move`, `output`, `out`, `mutable`, `mut`, the parser expects code to look like this:
+Each `require_operator_for_..._callsite` setting decides whether that kind of argument is marked at the callsite. When it is `true`, the argument must be wrapped in the operator; when it is `false`, the operator may not be used at all, so that every callsite in the project looks the same.
+
+For the settings above, and a tag header with the tags `moved`, `output` and `mutable` and the operators `move()`, `out()` and `mut()`, the parser expects code to look like this:
 
 ```c
 struct Data
@@ -556,23 +777,31 @@ struct Data
 };
 typedef struct Data Data;
 
-int get_data_i(const Data* data);
-
+int get_data_i(const Data* data);                           // No tag needed, const
 void initialize_data(output Data** data);
 void edit_data(mutable Data* data, int i, int j, int k);
 void give_data_to_other_section(moved Data* data);
+void no_tag(Data* data);                                    // Triggers parser, non-const pointer without a tag
 
 void example(void)
 {
   Data* data = NULL;
-  initialize_data(out(&data));
-  edit_data(data, 3, 5, 7);
-  int i = get_data_i(data);
-  give_data_to_other_section(move(data));
+  initialize_data(out(&data));                              // OK
+  edit_data(data, 3, 5, 7);                                 // OK, the modify operator is disabled
+  int i = get_data_i(data);                                 // OK
+  give_data_to_other_section(move(data));                   // OK
+
+  Data* other = NULL;
+  initialize_data(&other);                                  // Triggers parser, missing out()
+  edit_data(mut(other), 1, 2, 3);                           // Triggers parser, the modify operator is disabled
+  initialize_data(move(&other));                            // Triggers parser, wrong operator
+  get_data_i(move(other));                                  // Triggers parser, the parameter has no tag
 }
 ```
 
-Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `mut` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `mutable`, `output`, or `moved` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior. 
+Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `mut` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `mutable`, `output`, or `moved` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior.
+
+A function declared more than once (e.g. in a header and in the source file) must use the same tags every time. Functions declared in system headers and `third_party_includes` folders have no tags, so passing a pointer to them needs no operator, and using one is reported.
 
 Once a pointer has been moved, the called function owns it, so the pointer may not be used again (read, moved again, compared, passed on, its address taken) until it has been reassigned, either with `=` or by declaring it again. Passing its address to an `out` parameter does not count as reassigning it, since the called function is not guaranteed to write a new value, for example when it fails and returns an error code early. Reassign it explicitly first, e.g. `data = NULL;`. The check follows the control flow of the function: a use is reported if the pointer may have been moved on any path that reaches it, so a move inside one branch of an `if` counts after the `if`, unless that branch returns, and a move inside a loop counts in the next iteration. Only plain pointer variables are followed, not struct fields or array elements.
 
@@ -601,12 +830,32 @@ void process(mutable Data* data)
 }
 ```
 
-As mentioned, the tags are just macro definitions (even if they must follow some simple rules shown in linked document above). This means that the user can provide any names the user wants. For example, `move` and `move_cast()` with `out` and `out_cast`; or `moved` with `move`, `outed` with `out`, and `modded` with `mod`. They can of course all also be caps. 
+#### Naming the tags and operators
+The tags and operators are just macros, so any names can be used, e.g. `move` and `move_cast()` with `out` and `out_cast()`, or `moved` with `move()`, `outed` with `out()` and `modded` with `mod()`, in capital letters or not. What WorkshopC recognizes is what they expand to while it parses the code (when `WORKSHOPC_PARSING` is defined):
+- A tag must expand to `__attribute__((annotate("workshopc_move")))`, `"workshopc_out"` or `"workshopc_modify"`.
+- An operator must call a function named `workshopc_move`, `workshopc_out` or `workshopc_modify` that takes the argument and returns it unchanged.
+
+When `WORKSHOPC_PARSING` is not defined, the tags expand to nothing and the operators to their argument, so the real build is unaffected.
+
+```c
+#ifdef WORKSHOPC_PARSING
+
+static inline void* workshopc_move(void* arg) { return arg; }
+#define move(expr) ((__typeof__(expr))workshopc_move((void*)(expr)))
+#define moved __attribute__((annotate("workshopc_move")))
+
+#else
+
+#define move(expr) (expr)
+#define moved
+
+#endif
+```
 
 ### RAII and struct resource management
 This rule introduces struct categorization and centralizes resource management within them to a given set of functions, effectively creating a RAII system. 
 
-The structs are given their category "type" by the creation function they are accompanied with, whose name is the struct name plus a suffix given by the config file. The creation functions are exempt from all rules, meaning any need to e.g. initialize a variable does not exist in these functions. The following is true for these settings:
+The structs are given their category "type" by the creation function they are accompanied with, whose name is the struct name plus a suffix given by the config file. A struct must have exactly one creation function: a pod, a raii or a free one. The creation function and the other lifecycle functions of a struct are exempt from its rules, meaning any need to e.g. initialize a variable from a function does not exist in these functions, since they are where the struct is actually built. The following is true for these settings:
 
 ```yaml
 struct_resource_management:
@@ -630,7 +879,7 @@ struct_resource_management:
 - `raii_may_only_move_value_ref` (default `false`): when `true`, a raii move function may only be given the address of a variable, e.g. `dynamic_string_move(&name)`, so that only an object owned by the calling scope can be moved from. A pointer (`dynamic_string_move(name_ptr)`), a struct field (`&holder.name`, `&holder->name`) or anything behind a pointer (`&*name_ptr`) is reported. The lifecycle functions of any struct may still work through their `self` pointer, e.g. a struct's own return function moving `self`, or the move function of a struct with a raii field moving `&self->field`.
 - `raii_may_only_destroy_value_ref` (default `false`): the same for the destroy function, e.g. `dynamic_string_destroy(&name)`. The destroy function of a struct with raii fields may still destroy them with `&self->field`. Fields of [free structs](#free-struct) are not affected and may be destroyed from anywhere, e.g. `dynamic_string_destroy(&holder.name)` or `dynamic_string_destroy(&holder->name)`, since free structs come with no rules.
 #### POD structs
-Plain Old Data (POD) structs come with only one rule: they must always be initialized. A pod struct requires a create function of signature `struct <structname> <structname>_pod(...)` and must always be initialized. They are used to avoid uninitialized variables and make sure they are always initialized correctly. The initial assignment must come from this function or another variable. 
+Plain Old Data (POD) structs come with only one rule: they must always be initialized correctly. A pod struct requires a create function of signature `struct <structname> <structname>_pod(...)`. They are used to avoid uninitialized variables and make sure they are always initialized correctly. Every value of a pod struct must come from a function return value or another struct variable, whether it initializes a variable, is passed as an argument or is returned, so `{0}` and brace literals are only allowed in the `_pod` function.
 
 ```c
 typedef struct position
@@ -638,9 +887,9 @@ typedef struct position
   int x, y, z;
 } position_t;
 
-static inline position_t position_pod(int x, int, y, int z)
+static inline position_t position_pod(int x, int y, int z)
 {
-  return (position_t){x, y, z};   // This initialization is only legal in the _pod function
+  return (position_t){x, y, z};   // OK, brace literals are only legal in the _pod function
 }
 
 static inline position_t position_default()
@@ -648,15 +897,21 @@ static inline position_t position_default()
   return position_pod(0, 0, 0);   // This function is based on the core create function above
 }
 
+int position_sum(position_t position);
+
 void foo()
 {
-  position_t no_init_pos;                 // No init, causes an error
-  position_t pos = position_default();
-  pos = position_pod(1, 2, 3);
-  position_t pos_2 = pos;
-  pos_2.y = 10;
+  position_t no_init_pos;                         // Triggers parser, not initialized
+  position_t zero_pos = {0};                      // Triggers parser, not from a function or variable
+  position_t pos = position_default();            // OK
+  pos = position_pod(1, 2, 3);                    // OK, pod structs may be reassigned
+  position_t pos_2 = pos;                         // OK, copied from another variable
+  pos_2.y = 10;                                   // OK
+  int sum = position_sum((position_t){1, 2, 3});  // Triggers parser, brace literal as an argument
 }
 ```
+
+A pod struct may only contain other pod structs, not raii or free structs, since a copy of a pod struct is just a copy of its bytes.
 
 Arrays of pod structs are allowed outside of structs when every element, at every level of an array of arrays, is explicitly initialized from a function return value or another struct variable, e.g. `position_t line[2] = { position_pod(0, 0, 0), pos };`, so `{0}`, brace literals and missing elements are not allowed. Arrays of raii structs follow their own rules, see [arrays of raii structs](#arrays-of-raii-structs).
 
@@ -715,6 +970,35 @@ void print_big_greeting()
 
   dynamic_string_destroy(&greeting);
 }
+```
+
+A raii struct owns its resources, so every value of it must have exactly one owner, and the rules follow from that:
+- A variable must be initialized from a function return value, e.g. the make, copy or move function, never from another variable (`d_str b = a;` would make two owners of the same memory).
+- It may not be reassigned once initialized, not even through a pointer, a field or an array element, since the old value would leak.
+- It may only be passed by value as a function return value, e.g. `take(dynamic_string_copy(&s))` or `take(dynamic_string_move(&s))`, so that the called function gets its own value, which it then must destroy.
+- Every variable, and every parameter passed by value, must be destroyed or returned before every scope exit (the end of its block, `return`, `break` or `continue`).
+- A function returning a raii struct must return a function call, and a local variable is returned with the return function.
+- A raii struct returned by a function may not be discarded or have a field read directly on the returned value, since it could then never be destroyed.
+
+```c
+d_str make_greeting(const char* name)
+{
+  d_str greeting = dynamic_string_make("Hello, ");
+  dynamic_string_add(&greeting, name);
+  return dynamic_string_return(&greeting);          // OK, ownership moves to the caller
+}
+
+void use_greetings(void)
+{
+  d_str a = make_greeting("world");                 // OK
+  d_str b = a;                                      // Triggers parser, two owners of the same memory
+  a = dynamic_string_make("again");                 // Triggers parser, the old value would leak
+  make_greeting("world");                           // Triggers parser, the result can never be destroyed
+  size_t size = make_greeting("world").size;        // Triggers parser, same
+  d_str c = dynamic_string_return(&a);              // Triggers parser, return functions only belong in return statements
+
+  dynamic_string_destroy(&a);
+}                                                   // Triggers parser, b and c are never destroyed
 ```
 
 This rule works better when combined with the [private members rule](#private-rule) or the [private alternative rule](#private-alternative-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled.
@@ -993,7 +1277,25 @@ Details:
 - This rule reports on the `WorkshopC off` line itself, so it can not be silenced by the suppression it is checking.
 
 ### Adjust code for parser
-The parser runs with `WORKSHOPC_PARSING` defined as a macro. This allows users to create `#ifndef` guards to adjust code for parsing and usage. 
+The parser runs with `WORKSHOPC_PARSING` defined as a macro. This allows users to create `#ifdef` and `#ifndef` guards to adjust code for parsing and usage. The tag headers use it to turn the tags into annotations only while WorkshopC parses the code:
+
+```c
+#ifdef WORKSHOPC_PARSING
+#define PRIVATE __attribute__((annotate("workshopc_private_field")))
+#else
+#define PRIVATE
+#endif
+```
+
+It can also hide code from the parser that clang can not handle, e.g. an extension of another compiler:
+
+```c
+#ifndef WORKSHOPC_PARSING
+#pragma some_vendor_specific_pragma
+#endif
+```
+
+Code hidden this way is not checked at all, so to only silence a rule, prefer [disabling the section](#disable-section) with a reason.
 
 ## WorkshopC Build System Documentation
 
@@ -1025,25 +1327,13 @@ It is **NOT** a portable build system. It assumes:
 
 #### What it does
 
-After building, you will get the `workshopc` executable in the `release/` folder.
-
-
-- Reads your YAML rule configuration from the config file
-- Loads the compilation database to understand compiler flags and settings
-- Parses the provided C source file
-- Analyzes code using Clang AST
-- Prints warnings and errors to the console
-- Returns:
-  - `0` if only warnings or no issues
-  - `1` if errors were found
+After building, you will get the `workshopc` executable in the `release/` folder. See [How to use](#how-to-use) for running it, its output and its exit codes.
 
 #### Notes
 
-- The compilation database is typically located in your CMake build directory (e.g., `build/`)
+- The compilation database of the project being analyzed is typically located in its CMake build directory (e.g., `build/`)
 - It's generated automatically by CMake when configured with `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
-- Warnings do not fail the tool by default
-- Errors are considered hard failures
-- Output is intended for use in CI pipelines or pre-commit checks
+- Output is intended for use in CI pipelines or pre-commit checks, see the [exit codes](#how-to-use)
 - If the compilation database cannot be found, the tool will fail with an error message
 
 #### Requirements
@@ -1191,7 +1481,7 @@ This generates:
 After building, use the tool with the compilation database from the build directory:
 
 ```bash
-### Example: analyze a test file
+# Example: analyze a test file
 ./build/workshopc --config tests/enum.config.yaml -p build-tests/ tests/enum.c
 ```
 
