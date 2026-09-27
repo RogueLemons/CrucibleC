@@ -1,0 +1,6 @@
+error: 'WorkshopC off' is never turned back on with 'WorkshopC on' in this file, every rule is disabled until the end of the file
+error: 'WorkshopC on' without a preceding 'WorkshopC off' in this file
+error: 'WorkshopC off' while already turned off at line 14, suppressions can not be nested
+error: 'WorkshopC off' is never turned back on with 'WorkshopC on' in this file, every rule is disabled until the end of the file
+warning: enum 'after_include' is not allowed
+warning: enum 'after_nested' is not allowed

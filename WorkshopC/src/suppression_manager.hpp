@@ -16,6 +16,12 @@ struct MissingSuppressionReason {
     unsigned column;
 };
 
+struct UnbalancedSuppression {
+    unsigned line;
+    unsigned column;
+    std::string message;
+};
+
 class SuppressionManager {
 private:
     std::unordered_map<
@@ -45,6 +51,24 @@ public:
      */
     std::vector<MissingSuppressionReason> findMissingReasons(
         const std::string &path
+    );
+
+    /*
+     * Finds every 'WorkshopC off' that is never turned back on in the
+     * same file, every 'WorkshopC on' without a preceding 'WorkshopC
+     * off', and every 'WorkshopC off' while already turned off.
+     */
+    std::vector<UnbalancedSuppression> findUnbalanced(
+        const std::string &path
+    );
+
+    /*
+     * Every file that took part in the translation unit, except system
+     * headers and files in the given third party folders.
+     */
+    static std::vector<std::string> projectFiles(
+        const clang::SourceManager &sm,
+        const std::vector<std::string> &thirdPartyIncludes
     );
 
     bool isSuppressed(

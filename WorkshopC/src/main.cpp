@@ -2,6 +2,7 @@
 #include "config.hpp"
 #include "suppression_manager.hpp"
 #include "rule_suppression_reason.hpp"
+#include "rule_suppression_balance.hpp"
 #include "rule_enum.hpp"
 #include "rule_private.hpp"
 #include "rule_private_alternative.hpp"
@@ -57,6 +58,7 @@ private:
     SuppressionManager suppressions{};
 
     std::unique_ptr<SuppressionReasonRule> suppressionReasonRule{};
+    std::unique_ptr<SuppressionBalanceRule> suppressionBalanceRule{};
     std::unique_ptr<EnumRule> enumRule{};
     std::unique_ptr<PrivateRule> privateRule{};
     std::unique_ptr<PrivateAlternativeRule> privateAlternativeRule{};
@@ -93,6 +95,15 @@ public:
             warnings,
             errors
         );
+
+        // Every 'WorkshopC off' must be turned back on, always enabled
+        suppressionBalanceRule = std::make_unique<SuppressionBalanceRule>(
+            config,
+            suppressions,
+            *diagnostics
+        );
+
+        suppressionBalanceRule->bindFinder(finder);
 
         // Suppression reason rule
         if (config.suppressionReasonRule.level != RuleLevel::Off) {

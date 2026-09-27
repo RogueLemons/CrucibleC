@@ -21,9 +21,6 @@ private:
 
     bool checked = false;
 
-private:
-    bool isThirdParty(const std::string &path) const;
-
 public:
     SuppressionReasonRule(const Config &cfg,
                           SuppressionManager &sup,

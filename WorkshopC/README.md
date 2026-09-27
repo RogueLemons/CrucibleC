@@ -807,6 +807,8 @@ enum Color { // Does not trigger enum rule
 // WorkshopC on
 ```
 
+A suppression only applies to the file it is written in, so a header that turns WorkshopC off does not affect the files that include it. Every `// WorkshopC off` must be turned back on with `// WorkshopC on` in the same file, in headers and source files alike, since a forgotten `on` would silently disable every rule for the rest of the file. This check is always enabled and reported as an error, together with an `on` without a preceding `off`, and an `off` while already turned off (suppressions can not be nested, the first `on` ends the suppression).
+
 #### Suppression reason rule
 Every suppression should say why it exists. When `suppression_reason_rule` is enabled, each `// WorkshopC off` comment must be followed **on the very next line** by a comment that starts with `Reason: ` and gives a non-empty reason. A `/* Reason: ... */` block comment is also accepted.
 
@@ -1141,7 +1143,6 @@ For Beta V1 it shall
 - Verify build for Linux
 - Add ability to take folder of source code instead of single file
 - Reorganize README and documentation
-- Suppression must always, in file, end manually
 - Check if "project_includes" can be removed from config
 
 For Beta V1.1 it shall

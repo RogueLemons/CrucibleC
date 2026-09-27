@@ -1,6 +1,7 @@
 #include "suppression_manager.hpp"
 
 #include <fstream>
+#include <set>
 
 bool SuppressionManager::contains(
     const std::string &line,
@@ -140,6 +141,112 @@ std::vector<MissingSuppressionReason> SuppressionManager::findMissingReasons(
     }
 
     return missing;
+}
+
+std::vector<UnbalancedSuppression> SuppressionManager::findUnbalanced(
+    const std::string &path
+) {
+    std::vector<UnbalancedSuppression> found;
+
+    std::ifstream file(path);
+
+    if (!file.is_open())
+        return found;
+
+    const std::string offText = "WorkshopC off";
+    const std::string onText = "WorkshopC on";
+
+    bool disabled = false;
+    unsigned offLine = 0;
+    unsigned offColumn = 0;
+    unsigned currentLine = 0;
+
+    std::string line;
+
+    while (std::getline(file, line)) {
+        currentLine++;
+
+        const size_t offPos = line.find(offText);
+
+        if (offPos != std::string::npos) {
+            if (disabled) {
+                found.push_back({
+                    currentLine,
+                    static_cast<unsigned>(offPos + 1),
+                    "'WorkshopC off' while already turned off at line " +
+                    std::to_string(offLine) +
+                    ", suppressions can not be nested"
+                });
+            }
+            else {
+                disabled = true;
+                offLine = currentLine;
+                offColumn = static_cast<unsigned>(offPos + 1);
+            }
+        }
+
+        const size_t onPos = line.find(onText);
+
+        if (onPos != std::string::npos) {
+            if (!disabled) {
+                found.push_back({
+                    currentLine,
+                    static_cast<unsigned>(onPos + 1),
+                    "'WorkshopC on' without a preceding 'WorkshopC off' "
+                    "in this file"
+                });
+            }
+
+            disabled = false;
+        }
+    }
+
+    if (disabled) {
+        found.push_back({
+            offLine,
+            offColumn,
+            "'WorkshopC off' is never turned back on with 'WorkshopC on' "
+            "in this file, every rule is disabled until the end of the file"
+        });
+    }
+
+    return found;
+}
+
+std::vector<std::string> SuppressionManager::projectFiles(
+    const clang::SourceManager &sm,
+    const std::vector<std::string> &thirdPartyIncludes
+) {
+    std::set<std::string> paths;
+
+    for (auto it = sm.fileinfo_begin(); it != sm.fileinfo_end(); ++it) {
+        const clang::FileID fid = sm.translateFile(it->first);
+
+        if (fid.isInvalid())
+            continue;
+
+        const clang::SourceLocation start = sm.getLocForStartOfFile(fid);
+
+        if (sm.isInSystemHeader(start))
+            continue;
+
+        const std::string path = sm.getFilename(start).str();
+
+        if (path.empty())
+            continue;
+
+        bool thirdParty = false;
+
+        for (const auto &p : thirdPartyIncludes) {
+            if (!p.empty() && path.find(p) != std::string::npos)
+                thirdParty = true;
+        }
+
+        if (!thirdParty)
+            paths.insert(path);
+    }
+
+    return std::vector<std::string>(paths.begin(), paths.end());
 }
 
 bool SuppressionManager::isSuppressed(

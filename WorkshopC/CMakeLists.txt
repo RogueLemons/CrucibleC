@@ -56,6 +56,7 @@ set(SOURCES
     src/struct_database.cpp
     src/finder_and_finalizer_consumer.cpp
     src/rule_suppression_reason.cpp
+    src/rule_suppression_balance.cpp
     src/rule_enum.cpp
     src/rule_private.cpp
     src/rule_private_alternative.cpp
