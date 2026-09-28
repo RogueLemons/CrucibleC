@@ -3,6 +3,8 @@ AlloyC is a small superset of C that transpiles to plain C, adding a few keyword
 
 It focuses on portability and predictable, easy-to-read output, making C safer by default through simple transformations.
 
+> *Note: the benefits of this project have been implemented the parser project [WorkshopC](../WorkshopC/).*
+
 ## Table of Contents
 
 * [Quick Start](#quick-start)
@@ -812,7 +814,6 @@ void foobar()
 
 
 ## TODO
-- transform project into a code analysis tool for pure C code
 - consider inverting keyword **check** so everything is check by default and make user use keyword **nullable** for pointers that may be null
 - consider adding **cleanpop** const variables (could create mutable variable with weird name and a const pointer to it with users original name, or just tell users to create const pointer view variables)
 - the transpiler is only used on a file-by-file basis on purpose, the project would need a companion tool or be expanded in order to verify that functions returning **check** pointers have the same signature in declarations and definitions 
