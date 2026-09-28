@@ -1819,10 +1819,10 @@ For Beta V1 it shall
 - Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
 
 For Beta V1.1 it shall
-- Add rules for vtables and interfaces (the rule codes shall be 14 and 15)
+- Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod
+- Add rules for span struct, shall require suffix, compatible with pod
 
 For Beta V1.2 it shall
 - Add LSP support
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
-- Add rule that all arrays of pointers must end with NULL pointer
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
