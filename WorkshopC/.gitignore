@@ -27,7 +27,7 @@ CTestTestfile.cmake
 
 # Build outputs
 Debug/
-# Release/
+Release/
 x64/
 x86/
 # *.exe
@@ -57,5 +57,8 @@ Thumbs.db
 # =========================
 # WorkshopC output
 # =========================
+# The built tool, copied here by windows_rebuild.py
+release/
+
 # Text, JSON and SARIF files written by the output files test
 tests/output/
