@@ -147,28 +147,22 @@ add_custom_command(TARGET workshopc POST_BUILD
         ${RELEASE_DIR}/$<TARGET_FILE_NAME:workshopc>
 )
 
-# Copy defaults
-add_custom_command(TARGET workshopc POST_BUILD
+# Copy defaults and licenses on every build, not only when the executable
+# is linked again, so that a changed config or tag header always ends up
+# in the release folder
+add_custom_target(release_files ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${RELEASE_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/default/default.workshopc.yaml
         ${RELEASE_DIR}/default.workshopc.yaml
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/default/move_tags.h
-        ${RELEASE_DIR}/move_tags.h
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/default/private_tag.h
-        ${RELEASE_DIR}/private_tag.h
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/default/ref_tag.h
-        ${RELEASE_DIR}/ref_tag.h
-)
-
-# Copy licenses
-add_custom_command(TARGET workshopc POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/default/tags
+        ${RELEASE_DIR}/tags
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/../LICENSE
         ${RELEASE_DIR}/LICENSE
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/../THIRD-PARTY-NOTICES.txt
         ${RELEASE_DIR}/THIRD-PARTY-NOTICES.txt
+    COMMENT "Copying the default config, tag headers and licenses to ${RELEASE_DIR}"
 )

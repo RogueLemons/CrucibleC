@@ -3,6 +3,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
 
 ## Contents
 - [How to use](#how-to-use)
+  - [Tag headers](#tag-headers)
 - [Diagnostic codes](#diagnostic-codes)
 - [Config behavior](#config-behavior)
   - [Enum rule](#enum-rule)
@@ -86,6 +87,30 @@ Codes of `64` and above always mean the tool itself could not complete the analy
 The tool runs the file through clang, but only WorkshopC's own rules produce warnings. Clang's warnings (unused variables, implicit conversions and so on) are disabled with `-w`, even if the compilation database enables `-Wall` or `-Werror`, since they belong to the project's normal build. Genuine compile errors are still printed in clang's normal format, and the exit code is then `67`. The rules still run on whatever clang could recover from the broken file, but the result should be treated as incomplete until the file compiles.
 
 [Here is a premade config ready for use as is and provide a base to easily edit](./default/default.workshopc.yaml). Copy it to the root of your project as `workshopc.yaml` to have it found automatically.
+
+### Tag headers
+Some rules use tags, macros written in the code, e.g. to mark who owns a pointer. Premade headers for them come in two naming styles, with the same file names in both folders, so the style is chosen by the include path alone (e.g. `-I workshopc/tags/lower`):
+
+| Header | [`default/tags/upper`](./default/tags/upper) | [`default/tags/lower`](./default/tags/lower) |
+|--------|-------|-------|
+| `move_tags.h` ([argument pointer movement](#argument-pointer-movement-rule)) | `MOVED`, `OUTPUT`, `MUTABLE`, `MOVE()`, `OUT()`, `MUT()` | `receives`, `initializes`, `borrows`, `give()`, `overwrite()`, `lend()` |
+| `private_tag.h` ([private alternative](#private-alternative-rule)) | `PRIVATE` | `confined` |
+| `ref_tag.h` ([reference pointer](#reference-pointer-rule)) | `REF` | `massive` |
+| `workshopc_tags.h` | all of the above | all of the above |
+
+The lowercase names describe what each side of a call does with a pointer, so a declaration and its call read like sentences:
+
+```c
+void consume(receives item* value);         consume(give(value));         // ownership moves to consume
+void create(initializes item** result);      create(overwrite(&value));    // create writes value, the old one is replaced
+void edit(borrows item* value);              edit(lend(value));            // edit changes value, the caller keeps it
+int read(massive const item* value);         read(&local);                 // value is never null
+struct item { confined int secret; };                                      // only item's own functions touch secret
+```
+
+A pointer is like a shell around what it points to: a `massive` pointer is never an empty shell, there is always a real object inside it, taken directly from a variable, a field or an array element and never through another pointer. A `confined` field is confined to the functions of its own struct.
+
+A macro replaces its name everywhere after it is defined, also in the headers included after it, so include the tag headers after system and third party headers, and do not use the tag names for anything else. The lowercase names are chosen to be rare, but the uppercase ones are the safest. The headers are only examples, the names can be changed freely, see [naming the tags and operators](#naming-the-tags-and-operators).
 
 ## Diagnostic codes
 Every diagnostic ends with a code, e.g. `[CCW0101]`, which identifies exactly which check reported it. The JSON and SARIF files carry the code and a readable name as separate fields (`code` and `name` in JSON, `ruleId` in SARIF, whose rule list describes every code).
@@ -394,7 +419,7 @@ Details:
 - Use either this rule or the [private alternative rule](#private-alternative-rule), which marks private fields with a tag instead of a name.
 
 ### Private alternative rule
-This rule is an alternative to the [private rule](#private-rule) that, instead of matching a field by name, matches any field tagged with the privacy tag. [Here is a premade tag header](./default/private_tag.h) that can be used as is. The tag is a macro that adds an annotation while WorkshopC parses the code and expands to nothing otherwise, so the macro name can be changed freely.
+This rule is an alternative to the [private rule](#private-rule) that, instead of matching a field by name, matches any field tagged with the privacy tag. A [premade tag header](#tag-headers) can be used as is. The tag is a macro that adds an annotation while WorkshopC parses the code and expands to nothing otherwise, so the macro name can be changed freely.
 
 ```yaml
 private_alternative:
@@ -773,7 +798,7 @@ int log_only(int* value)
 Where paths come together, e.g. after an `if`/`else`, a loop or a `switch`, or at a label reached by a `goto`, the pointer is only known to be non-null if it is on all of them. So a check in one branch of an `if` does not count after it unless the other branches check too, and a check inside a loop does not count after the loop, since the loop may not run at all. Giving a parameter a new value (`i_ptr = other;`) forgets that it was checked. Passing the pointer on to another function is not a check, and neither is a function's result, e.g. `if (is_valid(i_ptr))`, since the rule can not know what the function checks. Each parameter is checked on its own and reported at most once, at its first unchecked dereference. Reference parameters of the [reference pointer rule](#reference-pointer-rule) can be exempted, since they can never be null.
 
 ### Argument pointer movement rule
-This rule makes the ownership of pointers visible. Every non-const pointer parameter must be tagged with how the function uses it, and the call sites can be required to mark the argument with a matching "operator", so both the function and the callsite show what happens to the pointer. [Here is a premade tag header](./default/move_tags.h) that can be used as is, but all macro names can be changed as well.
+This rule makes the ownership of pointers visible. Every non-const pointer parameter must be tagged with how the function uses it, and the call sites can be required to mark the argument with a matching "operator", so both the function and the callsite show what happens to the pointer. A [premade tag header](#tag-headers) can be used as is, but all macro names can be changed as well.
 
 There are three tags:
 - **move**: the function takes ownership of the pointer, e.g. it stores it or frees it. The caller may not use the pointer again until it has been given a new value.
@@ -792,7 +817,7 @@ argument_pointer_movement:
 
 Each `require_operator_for_..._callsite` setting decides whether that kind of argument is marked at the callsite. When it is `true`, the argument must be wrapped in the operator; when it is `false`, the operator may not be used at all, so that every callsite in the project looks the same.
 
-For the settings above, and a tag header with the tags `moved`, `output` and `mutable` and the operators `move()`, `out()` and `mut()`, the parser expects code to look like this:
+For the settings above, and the [lowercase tag header](#tag-headers) with the tags `receives`, `initializes` and `borrows` and the operators `give()`, `overwrite()` and `lend()`, the parser expects code to look like this:
 
 ```c
 struct Data
@@ -802,28 +827,28 @@ struct Data
 typedef struct Data Data;
 
 int get_data_i(const Data* data);                           // No tag needed, const
-void initialize_data(output Data** data);
-void edit_data(mutable Data* data, int i, int j, int k);
-void give_data_to_other_section(moved Data* data);
+void initialize_data(initializes Data** data);
+void edit_data(borrows Data* data, int i, int j, int k);
+void give_data_to_other_section(receives Data* data);
 void no_tag(Data* data);                                    // Triggers parser, non-const pointer without a tag
 
 void example(void)
 {
   Data* data = NULL;
-  initialize_data(out(&data));                              // OK
+  initialize_data(overwrite(&data));                        // OK
   edit_data(data, 3, 5, 7);                                 // OK, the modify operator is disabled
   int i = get_data_i(data);                                 // OK
-  give_data_to_other_section(move(data));                   // OK
+  give_data_to_other_section(give(data));                   // OK
 
   Data* other = NULL;
-  initialize_data(&other);                                  // Triggers parser, missing out()
-  edit_data(mut(other), 1, 2, 3);                           // Triggers parser, the modify operator is disabled
-  initialize_data(move(&other));                            // Triggers parser, wrong operator
-  get_data_i(move(other));                                  // Triggers parser, the parameter has no tag
+  initialize_data(&other);                                  // Triggers parser, missing overwrite()
+  edit_data(lend(other), 1, 2, 3);                          // Triggers parser, the modify operator is disabled
+  initialize_data(give(&other));                            // Triggers parser, wrong operator
+  get_data_i(give(other));                                  // Triggers parser, the parameter has no tag
 }
 ```
 
-Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `mut` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `mutable`, `output`, or `moved` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior.
+Notice how everything that is const does not need tagging because it almost handles itself, and notice how the need for the `lend` "operator" was disabled in the settings. This is a good middle ground so that the ownership transfer is the most noticeable parts of the code. With these rules in place, the code becomes self-documenting and if a function is ever changed in future in taking a `const`, `borrows`, `initializes`, or `receives` pointer then the parser will trigger and catch that the callsite is unedited and may have unexpected behavior.
 
 A function declared more than once (e.g. in a header and in the source file) must use the same tags every time. Functions declared in system headers and `third_party_includes` folders have no tags, so passing a pointer to them needs no operator, and using one is reported.
 
@@ -833,24 +858,24 @@ Once a pointer has been moved, the called function owns it, so the pointer may n
 void example(void)
 {
   Data* data = NULL;
-  initialize_data(out(&data));
-  give_data_to_other_section(move(data));
+  initialize_data(overwrite(&data));
+  give_data_to_other_section(give(data));
   edit_data(data, 1, 2, 3);                 // Triggers parser, data was moved
-  initialize_data(out(&data));              // Triggers parser, out may not write a new value
+  initialize_data(overwrite(&data));        // Triggers parser, out may not write a new value
   data = NULL;                              // OK, data is reassigned
-  initialize_data(out(&data));              // OK
+  initialize_data(overwrite(&data));        // OK
   edit_data(data, 1, 2, 3);                 // OK
 }
 ```
 
 The movement tags may only be written on parameters, of function declarations and definitions and of function pointer types, not on variables, struct fields, functions or typedefs.
 
-A parameter tagged `mutable` or `output` is only borrowed by the function, so it may not be moved away. The same goes for what an `output` parameter points to.
+A parameter tagged `borrows` or `initializes` is only borrowed by the function, so it may not be moved away. The same goes for what an `initializes` parameter points to.
 
 ```c
-void process(mutable Data* data)
+void process(borrows Data* data)
 {
-  give_data_to_other_section(move(data));   // Triggers parser, the function does not own data
+  give_data_to_other_section(give(data));   // Triggers parser, the function does not own data
 }
 ```
 
@@ -858,26 +883,26 @@ void process(mutable Data* data)
 A function pointer type carries the tags on its parameters, just like a function, and a non-const pointer parameter of it needs a tag too. A function, or another function pointer, that is assigned or passed to a function pointer must have the same tags, parameter by parameter. This is checked wherever a function pointer gets its value: initializations (also of arrays and struct fields), compound literals such as `(handlers){ .on_event = function }`, assignments, arguments and return statements. A cast does not hide a mismatch.
 
 ```c
-typedef void (*consumer_t)(moved Data* data);
+typedef void (*consumer_t)(receives Data* data);
 
-void give_data_to_other_section(moved Data* data);
-void edit_data(mutable Data* data, int i, int j, int k);
-void borrow_data(mutable Data* data);
+void give_data_to_other_section(receives Data* data);
+void edit_data(borrows Data* data, int i, int j, int k);
+void borrow_data(borrows Data* data);
 
 consumer_t consumer = give_data_to_other_section;  // OK, the same tags
-consumer_t wrong = borrow_data;                    // Triggers parser, mutable instead of moved
+consumer_t wrong = borrow_data;                    // Triggers parser, borrows instead of receives
 void register_consumer(consumer_t consumer);
 register_consumer(borrow_data);                    // Triggers parser, same
 ```
 
-Calls through a function pointer then follow the tags of its type, exactly like calls to a function: the callsite operators, the use of a pointer after it was moved, and the borrowed parameters that may not be moved. The function pointer can be a variable, a parameter, a struct field, an array element or a conditional expression. A call through a conditional expression, e.g. `(flag ? first : second)(move(data))`, follows the tags its branches agree on, and is reported when they tag a parameter differently, since the callsite can only follow one set of tags.
+Calls through a function pointer then follow the tags of its type, exactly like calls to a function: the callsite operators, the use of a pointer after it was moved, and the borrowed parameters that may not be moved. The function pointer can be a variable, a parameter, a struct field, an array element or a conditional expression. A call through a conditional expression, e.g. `(flag ? first : second)(give(data))`, follows the tags its branches agree on, and is reported when they tag a parameter differently, since the callsite can only follow one set of tags.
 
 ```c
 void example(consumer_t consumer)
 {
   Data* data = NULL;
-  initialize_data(out(&data));
-  consumer(move(data));                     // OK, the operator of consumer_t's moved parameter
+  initialize_data(overwrite(&data));
+  consumer(give(data));                     // OK, the operator of consumer_t's receives parameter
   edit_data(data, 1, 2, 3);                 // Triggers parser, data was moved to consumer
 }
 ```
@@ -885,26 +910,47 @@ void example(consumer_t consumer)
 A function pointer type from a system header or a `third_party_includes` folder has no tags, so any function may be assigned or passed to it.
 
 #### Naming the tags and operators
-The tags and operators are just macros, so any names can be used, e.g. `move` and `move_cast()` with `out` and `out_cast()`, or `moved` with `move()`, `outed` with `out()` and `modded` with `mod()`, in capital letters or not. What WorkshopC recognizes is what they expand to while it parses the code (when `WORKSHOPC_PARSING` is defined):
+The tags and operators are just macros, so any names can be used instead of the [premade ones](#tag-headers), in capital letters or not. What WorkshopC recognizes is what they expand to while it parses the code (when `WORKSHOPC_PARSING` is defined):
 - A tag must expand to `__attribute__((annotate("workshopc_move")))`, `"workshopc_out"` or `"workshopc_modify"`.
 - An operator must call a function named `workshopc_move`, `workshopc_out` or `workshopc_modify` that takes the argument and returns it unchanged.
 
-When `WORKSHOPC_PARSING` is not defined, the tags expand to nothing and the operators to their argument, so the real build is unaffected.
+When `WORKSHOPC_PARSING` is not defined, the tags expand to nothing and the operators to their argument, so the real build is unaffected. For example, a header with the tags `moved`, `output` and `mutable` and the operators `move()`, `out()` and `mut()`:
 
 ```c
 #ifdef WORKSHOPC_PARSING
 
 static inline void* workshopc_move(void* arg) { return arg; }
+static inline void* workshopc_out(void* arg) { return arg; }
+static inline void* workshopc_modify(void* arg) { return arg; }
+
 #define move(expr) ((__typeof__(expr))workshopc_move((void*)(expr)))
-#define moved __attribute__((annotate("workshopc_move")))
+#define out(expr)  ((__typeof__(expr))workshopc_out((void*)(expr)))
+#define mut(expr)  ((__typeof__(expr))workshopc_modify((void*)(expr)))
+
+#define moved   __attribute__((annotate("workshopc_move")))
+#define output  __attribute__((annotate("workshopc_out")))
+#define mutable __attribute__((annotate("workshopc_modify")))
 
 #else
 
 #define move(expr) (expr)
+#define out(expr)  (expr)
+#define mut(expr)  (expr)
+
 #define moved
+#define output
+#define mutable
 
 #endif
 ```
+
+```c
+void give_data_to_other_section(moved Data* data);      give_data_to_other_section(move(data));
+void initialize_data(output Data** data);                initialize_data(out(&data));
+void edit_data(mutable Data* data, int i, int j, int k); edit_data(mut(data), 1, 2, 3);
+```
+
+Names like these read well but are easy to clash with: every variable called `output` breaks once the header is included, and `mutable` is a C++ keyword. Pick names that are rare in your code.
 
 ### RAII and struct resource management
 This rule introduces struct categorization and centralizes resource management within them to a given set of functions, effectively creating a RAII system. 
@@ -1283,7 +1329,7 @@ int COUNTER = 0;                        // Triggers parser, not const
 Local variables that are not static are never checked. A variable declared more than once (e.g. `extern` in a header and the definition in the source file) is only checked once, at its definition.
 
 ### Reference pointer rule
-A reference pointer is a pointer parameter that always points to a real object, so it can never be null. It is marked with a tag, a macro that the parser sees as an annotation. [Here is a premade tag file](./default/ref_tag.h), and the macro name can be changed freely.
+A reference pointer is a pointer parameter that always points to a real object, so it can never be null. It is marked with a tag, a macro that the parser sees as an annotation. A [premade tag header](#tag-headers) can be used as is, and the macro name can be changed freely.
 
 ```yaml
 reference_pointer:
@@ -1346,7 +1392,7 @@ reader_t nullable = read_nullable;          // Triggers parser, read_nullable do
 reader(NULL);                               // Triggers parser, a reference can never be null
 ```
 
-The tag works side by side with the [argument pointer movement rule](#argument-pointer-movement-rule), in any order, e.g. `void scale(mutable REF float* value, float factor);` called as `scale(mut(&value), 2.0f);`. The reference tag is not a movement tag, so a non-const reference still needs one of the movement tags when that rule is enabled.
+The tag works side by side with the [argument pointer movement rule](#argument-pointer-movement-rule), in any order, e.g. `void scale(MUTABLE REF float* value, float factor);` called as `scale(MUT(&value), 2.0f);`, or `void scale(borrows massive float* value, float factor);` called as `scale(lend(&value), 2.0f);` with the lowercase headers. The reference tag is not a movement tag, so a non-const reference still needs one of the movement tags when that rule is enabled.
 
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
