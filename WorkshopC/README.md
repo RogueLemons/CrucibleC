@@ -737,12 +737,13 @@ int dereference_safely(int* i_ptr)
 }
 ```
 
-`*i_ptr`, `i_ptr->field` and `i_ptr[index]` all count as dereferences. The following count as a null check:
-- A comparison with null anywhere, e.g. `i_ptr == NULL`, `NULL != i_ptr`, a comparison inside a macro such as `IS_NULL(i_ptr)`, a comparison stored in a variable (`bool valid = i_ptr != NULL; if (valid) ...`) or `assert(i_ptr != NULL)`.
-- A call to a function with `null` or `NULL` in its name that is given the pointer, e.g. `if (is_null(i_ptr)) return;`.
-- With `allow_direct_ptr_in_if_statement: true`, a plain `i_ptr` or `!i_ptr` used as a condition (`if`, `while`, `for`, `?:`, `&&`, `||`), e.g. `if (!i_ptr) return;` or `return i_ptr ? *i_ptr : 0;`. When it is `false`, the comparison must be written out.
+`*i_ptr`, `i_ptr->field` and `i_ptr[index]` all count as dereferences. A dereference is only allowed where the pointer is known to be non-null on every path of the function that reaches it, so the rule follows the control flow of the function rather than just looking for a check somewhere before it. A pointer is known to be non-null:
+- In the branch where a condition says so: the `if` branch of `if (i_ptr != NULL)`, the `else` branch of `if (i_ptr == NULL)`, the right side of `i_ptr && *i_ptr` or `!i_ptr || *i_ptr`, the matching branch of `?:`, and a loop body behind such a loop condition.
+- After a check whose null branch always leaves: `return`, `break`, `continue`, `goto`, or a call to a function that never returns, such as `abort()` or `exit()`. `assert(i_ptr != NULL)` works the same way, since a failed assert aborts.
 
-Passing the pointer on to another function is not a check. A check only counts in the scope it was made in and the scopes nested inside it, following the control flow of the function:
+These conditions count as null checks:
+- A comparison with null, e.g. `i_ptr == NULL`, `NULL != i_ptr`, or a comparison inside a macro such as `IS_NULL(i_ptr)`. It can also be stored in a variable first: `bool valid = i_ptr != NULL; if (valid) ...`.
+- With `allow_direct_ptr_in_if_statement: true`, a plain `i_ptr` or `!i_ptr`, e.g. `if (!i_ptr) return;` or `return i_ptr ? *i_ptr : 0;`. When it is `false`, the comparison must be written out.
 
 ```c
 int sum(int* a, int* b, int flag)
@@ -753,15 +754,23 @@ int sum(int* a, int* b, int flag)
   if (flag)
   {
     if (!b)
-      return *a;      // OK, a was checked in an enclosing scope
-    return *a + *b;   // OK, b was checked in this scope
+      return *a;      // OK, a is not null on every path here
+    return *a + *b;   // OK, b is not null in this branch
   }
 
-  return *a + *b;     // Triggers parser for b, its check was inside the if above
+  return *a + *b;     // Triggers parser for b, it is only checked when flag is set
+}
+
+int log_only(int* value)
+{
+  if (value == NULL)
+    log_error("null");  // execution goes on with a null pointer
+
+  return *value;        // Triggers parser, the null branch does not leave
 }
 ```
 
-Likewise a check in one branch of an `if` does not count in the other branch, and a check inside a loop does not count after the loop, since the loop may not run at all. Each parameter is checked on its own and reported at most once, at its first unchecked dereference. Reference parameters of the [reference pointer rule](#reference-pointer-rule) can be exempted, since they can never be null.
+Where paths come together, e.g. after an `if`/`else`, a loop or a `switch`, or at a label reached by a `goto`, the pointer is only known to be non-null if it is on all of them. So a check in one branch of an `if` does not count after it unless the other branches check too, and a check inside a loop does not count after the loop, since the loop may not run at all. Giving a parameter a new value (`i_ptr = other;`) forgets that it was checked. Passing the pointer on to another function is not a check, and neither is a function's result, e.g. `if (is_valid(i_ptr))`, since the rule can not know what the function checks. Each parameter is checked on its own and reported at most once, at its first unchecked dereference. Reference parameters of the [reference pointer rule](#reference-pointer-rule) can be exempted, since they can never be null.
 
 ### Argument pointer movement rule
 This rule makes the ownership of pointers visible. Every non-const pointer parameter must be tagged with how the function uses it, and the call sites can be required to mark the argument with a matching "operator", so both the function and the callsite show what happens to the pointer. [Here is a premade tag header](./default/move_tags.h) that can be used as is, but all macro names can be changed as well.

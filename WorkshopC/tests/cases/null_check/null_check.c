@@ -5,7 +5,7 @@
 #include "headers/function_without_nullcheck.h"
 
 #define IS_NULL(ptr) ((ptr) == ((void*)0))
-#define ABORT_IF_NULL(ptr) do { int is_null_ = (ptr) == NULL; assert(is_null_ && "ptr may not be null"); } while(0)
+#define ABORT_IF_NULL(ptr) do { int is_null_ = (ptr) == NULL; assert(!is_null_ && "ptr may not be null"); } while(0)
 
 float good_null_check(float* f_ptr_good)
 {
@@ -277,4 +277,193 @@ static int checked_as_bool_variables(int* checked_as_bool)
         return *checked_as_bool; // good: checked_as_bool is true only if checked_as_bool is not null
 
     return 0;
+}
+
+// -------------------------------------------------------------
+// The check follows the control flow: a dereference is only safe
+// where the pointer is known to be non-null on every path
+// -------------------------------------------------------------
+
+void log_error(const char* message);
+void abort(void);
+int is_not_null(const void* ptr);
+
+static int check_without_leaving(int* not_guarding)
+{
+    if (not_guarding == NULL)
+        log_error("null"); // the function goes on with a null pointer
+
+    return *not_guarding; // bad: the null branch does not leave the function
+}
+
+static int dereference_in_null_branch(int* wrong_branch)
+{
+    if (wrong_branch == NULL)
+        return *wrong_branch; // bad: dereferenced exactly when it is null
+
+    return 0;
+}
+
+static int guard_with_abort(int* aborting)
+{
+    if (!aborting)
+        abort();
+
+    return *aborting; // good: abort does not return
+}
+
+static int guard_with_function_call(int* named_not_null)
+{
+    if (!is_not_null(named_not_null))
+        return 0;
+
+    return *named_not_null; // bad: a function call is not a null check, whatever its name
+}
+
+static int guard_with_or(int* or_guard)
+{
+    return !or_guard || *or_guard > 0; // good: the right side only runs when or_guard is not null
+}
+
+static int guard_in_else_only(int* else_only, int flag)
+{
+    if (flag)
+        log_error("flag");
+    else if (!else_only)
+        return 0;
+
+    return *else_only; // bad: only checked when flag is false
+}
+
+static int guard_with_goto(int* goto_guard)
+{
+    int result = 0;
+
+    if (goto_guard == NULL)
+        goto done;
+
+    result = *goto_guard; // good: the null branch jumps past it
+
+done:
+    return result;
+}
+
+static int guard_reached_by_goto(int* goto_skipped)
+{
+    if (goto_skipped == NULL)
+        goto use; // jumps with a null pointer
+
+    log_error("checked");
+
+use:
+    return *goto_skipped; // bad: reached through the goto with a null pointer
+}
+
+static int guard_with_loop_break(int* loop_break, int count)
+{
+    int sum = 0;
+
+    for (int i = 0; i < count; ++i)
+    {
+        if (loop_break == NULL)
+            break;
+
+        sum += *loop_break; // good: checked in this iteration
+    }
+
+    return sum;
+}
+
+static int guard_with_continue(int** values, int count)
+{
+    int sum = 0;
+
+    for (int i = 0; i < count; ++i)
+    {
+        if (!values)
+            continue;
+
+        sum += *values[i]; // good: continue skips the null case
+    }
+
+    return sum;
+}
+
+static int reassigned_after_check(int* reassigned, int* other)
+{
+    if (!reassigned)
+        return 0;
+
+    reassigned = other;
+    return *reassigned; // bad: reassigned after the check, and may be null again
+}
+
+static int guard_in_every_case(int* every_case, int kind)
+{
+    switch (kind)
+    {
+        case 1:
+            if (!every_case)
+                return 0;
+            break;
+        default:
+            if (every_case == NULL)
+                return -1;
+            break;
+    }
+
+    return *every_case; // good: every case leaves when it is null
+}
+
+static int guard_in_some_cases(int* some_cases, int kind)
+{
+    switch (kind)
+    {
+        case 1:
+            if (!some_cases)
+                return 0;
+            break;
+        default:
+            break;
+    }
+
+    return *some_cases; // bad: not checked in the default case
+}
+
+static int guard_with_braces(int* braced)
+{
+    if (braced == NULL)
+    {
+        log_error("null");
+        return 0;
+    }
+
+    return *braced; // good: the null branch in braces leaves the function
+}
+
+static int braces_without_leaving(int* braced_not_leaving)
+{
+    if (braced_not_leaving == NULL)
+    {
+        log_error("null");
+    }
+
+    return *braced_not_leaving; // bad: the null branch in braces does not leave the function
+}
+
+static int reassigned_then_checked(int* reassigned_checked, int* other_checked)
+{
+    if (!reassigned_checked)
+    {
+        return 0;
+    }
+
+    reassigned_checked = other_checked;
+
+    if (reassigned_checked == NULL)
+    {
+        return 0;
+    }
+
+    return *reassigned_checked; // good: checked again after the reassignment
 }
