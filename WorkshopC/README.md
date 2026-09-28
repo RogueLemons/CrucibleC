@@ -34,7 +34,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
 workshopc [options] <files or folders...>
 ```
 
-Put a `workshopc.config.yaml` in the root of your project with `compile_commands_dir` pointing at the folder containing `compile_commands.json` (typically the CMake build folder), and then all that is needed is:
+Put a `workshopc.yaml` in the root of your project with `compile_commands_dir` pointing at the folder containing `compile_commands.json` (typically the CMake build folder), and then all that is needed is:
 
 ```bash
 workshopc src/
@@ -42,7 +42,7 @@ workshopc src/
 
 **Arguments:**
 - `<files or folders...>` — The C files to analyze. Folders are searched recursively for `.c` files, skipping `third_party_includes` folders and the compilation database folder. Headers are checked through the files that include them, and a problem in a header included by several files is only reported once.
-- `--config <file>` — The config file. Without it, `workshopc.config.yaml` is searched for in the current folder and then its parents.
+- `--config <file>` — The config file. Without it, `workshopc.yaml` is searched for in the current folder and then its parents. Other configs are named `<name>.workshopc.yaml` by convention, e.g. `ci.workshopc.yaml`, and given with this option.
 - `-p, --build-path <folder>` — The folder containing `compile_commands.json`. Overrides `compile_commands_dir` from the config.
 - `--text <file>` — Also write the diagnostics as text to a file, the same lines as printed to the terminal.
 - `--json <file>` — Also write the diagnostics as JSON to a file: the warning and error counts and a list of diagnostics, each with its file, line, column, level, code, name and message.
@@ -58,7 +58,7 @@ Examples:
 ```bash
 workshopc src/                                  # everything under src/, config found automatically
 workshopc src/main.c src/parser.c               # only these files
-workshopc --config ci.config.yaml -p out/ src/  # another config and build folder
+workshopc --config ci.workshopc.yaml -p out/ src/  # another config and build folder
 workshopc -q --sarif results.sarif src/         # only a SARIF file, e.g. for CI
 workshopc --text out.txt --json out.json src/   # terminal output plus a text and a JSON file
 workshopc -q --json - src/ | jq .errors         # JSON to stdout, for piping
@@ -85,7 +85,7 @@ Codes of `64` and above always mean the tool itself could not complete the analy
 
 The tool runs the file through clang, but only WorkshopC's own rules produce warnings. Clang's warnings (unused variables, implicit conversions and so on) are disabled with `-w`, even if the compilation database enables `-Wall` or `-Werror`, since they belong to the project's normal build. Genuine compile errors are still printed in clang's normal format, and the exit code is then `67`. The rules still run on whatever clang could recover from the broken file, but the result should be treated as incomplete until the file compiles.
 
-[Here is a premade config.yaml file ready for use as is and provide a base to easily edit](./default/workshopc.config.yaml).
+[Here is a premade config ready for use as is and provide a base to easily edit](./default/default.workshopc.yaml). Copy it to the root of your project as `workshopc.yaml` to have it found automatically.
 
 ## Diagnostic codes
 Every diagnostic ends with a code, e.g. `[CCW0101]`, which identifies exactly which check reported it. The JSON and SARIF files carry the code and a readable name as separate fields (`code` and `name` in JSON, `ruleId` in SARIF, whose rule list describes every code).
@@ -216,7 +216,7 @@ rules:
     level: Error
 ```
 
-- A rule that is left out of the config is `Off`. An option that is left out gets its default, which is `false` for the on/off options unless its description below says otherwise. Starting from [the default config](./default/workshopc.config.yaml) is the easiest way to see every option.
+- A rule that is left out of the config is `Off`. An option that is left out gets its default, which is `false` for the on/off options unless its description below says otherwise. Starting from [the default config](./default/default.workshopc.yaml) is the easiest way to see every option.
 - A file is third party when its path contains one of the `third_party_includes` entries, e.g. `external/` matches `project/external/json/json.h`. Code in third party files and system headers is never reported, but the project's own code that uses it still is.
 - `Warning` and `Error` only differ in how the result is reported (the level in the output and the [exit code](#how-to-use)), the checks are the same.
 
@@ -1596,7 +1596,7 @@ After building, use the tool with the compilation database from the build direct
 
 ```bash
 # Example: analyze a test file
-./build/workshopc --config tests/cases/enum/enum.config.yaml -p build-tests/ tests/cases/enum/enum.c
+./build/workshopc --config tests/cases/enum/enum.workshopc.yaml -p build-tests/ tests/cases/enum/enum.c
 ```
 
 The tool requires access to the compilation database to understand compiler flags and include paths. The database must describe the code being analyzed, not the tool itself, so the test files have their own (see below).
@@ -1611,7 +1611,7 @@ python run_tests.py
 
 Every test case is a folder in `tests/cases/` holding three files with the folder's name, e.g. `tests/cases/struct_usage/`:
 - `struct_usage.c`: the code to analyze, with a `// good` or `// bad: reason` comment on the lines that matter,
-- `struct_usage.config.yaml`: the config it is analyzed with,
+- `struct_usage.workshopc.yaml`: the config it is analyzed with,
 - `struct_usage.expected.txt`: every diagnostic the tool must report, one per line as `level: message [code]`, in any order.
 
 Headers shared by the tests are in `tests/headers/`, and `tests/external/` stands in for third party code (every test config lists `external/` in `third_party_includes`). The tests include them as `"headers/..."` and `"external/..."`, which works from every test case folder since `tests/` is on the include path.
@@ -1713,6 +1713,7 @@ For Beta V1 it shall
 - Verify build for Linux
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
+- Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15)

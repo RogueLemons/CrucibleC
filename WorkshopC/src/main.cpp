@@ -452,7 +452,9 @@ static std::string findResourceDirArgument(const char *argv0) {
 // -------------------------
 // Command line
 // -------------------------
-static const char *kDefaultConfigName = "workshopc.config.yaml";
+// Found automatically. Other configs, e.g. the presets or
+// 'ci.workshopc.yaml', are given with --config
+static const char *kDefaultConfigName = "workshopc.yaml";
 
 static const char *kUsage =
     "Usage: workshopc [options] <files or folders...>\n"
@@ -460,7 +462,7 @@ static const char *kUsage =
     "Analyzes the given C files, and every .c file found in the given folders.\n"
     "\n"
     "Options:\n"
-    "  --config <file>                   The config file. Without it, workshopc.config.yaml\n"
+    "  --config <file>                   The config file. Without it, workshopc.yaml\n"
     "                                    is searched for in the current folder and its parents.\n"
     "  -p, --build-path <folder>         The folder containing compile_commands.json.\n"
     "                                    Overrides compile_commands_dir from the config.\n"

@@ -150,14 +150,17 @@ add_custom_command(TARGET workshopc POST_BUILD
 # Copy defaults
 add_custom_command(TARGET workshopc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/default/workshopc.config.yaml
-        ${RELEASE_DIR}/workshopc.config.yaml
+        ${CMAKE_SOURCE_DIR}/default/default.workshopc.yaml
+        ${RELEASE_DIR}/default.workshopc.yaml
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/default/move_tags.h
         ${RELEASE_DIR}/move_tags.h
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/default/private_tag.h
         ${RELEASE_DIR}/private_tag.h
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/default/ref_tag.h
+        ${RELEASE_DIR}/ref_tag.h
 )
 
 # Copy licenses

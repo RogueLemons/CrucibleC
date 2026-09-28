@@ -52,7 +52,7 @@ def generate_tests_compdb():
 def find_tests():
     """
     Every test case is a folder tests/cases/<name>/ holding <name>.c,
-    <name>.config.yaml and <name>.expected.txt.
+    <name>.workshopc.yaml and <name>.expected.txt.
     """
     return sorted(
         folder / f"{folder.name}.c"
@@ -89,7 +89,7 @@ def load_expected(test_file):
 
 
 def load_config(test_file):
-    config_file = test_file.with_suffix(".config.yaml")
+    config_file = test_file.with_suffix(".workshopc.yaml")
 
     if not config_file.exists():
         print(f"Missing config file: {config_file}")
@@ -154,7 +154,7 @@ def run_output_files_test(exe):
         [
             str(exe),
             "--quiet",
-            "--config", str(OUTPUT_FILES_TEST.with_suffix(".config.yaml")),
+            "--config", str(OUTPUT_FILES_TEST.with_suffix(".workshopc.yaml")),
             "-p", str(TESTS_COMPDB),
             "--text", str(text_file),
             "--json", str(json_file),
