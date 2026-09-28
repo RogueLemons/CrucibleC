@@ -1,0 +1,6 @@
+# Array struct rule without library-passing restrictions
+
+rules:
+  array_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions: false

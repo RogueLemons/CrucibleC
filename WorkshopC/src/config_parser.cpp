@@ -346,6 +346,19 @@ void ConfigParser::applySetting(
 }
 
 void ConfigParser::applySetting(
+    ArrayStructRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+    else if (key == "only_allow_array_passing_to_library_functions") {
+        cfg.onlyAllowArrayPassingToLibraryFunctions = parseBool(value);
+    }
+}
+
+void ConfigParser::applySetting(
     GlobalVariableRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -495,6 +508,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "function_discard") {
         applySetting(config.functionDiscardRule, key, value);
+    }
+    else if (currentRule == "array_struct") {
+        applySetting(config.arrayStructRule, key, value);
     }
 }
 

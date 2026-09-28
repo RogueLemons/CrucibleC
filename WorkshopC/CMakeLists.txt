@@ -79,6 +79,7 @@ set(SOURCES
     src/rule_reference_pointer.cpp
     src/rule_function_pointer_tags.cpp
     src/rule_function_discard.cpp
+    src/rule_array_struct.cpp
 )
 
 add_executable(workshopc ${SOURCES})

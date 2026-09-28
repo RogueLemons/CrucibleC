@@ -134,3 +134,8 @@ rules:
   # Function discard rule - forbids discarding return values of functions that return a value
   function_discard:
     level: Warning
+
+  # Array struct rule - only allows arrays to be declared in structs
+  array_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions: true

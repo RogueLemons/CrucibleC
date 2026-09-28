@@ -7,18 +7,17 @@
  * WorkshopC): 'rr' is the rule and 'cc' the check within that rule.
  *
  *   00  WorkshopC itself (suppression comments)
- *   01  enum                      10  struct resource management: database
- *   02  private                   11  struct resource management: init
- *   03  private_alternative       12  struct resource management: cleanup
- *   04  function_pointer          13  struct resource management: return values
- *   05  typedef_struct            14  (reserved for future rules)
- *   06  assignment                15  (reserved for future rules)
- *   07  prefix_namespace          16  restricted_malloc
- *   08  null_check                17  single_return
- *   09  argument_pointer_movement 18  strict_switch
- *                                 19  global_variable
- *                                 20  reference_pointer
- *                                 21  function_discard
+ *   01  enum                                   12  struct resource management: cleanup
+ *   02  private                                13  struct resource management: return values
+ *   03  private_alternative                    14  (reserved for future rules)
+ *   04  function_pointer                       15  (reserved for future rules)
+ *   05  typedef_struct                         16  restricted_malloc
+ *   06  assignment                             17  single_return
+ *   07  prefix_namespace                       18  strict_switch
+ *   08  null_check                             19  global_variable
+ *   09  argument_pointer_movement              20  reference_pointer
+ *   10  struct resource management: database   21  function_discard
+ *   11  struct resource management: init       22  array_struct
  *
  * Codes are never renumbered or reused: a removed check keeps its code
  * unused, and a new check gets the next free number of its rule. The
@@ -218,7 +217,12 @@
       "A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional") \
     /* 21 function_discard */ \
     X(FunctionReturnDiscarded, "CCW2101", "function-return-discarded", \
-      "A non-void function return value is discarded")
+      "A non-void function return value is discarded") \
+    /* 22 array_struct */ \
+    X(ArrayOutsideStruct, "CCW2201", "array-outside-struct", \
+      "An array may only be declared as a field inside a struct") \
+    X(ArrayPassedToNonLibraryFunction, "CCW2202", "array-passed-to-non-library-function", \
+      "An array field may only be passed directly to a standard-library or third-party function")
 
 enum class DiagCode {
 #define WORKSHOPC_CODE_ENUM(enumerator, code, name, description) enumerator,

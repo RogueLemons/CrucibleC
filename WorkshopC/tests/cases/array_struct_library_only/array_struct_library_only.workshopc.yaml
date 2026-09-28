@@ -1,0 +1,9 @@
+# Array struct rule with library-passing restrictions
+
+third_party_includes:
+  - external/
+
+rules:
+  array_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions: true

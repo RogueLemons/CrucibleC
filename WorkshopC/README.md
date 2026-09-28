@@ -22,6 +22,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
   - [Global variable rule](#global-variable-rule)
   - [Reference pointer rule](#reference-pointer-rule)
   - [Function discard rule](#function-discard-rule)
+  - [Array struct rule](#array-struct-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -226,6 +227,9 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW2005` | `function-pointer-reference-tag-mismatch` | A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional |
 | | **21 — [Function discard](#function-discard-rule)** | |
 | `CCW2101` | `function-return-discarded` | A non-void function return value is discarded |
+| | **22 — [Array struct](#array-struct-rule)** | |
+| `CCW2201` | `array-outside-struct` | An array is declared outside a struct field |
+| `CCW2202` | `array-passed-to-non-library-function` | A struct array field is passed to a non-standard-library and non-third-party function |
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
@@ -1416,6 +1420,37 @@ get_value();             // Triggers parser
 int value = get_value(); // OK: result is used
 ```
 
+### Array struct rule
+This safety feature requires arrays to be declared only as fields inside structs. It helps prevent accidentally passing the wrong array size through C's array-to-pointer decay: once an array becomes a pointer, a receiving function cannot know its length unless the caller also supplies it correctly.
+
+```yaml
+array_struct:
+  level: Warning
+  only_allow_array_passing_to_library_functions: true
+```
+
+With `only_allow_array_passing_to_library_functions: false`, the rule only checks that arrays are struct fields. With it set to `true`, an array field may only be passed directly to a function declared by the standard library or by a configured `third_party_includes` path. Calls to project functions are reported, so project code must expose a safer wrapper or another deliberate interface instead.
+
+```c
+struct image
+{
+  unsigned char pixels[1024];
+};
+typedef struct image image;
+
+void project_process(unsigned char* pixels, size_t count);
+
+void use_image(image* image)
+{
+  project_process(image->pixels, 1024); // Triggers parser when the option is true
+  memcpy(image->pixels, image->pixels, sizeof(image->pixels)); // OK: standard library
+}
+
+int loose_buffer[4]; // Triggers parser: not a struct field
+```
+
+Standard-library functions are recognized from system headers. Third-party functions are recognized when their declarations come from a path listed in `third_party_includes`.
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -1789,6 +1824,5 @@ For Beta V1.1 it shall
 For Beta V1.2 it shall
 - Add LSP support
 - Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
-- Add rule that if an array is provided to a function then its next provided argument must be its correct size, same with a malloc if its size can be seen in the scope, perhaps with `#define array_size_t size_t`; or just use clang's __counted_by(n) and tell users to wrap it in a macro; or (optionally) never allow an array to be passed directly and instead enforce use of array wrappers with e.g. suffix rule `<type>_array_4`; or enforce variable length array wrapped in struct with field for element count
 - Add rule that all arrays of pointers must end with NULL pointer
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS

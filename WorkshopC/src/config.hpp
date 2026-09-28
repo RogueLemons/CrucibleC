@@ -141,6 +141,12 @@ struct FunctionDiscardRuleConfig {
     RuleLevel level = RuleLevel::Off;
 };
 
+struct ArrayStructRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool onlyAllowArrayPassingToLibraryFunctions = false;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -159,7 +165,9 @@ struct Config {
     GlobalVariableRuleConfig globalVariableRule;
     ReferencePointerRuleConfig referencePointerRule;
     FunctionDiscardRuleConfig functionDiscardRule;
+    ArrayStructRuleConfig arrayStructRule;
 
+    // List of paths to third-party include directories, relative to the config file
     std::vector<std::string> thirdPartyIncludes;
 
     // Folder containing compile_commands.json, relative to the config file
