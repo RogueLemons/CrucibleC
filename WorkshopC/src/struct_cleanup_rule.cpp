@@ -819,6 +819,9 @@ void StructCleanupRule::CleanupAnalyzer::markDestroyedIfNeeded(const CallExpr *c
     if (!destroys)
         return;
 
+    if (owner.config.structResourceManagementRule.raiiDestroyInReverseOrder)
+        checkDestroyOrder(target, call->getExprLoc());
+
     for (auto &scope :
          scopes) {
 
@@ -845,6 +848,88 @@ void StructCleanupRule::CleanupAnalyzer::markDestroyedIfNeeded(const CallExpr *c
 
             tracked.destroyed =
                 true;
+        }
+    }
+}
+
+void StructCleanupRule::CleanupAnalyzer::checkDestroyOrder(
+    const VarDecl *target,
+    SourceLocation loc) const
+{
+    if (!target)
+        return;
+
+    const auto reportIfLive =
+        [this, target, loc](const TrackedVar &later) {
+            if (!later.decl ||
+                later.decl == target ||
+                later.destroyed)
+            {
+                return;
+            }
+
+            const bool targetIsArray =
+                target->getType()->isArrayType();
+            const bool laterIsArray =
+                later.decl->getType()->isArrayType();
+
+            const std::string targetDescription =
+                isa<ParmVarDecl>(target)
+                    ? "struct parameter '" + target->getNameAsString() + "'"
+                    : std::string(targetIsArray ? "struct array '" : "struct variable '") +
+                      target->getNameAsString() + "'";
+
+            const std::string laterDescription =
+                isa<ParmVarDecl>(later.decl)
+                    ? "struct parameter '" + later.decl->getNameAsString() + "'"
+                    : std::string(laterIsArray ? "struct array '" : "struct variable '") +
+                      later.decl->getNameAsString() + "'";
+
+            owner.reportUsageIssue(
+                DiagCode::RaiiDestroyNotReverseOrder,
+                loc,
+                targetDescription +
+                " must be destroyed after " +
+                laterDescription +
+                " (raii destruction must follow reverse declaration order)");
+        };
+
+    bool targetInParameters = false;
+
+    for (size_t i = 0; i < params.size(); ++i) {
+        if (params[i].decl == target) {
+            targetInParameters = true;
+
+            for (size_t j = i + 1; j < params.size(); ++j)
+                reportIfLive(params[j]);
+
+            break;
+        }
+    }
+
+    if (targetInParameters) {
+        for (const auto &scope : scopes)
+            for (const auto &later : scope.vars)
+                reportIfLive(later);
+
+        return;
+    }
+
+    for (size_t scopeIndex = 0; scopeIndex < scopes.size(); ++scopeIndex) {
+        const auto &scope = scopes[scopeIndex];
+
+        for (size_t varIndex = 0; varIndex < scope.vars.size(); ++varIndex) {
+            if (scope.vars[varIndex].decl != target)
+                continue;
+
+            for (size_t j = varIndex + 1; j < scope.vars.size(); ++j)
+                reportIfLive(scope.vars[j]);
+
+            for (size_t inner = scopeIndex + 1; inner < scopes.size(); ++inner)
+                for (const auto &later : scopes[inner].vars)
+                    reportIfLive(later);
+
+            return;
         }
     }
 }

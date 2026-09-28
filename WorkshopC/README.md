@@ -197,6 +197,7 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW1204` | `destroy-not-value-ref` | A raii destroy function is given something other than the address of a variable |
 | `CCW1205` | `destroy-array-first-argument` | The first argument of an array destroy function is not the array itself |
 | `CCW1206` | `destroy-array-size` | The second argument of an array destroy function is not the size of the array |
+| `CCW1207` | `raii-destroy-not-reverse-order` | A raii struct is destroyed before a later-declared raii struct |
 | | **13 — [Struct resource management: return values](#raii-and-struct-resource-management)** | |
 | `CCW1301` | `raii-return-function-outside-return` | A raii return function is used outside of a return statement |
 | `CCW1302` | `pod-return` | A function returning a pod struct does not return a function return value or another struct variable |
@@ -973,11 +974,13 @@ struct_resource_management:
     raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false
-    free_struct_creator_suffix: _init
     raii_struct_array_destroyer_suffix: _destroy_array
+    raii_destroy_in_reverse_order: true
+    free_struct_creator_suffix: _init
 ```
 
 - `raii_use_after_destroy` (default `true`): when `false`, a raii struct that has been destroyed with its destroy function may not be referenced again, neither passed to a function nor accessed through a field.
+  - `raii_destroy_in_reverse_order` (default `false`): when `true`, raii structs must be destroyed in reverse declaration order. If `a`, `b` and `c` are initialized in that order, they must be destroyed as `c`, `b`, then `a`. When `false`, destruction order is unrestricted as before.
 - `raii_struct_array_destroyer_suffix` (default empty): enables arrays of raii structs outside of structs, see [arrays of raii structs](#arrays-of-raii-structs). When empty, arrays of raii structs are only allowed inside structs.
 - `raii_may_only_move_value_ref` (default `false`): when `true`, a raii move function may only be given the address of a variable, e.g. `dynamic_string_move(&name)`, so that only an object owned by the calling scope can be moved from. A pointer (`dynamic_string_move(name_ptr)`), a struct field (`&holder.name`, `&holder->name`) or anything behind a pointer (`&*name_ptr`) is reported. The lifecycle functions of any struct may still work through their `self` pointer, e.g. a struct's own return function moving `self`, or the move function of a struct with a raii field moving `&self->field`.
 - `raii_may_only_destroy_value_ref` (default `false`): the same for the destroy function, e.g. `dynamic_string_destroy(&name)`. The destroy function of a struct with raii fields may still destroy them with `&self->field`. Fields of [free structs](#free-struct) are not affected and may be destroyed from anywhere, e.g. `dynamic_string_destroy(&holder.name)` or `dynamic_string_destroy(&holder->name)`, since free structs come with no rules.
@@ -1782,7 +1785,6 @@ For Beta V1 it shall
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15)
-- Optionally enforce raii struct destroy calls in reverse init order
 
 For Beta V1.2 it shall
 - Add LSP support

@@ -122,6 +122,10 @@ private:
 
         void markDestroyedIfNeeded(const CallExpr *call);
 
+        void checkDestroyOrder(
+            const VarDecl *target,
+            SourceLocation loc) const;
+
         /*
          * Reports every argument of 'call' that references a
          * tracked variable which has already been destroyed or

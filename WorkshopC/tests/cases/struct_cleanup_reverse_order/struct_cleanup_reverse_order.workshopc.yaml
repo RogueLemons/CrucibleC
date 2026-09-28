@@ -1,0 +1,18 @@
+# Struct cleanup reverse-order test configuration
+
+third_party_includes:
+  - external/
+
+rules:
+  struct_resource_management:
+    level: Error
+    pod_struct_creator_suffix: _pod
+    raii_struct_creator_suffix: _make
+    raii_struct_destroyer_suffix: _destroy
+    raii_struct_copy_suffix: _copy
+    raii_struct_move_suffix: _move
+    raii_struct_return_suffix: _return
+    raii_struct_valid_suffix: _valid
+    raii_struct_array_destroyer_suffix: _destroy_array
+    raii_destroy_in_reverse_order: true
+    free_struct_creator_suffix: _init

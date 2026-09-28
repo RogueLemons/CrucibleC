@@ -168,6 +168,8 @@
       "The first argument of an array destroy function is not the array itself") \
     X(DestroyArraySize, "CCW1206", "destroy-array-size", \
       "The second argument of an array destroy function is not the size of the array") \
+    X(RaiiDestroyNotReverseOrder, "CCW1207", "raii-destroy-not-reverse-order", \
+      "A raii struct is destroyed before a later-declared raii struct") \
     /* 13 struct resource management: return values */ \
     X(RaiiReturnFunctionOutsideReturn, "CCW1301", "raii-return-function-outside-return", \
       "A raii return function is used outside of a return statement") \
