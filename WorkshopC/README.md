@@ -137,13 +137,13 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | | **09 — [Argument pointer movement](#argument-pointer-movement-rule)** | |
 | `CCW0901` | `movement-tag-missing` | A non-const pointer parameter has no movement attribute |
 | `CCW0902` | `movement-tag-mismatch` | The movement attribute of a parameter differs between declaration and definition |
-| `CCW0903` | `movement-tag-not-on-parameter` | A movement attribute is used on something other than a function parameter |
+| `CCW0903` | `movement-tag-not-on-parameter` | A movement attribute is used on something other than a parameter of a function or function pointer type |
 | `CCW0904` | `borrowed-pointer-moved` | A modify or out parameter is moved to another function |
 | `CCW0905` | `operator-on-untagged-parameter` | A callsite operator is used for a parameter without a movement attribute |
 | `CCW0906` | `operator-disabled` | A callsite operator is used while that kind of callsite operator is disabled |
 | `CCW0907` | `operator-missing` | A callsite operator is missing for a parameter with a movement attribute |
 | `CCW0908` | `use-after-move` | A pointer is used after it may have been moved |
-| `CCW0909` | `movement-tag-on-function-pointer` | A movement attribute is used on a parameter of a function pointer type |
+| `CCW0909` | `function-pointer-movement-tag-mismatch` | A function or function pointer with other movement tags is assigned or passed to a function pointer, or called with it through a conditional |
 | | **10 — [Struct resource management: struct definitions](#raii-and-struct-resource-management)** | |
 | `CCW1001` | `struct-invalid-constructor` | A struct does not have exactly one pod, raii or free constructor function |
 | `CCW1002` | `struct-missing-destroy` | A raii struct is missing its destroy function |
@@ -195,8 +195,8 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW2001` | `reference-invalid-argument` | The argument for a reference parameter is not the address of an object or another reference |
 | `CCW2002` | `reference-reassigned` | A reference pointer is reassigned |
 | `CCW2003` | `reference-tag-on-non-pointer` | A reference tag is used on a parameter that is not a pointer |
-| `CCW2004` | `reference-tag-not-on-parameter` | A reference tag is used on something other than a function parameter |
-| `CCW2005` | `reference-tag-on-function-pointer` | A reference tag is used on a parameter of a function pointer type |
+| `CCW2004` | `reference-tag-not-on-parameter` | A reference tag is used on something other than a parameter of a function or function pointer type |
+| `CCW2005` | `function-pointer-reference-tag-mismatch` | A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional |
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
@@ -834,7 +834,7 @@ void example(void)
 }
 ```
 
-The movement tags may only be written on the parameters of function declarations and definitions, not on variables, struct fields, functions or typedefs. They are not allowed on the parameters of function pointer types either, since calls through a function pointer are not checked yet, so a tag there would look like a guarantee without being one.
+The movement tags may only be written on parameters, of function declarations and definitions and of function pointer types, not on variables, struct fields, functions or typedefs.
 
 A parameter tagged `mutable` or `output` is only borrowed by the function, so it may not be moved away. The same goes for what an `output` parameter points to.
 
@@ -844,6 +844,36 @@ void process(mutable Data* data)
   give_data_to_other_section(move(data));   // Triggers parser, the function does not own data
 }
 ```
+
+#### Function pointers
+A function pointer type carries the tags on its parameters, just like a function, and a non-const pointer parameter of it needs a tag too. A function, or another function pointer, that is assigned or passed to a function pointer must have the same tags, parameter by parameter. This is checked wherever a function pointer gets its value: initializations (also of arrays and struct fields), compound literals such as `(handlers){ .on_event = function }`, assignments, arguments and return statements. A cast does not hide a mismatch.
+
+```c
+typedef void (*consumer_t)(moved Data* data);
+
+void give_data_to_other_section(moved Data* data);
+void edit_data(mutable Data* data, int i, int j, int k);
+void borrow_data(mutable Data* data);
+
+consumer_t consumer = give_data_to_other_section;  // OK, the same tags
+consumer_t wrong = borrow_data;                    // Triggers parser, mutable instead of moved
+void register_consumer(consumer_t consumer);
+register_consumer(borrow_data);                    // Triggers parser, same
+```
+
+Calls through a function pointer then follow the tags of its type, exactly like calls to a function: the callsite operators, the use of a pointer after it was moved, and the borrowed parameters that may not be moved. The function pointer can be a variable, a parameter, a struct field, an array element or a conditional expression. A call through a conditional expression, e.g. `(flag ? first : second)(move(data))`, follows the tags its branches agree on, and is reported when they tag a parameter differently, since the callsite can only follow one set of tags.
+
+```c
+void example(consumer_t consumer)
+{
+  Data* data = NULL;
+  initialize_data(out(&data));
+  consumer(move(data));                     // OK, the operator of consumer_t's moved parameter
+  edit_data(data, 1, 2, 3);                 // Triggers parser, data was moved to consumer
+}
+```
+
+A function pointer type from a system header or a `third_party_includes` folder has no tags, so any function may be assigned or passed to it.
 
 #### Naming the tags and operators
 The tags and operators are just macros, so any names can be used, e.g. `move` and `move_cast()` with `out` and `out_cast()`, or `moved` with `move()`, `outed` with `out()` and `modded` with `mod()`, in capital letters or not. What WorkshopC recognizes is what they expand to while it parses the code (when `WORKSHOPC_PARSING` is defined):
@@ -1243,9 +1273,38 @@ void example(REF int* reference, int* pointer)
 
 The argument for a reference parameter must be the address of an object: a variable, a field of a variable (`&point.x`), an array element (`&numbers[1]`) or a field reached through another reference (`&reference->field`). An array or a string literal is accepted too, since it decays to a pointer to its first element, and so is another reference parameter passed on. A pointer variable, `NULL`, a pointer returned from a function, or anything reached through a normal pointer is reported. A reference parameter may not be reassigned (`=`, `+=`, `++`, ...), and the tag may only be used on pointers.
 
+A function pointer can be a reference too, so the function can call it without a null check. Its argument must then be a function, or another reference:
+
+```c
+typedef int (*math_func_t)(int a, int b);
+
+int apply(REF math_func_t func, int a, int b)
+{
+  return func(a, b);            // OK, a reference is never null
+}
+
+apply(add, 1, 2);               // OK, a function is never null
+apply(&add, 1, 2);              // OK
+apply(NULL, 1, 2);              // Triggers parser, and so do 0, (void*)0 and (math_func_t)0
+apply(maybe_null, 1, 2);        // Triggers parser, a normal function pointer may be null
+```
+
 With `disable_null_check_rule_for_reference_pointers: true`, the [null check rule](#null-check-rule) does not require a null check for reference parameters, since they can never be null.
 
-The reference tag may only be written on the parameters of function declarations and definitions, not on variables, struct fields, functions or typedefs, and not on the parameters of function pointer types, since calls through a function pointer are not checked yet.
+The reference tag may only be written on parameters, of function declarations and definitions and of function pointer types, not on variables, struct fields, functions or typedefs.
+
+A function pointer type follows the same rules as for the [movement tags](#function-pointers): a function assigned or passed to a function pointer must have the reference tag on the same parameters as the function pointer type, and the arguments of a call through a function pointer must be valid for its reference parameters.
+
+```c
+typedef void (*reader_t)(REF const Data* data);
+
+void read(REF const Data* data);
+void read_nullable(const Data* data);
+
+reader_t reader = read;                     // OK
+reader_t nullable = read_nullable;          // Triggers parser, read_nullable does not take a reference
+reader(NULL);                               // Triggers parser, a reference can never be null
+```
 
 The tag works side by side with the [argument pointer movement rule](#argument-pointer-movement-rule), in any order, e.g. `void scale(mutable REF float* value, float factor);` called as `scale(mut(&value), 2.0f);`. The reference tag is not a movement tag, so a non-const reference still needs one of the movement tags when that rule is enabled.
 
@@ -1617,7 +1676,6 @@ For Beta V1 it shall
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15)
-- (continue from above point) ...including support for the argument pointer tags (move, out, mutable) and the reference tag on the parameters of function pointer types: a function assigned or passed to a function pointer must have the same tags as the function pointer type, parameter by parameter, and calls through a function pointer must follow the tags of its type (callsite operators, use after move, reference arguments). Until then the tags are not allowed on function pointer parameters (remember to remove the two error codes)
 - Optionally enforce raii struct destroy calls in reverse init order
 - Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 

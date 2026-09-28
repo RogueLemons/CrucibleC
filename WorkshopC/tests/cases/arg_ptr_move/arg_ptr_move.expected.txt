@@ -28,6 +28,4 @@ warning: movement attribute (workshopc_move) on 'tagged_function' may only be us
 warning: movement attribute (workshopc_modify) on 'tagged_typedef' may only be used on function parameters [CCW0903]
 warning: movement attribute (workshopc_out) on 'field' may only be used on function parameters [CCW0903]
 warning: movement attribute (workshopc_modify) on 'local' may only be used on function parameters [CCW0903]
-warning: movement attribute (workshopc_modify) on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW0909]
-warning: movement attribute (workshopc_move) on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW0909]
-warning: movement attribute (workshopc_out) on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW0909]
+warning: function pointer type parameter 'value' uses non-const pointer; movement attribute required (workshopc_move, workshopc_out, workshopc_modify) [CCW0901]

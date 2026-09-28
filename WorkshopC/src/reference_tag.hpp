@@ -3,6 +3,8 @@
 #include <clang/AST/Attr.h>
 #include <clang/AST/Decl.h>
 
+#include "tag_placement.hpp"
+
 // Annotation written by the REF macro (see default/ref_tag.h)
 inline constexpr const char *kReferencePointerTag = "workshopc_reference_pointer";
 
@@ -28,11 +30,14 @@ inline bool hasReferenceTag(const clang::ParmVarDecl *param) {
     if (hasTag(param))
         return true;
 
-    const auto *owner =
-        llvm::dyn_cast<clang::FunctionDecl>(param->getDeclContext());
-
-    if (!owner)
+    // A parameter of a function pointer type has no other declarations.
+    // Its context can still be a function, when the type is written
+    // inside that function's body.
+    if (!isParameterOfFunctionDecl(param))
         return false;
+
+    const auto *owner =
+        llvm::cast<clang::FunctionDecl>(param->getDeclContext());
 
     const unsigned index = param->getFunctionScopeIndex();
 

@@ -1,0 +1,6 @@
+warning: argument for reference parameter 'func' of function 'apply' must be a function (e.g. 'add' or '&add') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'func' of function 'apply' must be a function (e.g. 'add' or '&add') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'func' of function 'apply' must be a function (e.g. 'add' or '&add') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'func' of function 'apply' must be a function (e.g. 'add' or '&add') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'func' of function 'apply' must be a function (e.g. 'add' or '&add') or another reference pointer, since a reference can never be null [CCW2001]
+warning: argument for reference parameter 'func' of function 'apply' must be a function (e.g. 'add' or '&add') or another reference pointer, since a reference can never be null [CCW2001]

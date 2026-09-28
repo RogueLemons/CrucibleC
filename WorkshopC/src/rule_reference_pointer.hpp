@@ -9,6 +9,7 @@
 
 #include "config.hpp"
 #include "diagnostics.hpp"
+#include "function_pointer_tags.hpp"
 #include "suppression_manager.hpp"
 
 using namespace clang;
@@ -56,6 +57,13 @@ private:
      */
     bool isObject(const Expr *expr) const;
 
+    /*
+     * True if 'expr' names a function, which as a function pointer is
+     * never null, e.g. 'add' or '&add' for a reference to a function
+     * pointer.
+     */
+    bool isFunction(const Expr *expr) const;
+
     bool isValidArgument(const Expr *arg) const;
 
     void report(
@@ -77,6 +85,14 @@ private:
      * The reference tag may only be written on function parameters,
      * not on variables, fields, functions or types.
      */
+    /*
+     * A parameter of a function pointer type, which has no function
+     * to be checked with: the tag may only be used on a pointer.
+     */
+    void checkFunctionPointerParameter(
+        const ParmVarDecl *param,
+        const SourceManager &sm);
+
     void checkTagPlacement(const Decl *decl, const SourceManager &sm);
 
 public:

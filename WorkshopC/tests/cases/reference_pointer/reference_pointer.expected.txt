@@ -14,6 +14,3 @@ warning: reference tag on 'tagged_global' may only be used on function parameter
 warning: reference tag on 'tagged_function' may only be used on function parameters [CCW2004]
 warning: reference tag on 'field' may only be used on function parameters [CCW2004]
 warning: reference tag on 'local' may only be used on function parameters [CCW2004]
-warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW2005]
-warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW2005]
-warning: reference tag on 'value' may not be used on a parameter of a function pointer type, calls through function pointers are not checked [CCW2005]

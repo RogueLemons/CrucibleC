@@ -10,6 +10,7 @@
 
 #include "config.hpp"
 #include "diagnostics.hpp"
+#include "function_pointer_tags.hpp"
 #include "suppression_manager.hpp"
 
 using namespace clang;
@@ -53,7 +54,7 @@ private:
      * only borrowed it, so it can not give away ownership of it.
      */
     void checkMoveOfBorrowedParam(const CallExpr *CE,
-                                  const FunctionDecl *FD,
+                                  const CalleeParameters &callee,
                                   const SourceManager &sm);
 
     void report(DiagCode code,

@@ -61,6 +61,13 @@ private:
      * The movement tags may only be written on function parameters,
      * not on variables, fields, functions or types.
      */
+    /*
+     * A parameter of a function pointer type follows the same rule as a
+     * function parameter: a non-const pointer needs a movement tag.
+     */
+    void checkFunctionPointerParameter(const ParmVarDecl *P,
+                                       const SourceManager &sm);
+
     void checkTagPlacement(const Decl *D, const SourceManager &sm);
 
 public:

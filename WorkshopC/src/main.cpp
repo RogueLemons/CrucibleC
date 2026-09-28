@@ -19,6 +19,7 @@
 #include "rule_strict_switch.hpp"
 #include "rule_global_variable.hpp"
 #include "rule_reference_pointer.hpp"
+#include "rule_function_pointer_tags.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -78,6 +79,7 @@ private:
     std::unique_ptr<StrictSwitchRule> strictSwitchRule{};
     std::unique_ptr<GlobalVariableRule> globalVariableRule{};
     std::unique_ptr<ReferencePointerRule> referencePointerRule{};
+    std::unique_ptr<FunctionPointerTagRule> functionPointerTagRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -307,6 +309,21 @@ public:
                 );
 
             referencePointerRule->bindFinder(finder);
+        }
+
+        // Tags of functions assigned or passed to function pointers,
+        // for both the movement tags and the reference tag
+        if (config.argumentPointerMovementRule.level != RuleLevel::Off ||
+            config.referencePointerRule.level != RuleLevel::Off) {
+
+            functionPointerTagRule =
+                std::make_unique<FunctionPointerTagRule>(
+                    config,
+                    suppressions,
+                    diagnostics
+                );
+
+            functionPointerTagRule->bindFinder(finder);
         }
 
         // struct resource management rule

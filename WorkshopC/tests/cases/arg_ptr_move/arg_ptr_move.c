@@ -265,18 +265,18 @@ void tagged_local(void)
     mod int* local = NULL; // bad: a local variable
 }
 
-// Calls through function pointers are not checked yet, so the tags are
-// not allowed on the parameters of function pointer types either
+// The tags are used on the parameters of function pointer types too,
+// see the function_pointer_tags test for how they are checked
 
-typedef void (*tagged_callback)(mod int* value); // bad: a parameter of a function pointer type
-void register_tagged_callback(void (*callback)(move int* value)); // bad: a parameter of a function pointer parameter
+typedef void (*tagged_callback)(mod int* value); // good: a parameter of a function pointer type
+void register_tagged_callback(void (*callback)(move int* value)); // good: a parameter of a function pointer parameter
 
 void tagged_local_callback(void)
 {
-    void (*callback)(out int** value) = NULL; // bad: a function pointer variable inside a function
+    void (*callback)(out int** value) = NULL; // good: a function pointer variable inside a function
 }
 
-typedef void (*plain_callback)(int* value); // good: function pointer parameters need no tags
+typedef void (*plain_callback)(int* value); // bad: a non-const pointer parameter of a function pointer type needs a tag too
 
 void use_plain_callback(const plain_callback callback)
 {

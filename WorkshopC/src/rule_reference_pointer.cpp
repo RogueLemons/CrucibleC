@@ -63,6 +63,13 @@ bool ReferencePointerRule::isReference(const Expr *expr) const {
     return ref && hasReferenceTag(dyn_cast<ParmVarDecl>(ref->getDecl()));
 }
 
+bool ReferencePointerRule::isFunction(const Expr *expr) const {
+    const auto *ref =
+        dyn_cast_or_null<DeclRefExpr>(expr ? expr->IgnoreParenImpCasts() : nullptr);
+
+    return ref && isa<FunctionDecl>(ref->getDecl());
+}
+
 bool ReferencePointerRule::isObject(const Expr *expr) const {
     if (!expr)
         return false;
@@ -106,10 +113,15 @@ bool ReferencePointerRule::isValidArgument(const Expr *arg) const {
     if (isReference(stripped))
         return true;
 
-    // &object
+    // A function, for a reference to a function pointer, is never null
+    if (isFunction(stripped))
+        return true;
+
+    // &object, or &function
     if (const auto *addressOf = dyn_cast<UnaryOperator>(stripped)) {
         if (addressOf->getOpcode() == UO_AddrOf)
-            return isObject(addressOf->getSubExpr());
+            return isObject(addressOf->getSubExpr()) ||
+                   isFunction(addressOf->getSubExpr());
     }
 
     // A string literal, or an array decaying to a pointer to its first element
@@ -141,15 +153,17 @@ void ReferencePointerRule::report(
 }
 
 void ReferencePointerRule::checkCall(const CallExpr *call, const SourceManager &sm) {
-    const FunctionDecl *callee = call->getDirectCallee();
+    // A function, or a function pointer whose type gives the tags
+    const CalleeParameters callee = calleeParametersOf(call);
 
-    if (!callee)
+    if (!callee.known)
         return;
 
-    const unsigned count = std::min(call->getNumArgs(), callee->getNumParams());
+    const unsigned count = std::min<unsigned>(
+        call->getNumArgs(), callee.parameters.size());
 
     for (unsigned i = 0; i < count; ++i) {
-        const ParmVarDecl *param = callee->getParamDecl(i);
+        const ParmVarDecl *param = callee.parameters[i];
 
         if (!hasReferenceTag(param))
             continue;
@@ -159,10 +173,16 @@ void ReferencePointerRule::checkCall(const CallExpr *call, const SourceManager &
         if (isValidArgument(arg))
             continue;
 
+        // A reference to a function pointer takes a function
+        const auto *pointer = param->getType()->getAs<PointerType>();
+        const bool toFunction = pointer && pointer->getPointeeType()->isFunctionType();
+
         report(DiagCode::ReferenceInvalidArgument, sm, arg->getExprLoc(),
             "argument for reference parameter '" + param->getNameAsString() +
-            "' of function '" + callee->getNameAsString() +
-            "' must be the address of an object (e.g. '&variable') or "
+            "' of " + callee.description +
+            (toFunction
+                ? " must be a function (e.g. 'add' or '&add') or "
+                : " must be the address of an object (e.g. '&variable') or ") +
             "another reference pointer, since a reference can never be null");
     }
 }
@@ -223,9 +243,15 @@ void ReferencePointerRule::checkTagPlacement(
 
     const auto *param = dyn_cast<ParmVarDecl>(decl);
 
-    // The tag belongs on the parameters of function declarations
-    if (param && isParameterOfFunctionDecl(param))
+    // The tag belongs on parameters, of functions and of function
+    // pointer types alike. Function parameters are checked with their
+    // function, see checkFunction.
+    if (param) {
+        if (!isParameterOfFunctionDecl(param))
+            checkFunctionPointerParameter(param, sm);
+
         return;
+    }
 
     for (const auto *attr : decl->attrs()) {
         const auto *annotate = dyn_cast<AnnotateAttr>(attr);
@@ -242,18 +268,26 @@ void ReferencePointerRule::checkTagPlacement(
                 name = named->getNameAsString();
         }
 
-        report(
-            param
-                ? DiagCode::ReferenceTagOnFunctionPointer
-                : DiagCode::ReferenceTagNotOnParameter,
-            sm, decl->getLocation(),
-            param
-                ? "reference tag on '" + name +
-                  "' may not be used on a parameter of a function pointer "
-                  "type, calls through function pointers are not checked"
-                : "reference tag on '" + name +
-                  "' may only be used on function parameters");
+        report(DiagCode::ReferenceTagNotOnParameter, sm, decl->getLocation(),
+            "reference tag on '" + name +
+            "' may only be used on function parameters");
     }
+}
+
+void ReferencePointerRule::checkFunctionPointerParameter(
+    const ParmVarDecl *param,
+    const SourceManager &sm)
+{
+    if (!hasReferenceTag(param) || param->getType()->isPointerType())
+        return;
+
+    const std::string name = param->getName().empty()
+        ? "parameter " + std::to_string(param->getFunctionScopeIndex() + 1)
+        : "parameter '" + param->getNameAsString() + "'";
+
+    report(DiagCode::ReferenceTagOnNonPointer, sm, param->getLocation(),
+        "reference tag on " + name +
+        " of a function pointer type may only be used on a pointer");
 }
 
 ReferencePointerRule::ReferencePointerRule(const Config &cfg,

@@ -14,6 +14,7 @@
 
 #include "config.hpp"
 #include "diagnostics.hpp"
+#include "function_pointer_tags.hpp"
 #include "suppression_manager.hpp"
 
 using namespace clang;

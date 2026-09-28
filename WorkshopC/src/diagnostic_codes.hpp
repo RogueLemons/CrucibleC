@@ -103,7 +103,7 @@
     X(MovementTagMismatch, "CCW0902", "movement-tag-mismatch", \
       "The movement attribute of a parameter differs between declaration and definition") \
     X(MovementTagNotOnParameter, "CCW0903", "movement-tag-not-on-parameter", \
-      "A movement attribute is used on something other than a function parameter") \
+      "A movement attribute is used on something other than a parameter of a function or function pointer type") \
     X(BorrowedPointerMoved, "CCW0904", "borrowed-pointer-moved", \
       "A modify or out parameter is moved to another function") \
     X(OperatorOnUntaggedParameter, "CCW0905", "operator-on-untagged-parameter", \
@@ -114,8 +114,8 @@
       "A callsite operator is missing for a parameter with a movement attribute") \
     X(UseAfterMove, "CCW0908", "use-after-move", \
       "A pointer is used after it may have been moved") \
-    X(MovementTagOnFunctionPointer, "CCW0909", "movement-tag-on-function-pointer", \
-      "A movement attribute is used on a parameter of a function pointer type") \
+    X(FunctionPointerMovementTagMismatch, "CCW0909", "function-pointer-movement-tag-mismatch", \
+      "A function or function pointer with other movement tags is assigned or passed to a function pointer, or called with it through a conditional") \
     /* 10 struct resource management: database */ \
     X(StructInvalidConstructor, "CCW1001", "struct-invalid-constructor", \
       "A struct does not have exactly one pod, raii or free constructor function") \
@@ -210,9 +210,9 @@
     X(ReferenceTagOnNonPointer, "CCW2003", "reference-tag-on-non-pointer", \
       "A reference tag is used on a parameter that is not a pointer") \
     X(ReferenceTagNotOnParameter, "CCW2004", "reference-tag-not-on-parameter", \
-      "A reference tag is used on something other than a function parameter") \
-    X(ReferenceTagOnFunctionPointer, "CCW2005", "reference-tag-on-function-pointer", \
-      "A reference tag is used on a parameter of a function pointer type")
+      "A reference tag is used on something other than a parameter of a function or function pointer type") \
+    X(FunctionPointerReferenceTagMismatch, "CCW2005", "function-pointer-reference-tag-mismatch", \
+      "A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional")
 
 enum class DiagCode {
 #define WORKSHOPC_CODE_ENUM(enumerator, code, name, description) enumerator,

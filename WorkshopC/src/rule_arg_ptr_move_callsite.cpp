@@ -159,13 +159,16 @@ std::string ArgumentPointerCallsiteRule::getOwnParamTag(const ParmVarDecl *P) co
 
 void ArgumentPointerCallsiteRule::checkMoveOfBorrowedParam(
     const CallExpr *CE,
-    const FunctionDecl *FD,
+    const CalleeParameters &callee,
     const SourceManager &sm)
 {
-    const unsigned count = std::min(CE->getNumArgs(), FD->getNumParams());
+    const unsigned count = std::min<unsigned>(
+        CE->getNumArgs(), callee.parameters.size());
 
     for (unsigned i = 0; i < count; ++i) {
-        if (getParamTag(FD->getParamDecl(i)) != kMoveTag)
+        const ParmVarDecl *target = callee.parameters[i];
+
+        if (!target || getParamTag(target) != kMoveTag)
             continue;
 
         // Strip parentheses, casts and the operator wrapper calls
@@ -212,9 +215,9 @@ void ArgumentPointerCallsiteRule::checkMoveOfBorrowedParam(
             std::string(ownTag == kModTag ? "modify" : "out") +
             " parameter '" + param->getNameAsString() +
             "' may not be moved to parameter '" +
-            FD->getParamDecl(i)->getNameAsString() +
-            "' of function '" + FD->getNameAsString() +
-            "', the function only borrows it and does not own it",
+            target->getNameAsString() +
+            "' of " + callee.description +
+            ", the function only borrows it and does not own it",
             sm,
             CE->getBeginLoc()
         );
@@ -283,24 +286,22 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
         return;
     }
 
-    const FunctionDecl *FD =
-        CE->getDirectCallee();
+    // A function, or a function pointer whose type gives the tags
+    const CalleeParameters callee =
+        calleeParametersOf(CE);
 
-    if (!FD)
+    if (!callee.known)
         return;
 
-    const std::string calleeName =
-        FD->getNameAsString();
-
     // Ignore wrapper helper calls
-    if (calleeName == "workshopc_modify" ||
-        calleeName == "workshopc_move" ||
-        calleeName == "workshopc_out")
+    if (callee.name == "workshopc_modify" ||
+        callee.name == "workshopc_move" ||
+        callee.name == "workshopc_out")
     {
         return;
     }
 
-    checkMoveOfBorrowedParam(CE, FD, sm);
+    checkMoveOfBorrowedParam(CE, callee, sm);
 
     for (unsigned i = 0;
          i < CE->getNumArgs();
@@ -308,8 +309,8 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
     {
         const ParmVarDecl *P = nullptr;
 
-        if (i < FD->getNumParams())
-            P = FD->getParamDecl(i);
+        if (i < callee.parameters.size())
+            P = callee.parameters[i];
 
         if (!P)
             continue;
@@ -355,9 +356,9 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                     operatorName +
                     "(...) used for parameter '" +
                     P->getNameAsString() +
-                    "' in function '" +
-                    FD->getNameAsString() +
-                    "', but the parameter is not tagged",
+                    "' in " +
+                    callee.description +
+                    ", but the parameter is not tagged",
                     sm,
                     CE->getBeginLoc()
                 );
@@ -381,9 +382,9 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                         DiagCode::OperatorDisabled,
                         "modify_operator(...) used for parameter '" +
                         P->getNameAsString() +
-                        "' in function '" +
-                        FD->getNameAsString() +
-                        "', but modify callsite operators are disabled",
+                        "' in " +
+                        callee.description +
+                        ", but modify callsite operators are disabled",
                         sm,
                         CE->getBeginLoc()
                     );
@@ -407,9 +408,9 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                         DiagCode::OperatorDisabled,
                         "move_operator(...) used for parameter '" +
                         P->getNameAsString() +
-                        "' in function '" +
-                        FD->getNameAsString() +
-                        "', but move callsite operators are disabled",
+                        "' in " +
+                        callee.description +
+                        ", but move callsite operators are disabled",
                         sm,
                         CE->getBeginLoc()
                     );
@@ -433,9 +434,9 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                         DiagCode::OperatorDisabled,
                         "out_operator(...) used for parameter '" +
                         P->getNameAsString() +
-                        "' in function '" +
-                        FD->getNameAsString() +
-                        "', but out callsite operators are disabled",
+                        "' in " +
+                        callee.description +
+                        ", but out callsite operators are disabled",
                         sm,
                         CE->getBeginLoc()
                     );
@@ -475,9 +476,8 @@ void ArgumentPointerCallsiteRule::run(const MatchFinder::MatchResult &result) {
                 operatorName +
                 "(...) at call site for parameter '" +
                 P->getNameAsString() +
-                "' in function '" +
-                FD->getNameAsString() +
-                "'",
+                "' in " +
+                callee.description,
                 sm,
                 CE->getBeginLoc()
             );

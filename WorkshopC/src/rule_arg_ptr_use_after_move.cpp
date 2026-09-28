@@ -130,15 +130,17 @@ void ArgumentPointerUseAfterMoveRule::walkCall(const CallExpr *call, State &stat
     for (const Expr *arg : call->arguments())
         walkExpr(arg, state);
 
-    const FunctionDecl *callee = call->getDirectCallee();
+    // A function, or a function pointer whose type gives the tags
+    const CalleeParameters callee = calleeParametersOf(call);
 
-    if (!callee)
+    if (!callee.known)
         return;
 
-    const unsigned count = std::min(call->getNumArgs(), callee->getNumParams());
+    const unsigned count = std::min<unsigned>(
+        call->getNumArgs(), callee.parameters.size());
 
     for (unsigned i = 0; i < count; ++i) {
-        const std::string tag = getParamTag(callee->getParamDecl(i));
+        const std::string tag = getParamTag(callee.parameters[i]);
         const Expr *arg = stripWrappers(call->getArg(i));
 
         // Passing '&ptr' to an out parameter does not count as reassigning
@@ -148,7 +150,7 @@ void ArgumentPointerUseAfterMoveRule::walkCall(const CallExpr *call, State &stat
             const VarDecl *var = getVariable(arg);
 
             if (isTracked(var))
-                state[var] = callee->getNameAsString();
+                state[var] = callee.name;
         }
     }
 }

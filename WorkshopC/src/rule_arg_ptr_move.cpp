@@ -92,10 +92,9 @@ void ArgumentPointerMovementRule::checkTagPlacement(
     if (!D || D->isImplicit())
         return;
 
-    const auto *param = dyn_cast<ParmVarDecl>(D);
-
-    // Tags belong on the parameters of function declarations
-    if (param && isParameterOfFunctionDecl(param))
+    // Tags belong on parameters, of functions and of function pointer
+    // types alike
+    if (isa<ParmVarDecl>(D))
         return;
 
     const SourceLocation expansionLoc = sm.getExpansionLoc(D->getLocation());
@@ -131,17 +130,53 @@ void ArgumentPointerMovementRule::checkTagPlacement(
 
         diagnostics.report(
             config.argumentPointerMovementRule.level,
-            param ? DiagCode::MovementTagOnFunctionPointer : DiagCode::MovementTagNotOnParameter,
+            DiagCode::MovementTagNotOnParameter,
             sm,
             expansionLoc,
-            param
-                ? "movement attribute (" + t.str() + ") on '" + name +
-                  "' may not be used on a parameter of a function pointer "
-                  "type, calls through function pointers are not checked"
-                : "movement attribute (" + t.str() + ") on '" + name +
-                  "' may only be used on function parameters"
+            "movement attribute (" + t.str() + ") on '" + name +
+            "' may only be used on function parameters"
         );
     }
+}
+
+void ArgumentPointerMovementRule::checkFunctionPointerParameter(
+    const ParmVarDecl *P,
+    const SourceManager &sm)
+{
+    // Function parameters are checked with their function
+    if (!P || P->isImplicit() || isParameterOfFunctionDecl(P))
+        return;
+
+    const QualType qt = P->getType();
+
+    if (!qt->isPointerType() || !isNonConstPointer(qt) || !getTag(P).empty())
+        return;
+
+    const SourceLocation expansionLoc = sm.getExpansionLoc(P->getLocation());
+
+    if (expansionLoc.isInvalid() ||
+        suppressions.isSuppressed(sm, expansionLoc) ||
+        sm.isInSystemHeader(expansionLoc))
+        return;
+
+    const std::string path = sm.getFilename(expansionLoc).str();
+
+    if (!path.empty() && isThirdParty(path))
+        return;
+
+    const std::string name = P->getName().empty()
+        ? "parameter " + std::to_string(P->getFunctionScopeIndex() + 1)
+        : "parameter '" + P->getNameAsString() + "'";
+
+    report(
+        DiagCode::MovementTagMissing,
+        "function pointer type " + name +
+        " uses non-const pointer; movement attribute required "
+        "(workshopc_move, workshopc_out, workshopc_modify)",
+        P,
+        sm,
+        expansionLoc
+    );
 }
 
 void ArgumentPointerMovementRule::bindFinder(MatchFinder &finder) {
@@ -160,6 +195,14 @@ void ArgumentPointerMovementRule::bindFinder(MatchFinder &finder) {
         this
     );
 
+    // Parameters of function pointer types
+    finder.addMatcher(
+        parmVarDecl(
+            unless(isExpansionInSystemHeader())
+        ).bind("param"),
+        this
+    );
+
     finder.addMatcher(
         callExpr(
             unless(isExpansionInSystemHeader())
@@ -172,6 +215,11 @@ void ArgumentPointerMovementRule::run(const MatchFinder::MatchResult &result) {
 
     if (const auto *tagged = result.Nodes.getNodeAs<Decl>("taggedDecl")) {
         checkTagPlacement(tagged, *result.SourceManager);
+        return;
+    }
+
+    if (const auto *param = result.Nodes.getNodeAs<ParmVarDecl>("param")) {
+        checkFunctionPointerParameter(param, *result.SourceManager);
         return;
     }
 
