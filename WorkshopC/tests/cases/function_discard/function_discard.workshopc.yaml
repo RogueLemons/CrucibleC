@@ -1,0 +1,5 @@
+# Function discard rule test configuration
+
+rules:
+  function_discard:
+    level: Warning

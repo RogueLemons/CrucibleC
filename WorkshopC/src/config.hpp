@@ -136,6 +136,10 @@ struct ReferencePointerRuleConfig {
     bool disableNullCheckRuleForReferencePointers = true;
 };
 
+struct FunctionDiscardRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -153,6 +157,7 @@ struct Config {
     StrictSwitchRuleConfig strictSwitchRule;
     GlobalVariableRuleConfig globalVariableRule;
     ReferencePointerRuleConfig referencePointerRule;
+    FunctionDiscardRuleConfig functionDiscardRule;
 
     std::vector<std::string> thirdPartyIncludes;
 

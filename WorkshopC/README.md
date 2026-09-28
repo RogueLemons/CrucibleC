@@ -21,6 +21,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
   - [Strict switch rule](#strict-switch-rule)
   - [Global variable rule](#global-variable-rule)
   - [Reference pointer rule](#reference-pointer-rule)
+  - [Function discard rule](#function-discard-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -222,6 +223,8 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW2003` | `reference-tag-on-non-pointer` | A reference tag is used on a parameter that is not a pointer |
 | `CCW2004` | `reference-tag-not-on-parameter` | A reference tag is used on something other than a parameter of a function or function pointer type |
 | `CCW2005` | `function-pointer-reference-tag-mismatch` | A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional |
+| | **21 — [Function discard](#function-discard-rule)** | |
+| `CCW2101` | `function-return-discarded` | A non-void function return value is discarded |
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
@@ -1394,6 +1397,22 @@ reader(NULL);                               // Triggers parser, a reference can 
 
 The tag works side by side with the [argument pointer movement rule](#argument-pointer-movement-rule), in any order, e.g. `void scale(MUTABLE REF float* value, float factor);` called as `scale(MUT(&value), 2.0f);`, or `void scale(borrows massive float* value, float factor);` called as `scale(lend(&value), 2.0f);` with the lowercase headers. The reference tag is not a movement tag, so a non-const reference still needs one of the movement tags when that rule is enabled.
 
+### Function discard rule
+This rule requires the result of every non-void function call to be used. An explicit cast to `void` documents that discarding the result is intentional and is allowed.
+
+```yaml
+function_discard:
+  level: Warning
+```
+
+```c
+int get_value(void);
+
+get_value();             // Triggers parser
+(void)get_value();       // OK: intentional discard
+int value = get_value(); // OK: result is used
+```
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -1764,7 +1783,6 @@ For Beta V1 it shall
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15)
 - Optionally enforce raii struct destroy calls in reverse init order
-- Add rule for disallowing function return discards (user can void cast at call location) unless function has discardable tag, or create a nodiscard tag instead
 
 For Beta V1.2 it shall
 - Add LSP support

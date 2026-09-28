@@ -333,6 +333,16 @@ void ConfigParser::applySetting(
 }
 
 void ConfigParser::applySetting(
+    FunctionDiscardRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+}
+
+void ConfigParser::applySetting(
     GlobalVariableRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -479,6 +489,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "reference_pointer") {
         applySetting(config.referencePointerRule, key, value);
+    }
+    else if (currentRule == "function_discard") {
+        applySetting(config.functionDiscardRule, key, value);
     }
 }
 

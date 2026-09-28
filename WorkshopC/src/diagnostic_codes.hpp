@@ -18,6 +18,7 @@
  *   09  argument_pointer_movement 18  strict_switch
  *                                 19  global_variable
  *                                 20  reference_pointer
+ *                                 21  function_discard
  *
  * Codes are never renumbered or reused: a removed check keeps its code
  * unused, and a new check gets the next free number of its rule. The
@@ -212,7 +213,10 @@
     X(ReferenceTagNotOnParameter, "CCW2004", "reference-tag-not-on-parameter", \
       "A reference tag is used on something other than a parameter of a function or function pointer type") \
     X(FunctionPointerReferenceTagMismatch, "CCW2005", "function-pointer-reference-tag-mismatch", \
-      "A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional")
+      "A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional") \
+    /* 21 function_discard */ \
+    X(FunctionReturnDiscarded, "CCW2101", "function-return-discarded", \
+      "A non-void function return value is discarded")
 
 enum class DiagCode {
 #define WORKSHOPC_CODE_ENUM(enumerator, code, name, description) enumerator,

@@ -129,3 +129,7 @@ rules:
   reference_pointer:
     level: Warning
     disable_null_check_rule_for_reference_pointers: true
+
+  # Function discard rule - forbids discarding return values of functions that return a value
+  function_discard:
+    level: Warning

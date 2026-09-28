@@ -20,6 +20,7 @@
 #include "rule_global_variable.hpp"
 #include "rule_reference_pointer.hpp"
 #include "rule_function_pointer_tags.hpp"
+#include "rule_function_discard.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -80,6 +81,7 @@ private:
     std::unique_ptr<GlobalVariableRule> globalVariableRule{};
     std::unique_ptr<ReferencePointerRule> referencePointerRule{};
     std::unique_ptr<FunctionPointerTagRule> functionPointerTagRule{};
+    std::unique_ptr<FunctionDiscardRule> functionDiscardRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -309,6 +311,17 @@ public:
                 );
 
             referencePointerRule->bindFinder(finder);
+        }
+
+        // Function discard rule
+        if (config.functionDiscardRule.level != RuleLevel::Off) {
+            functionDiscardRule = std::make_unique<FunctionDiscardRule>(
+                config,
+                suppressions,
+                diagnostics
+            );
+
+            functionDiscardRule->bindFinder(finder);
         }
 
         // Tags of functions assigned or passed to function pointers,

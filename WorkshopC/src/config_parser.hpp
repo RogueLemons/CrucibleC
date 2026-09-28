@@ -87,6 +87,12 @@ private:
     );
 
     static void applySetting(
+        FunctionDiscardRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    static void applySetting(
         GlobalVariableRuleConfig &cfg,
         const std::string &key,
         const std::string &value
