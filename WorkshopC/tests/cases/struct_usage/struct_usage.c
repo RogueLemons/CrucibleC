@@ -616,3 +616,74 @@ int outer_init(outer_t* self, int value)
     self->inner.vec = int_vector_make(value);               // bad: member of a member
     return 0;
 }
+
+// -------------------------------------------------------------
+// A raii struct with a raii field sets it in the initializer of
+// the value its make, copy and move functions build
+// -------------------------------------------------------------
+
+typedef struct color_holder
+{
+    color_t color;
+    int count;
+} color_holder_t;
+
+color_holder_t color_holder_make(int r, int g, int b, int a)
+{
+    color_holder_t self = { .color = color_make(r, g, b, a), .count = 1 }; // good: the raii field is set in the initializer
+    return self;
+}
+
+color_holder_t color_holder_copy(const color_holder_t* const self)
+{
+    return (color_holder_t){ .color = color_copy(&self->color), .count = self->count }; // good: also in a compound literal
+}
+
+color_holder_t color_holder_move(color_holder_t* const self)
+{
+    color_holder_t moved = { color_move(&self->color), self->count }; // good: also without field names
+    return moved;
+}
+
+void color_holder_destroy(color_holder_t* const self)
+{
+    if (!self)
+        return;
+
+    color_destroy(&self->color);    // good: the raii field is destroyed in the destroy function
+}
+
+color_holder_t color_holder_return(color_holder_t* self)
+{
+    if (!self)
+    {
+        color_holder_t invalid = {0};
+        invalid.count = -1;
+        return invalid;
+    }
+
+    return *self; // good: the raii field is returned as part of the struct
+}
+_Bool color_holder_valid(const color_holder_t* const self)
+{
+    if (!self)
+        return 0;
+
+    if (self->count < 0)
+        return 0;
+
+    return 1;
+}
+
+color_holder_t color_holder_make_assigned(int r, int g, int b, int a)
+{
+    color_holder_t self = color_holder_make(0, 0, 0, 0);
+    self.color = color_make(r, g, b, a); // bad: assigned after the initializer, the old value would leak
+    return color_holder_return(&self);
+}
+
+void initializer_outside_of_lifecycle_functions(void)
+{
+    color_holder_t holder = { .color = color_make(1, 2, 3, 4), .count = 1 }; // bad: only the lifecycle functions may use an initializer
+    color_holder_destroy(&holder);
+}

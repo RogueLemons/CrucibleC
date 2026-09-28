@@ -1055,6 +1055,37 @@ void use_greetings(void)
 }                                                   // Triggers parser, b and c are never destroyed
 ```
 
+##### Raii structs with raii fields
+A raii struct can hold other raii structs as fields. Since a raii value may not be reassigned, such a field is set in the initializer of the value the make, copy or move function builds, and not assigned afterwards. Only these lifecycle functions may initialize the struct with a brace initializer.
+
+```c
+typedef struct message
+{
+  d_str text;
+  int priority;
+} message;
+
+message message_make(const char* text, int priority)
+{
+  message self = { .text = dynamic_string_make(text), .priority = priority };  // OK
+  return self;
+}
+
+message message_copy(const message* self)
+{
+  return (message){ .text = dynamic_string_copy(&self->text), .priority = self->priority };  // OK
+}
+
+message message_make_later(const char* text)
+{
+  message self = message_make("", 0);
+  self.text = dynamic_string_make(text);            // Triggers parser, the old text would leak
+  return message_return(&self);
+}
+```
+
+If building a field needs steps first, e.g. checking that it is valid, do them with a local variable and move it into the initializer: `message self = { .text = dynamic_string_move(&text), .priority = 1 };`.
+
 This rule works better when combined with the [private members rule](#private-rule) or the [private alternative rule](#private-alternative-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled.
 
 ##### Arrays of raii structs

@@ -35,3 +35,5 @@ error: variable 'local' of type struct 'int_vector' cannot be reassigned with an
 error: struct variable 'copied' of type 'int_vector' should be initialized from a function return value [CCW1102]
 error: struct field 'self->vec' of type 'int_vector' cannot be reassigned with another struct value (raii) [CCW1108]
 error: struct field 'self->inner.vec' of type 'int_vector' cannot be reassigned with another struct value (raii) [CCW1108]
+error: struct field 'self.color' of type 'color' cannot be reassigned with another struct value (raii) [CCW1108]
+error: struct variable 'holder' of type 'color_holder' should be initialized from a function return value [CCW1102]
