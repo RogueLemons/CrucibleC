@@ -1,2 +1,3 @@
 warning: array variable 'local_values' may only be declared as a field inside a struct [CCW2201]
 warning: array field 'values' may only be passed directly to a standard-library or third-party function [CCW2202]
+warning: array variable 'ad_hoc_matrix' may only be declared as a field inside a struct [CCW2201]
