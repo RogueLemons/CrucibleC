@@ -9,6 +9,7 @@
 #include "struct_init_rule.hpp"
 #include "struct_cleanup_rule.hpp"
 #include "struct_raii_discard_rule.hpp"
+#include "struct_destroy_definition_rule.hpp"
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -23,6 +24,7 @@ private:
     StructInitRule *initRule = nullptr;
     StructCleanupRule *cleanupRule = nullptr;
     StructRaiiDiscardRule *raiiDiscardRule = nullptr;
+    StructDestroyDefinitionRule *destroyDefinitionRule = nullptr;
 
 public:
     FinderAndFinalizerConsumer(
@@ -31,7 +33,8 @@ public:
         StructDatabaseRule *databaseRule,
         StructInitRule *initRule,
         StructCleanupRule *cleanupRule,
-        StructRaiiDiscardRule *raiiDiscardRule);
+        StructRaiiDiscardRule *raiiDiscardRule,
+        StructDestroyDefinitionRule *destroyDefinitionRule);
 
     void HandleTranslationUnit(
         ASTContext &context) override;

@@ -93,6 +93,7 @@ rules:
     raii_use_after_destroy: false
     raii_struct_array_destroyer_suffix: _destroy_array
     raii_destroy_in_reverse_order: true
+    raii_standardized_destroy_definitions: true
     free_struct_creator_suffix: _init
 
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions

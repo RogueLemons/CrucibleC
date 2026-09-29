@@ -6,13 +6,15 @@ FinderAndFinalizerConsumer::FinderAndFinalizerConsumer(
     StructDatabaseRule *databaseRule,
     StructInitRule *initRule,
     StructCleanupRule *cleanupRule,
-    StructRaiiDiscardRule *raiiDiscardRule)
+    StructRaiiDiscardRule *raiiDiscardRule,
+    StructDestroyDefinitionRule *destroyDefinitionRule)
     : finder(finder),
       database(database),
       databaseRule(databaseRule),
       initRule(initRule),
       cleanupRule(cleanupRule),
-      raiiDiscardRule(raiiDiscardRule)
+      raiiDiscardRule(raiiDiscardRule),
+      destroyDefinitionRule(destroyDefinitionRule)
 {
 }
 
@@ -73,4 +75,15 @@ void FinderAndFinalizerConsumer::HandleTranslationUnit(
     // -------------------------------------------------
     if (raiiDiscardRule)
         raiiDiscardRule->finalize();
+
+    // -------------------------------------------------
+    // Phase 7:
+    //
+    // Check that the destroy function of each raii
+    // struct destroys all of its raii fields together,
+    // now that the database knows which fields are
+    // raii structs.
+    // -------------------------------------------------
+    if (destroyDefinitionRule)
+        destroyDefinitionRule->finalize();
 }

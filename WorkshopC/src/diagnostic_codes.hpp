@@ -170,6 +170,14 @@
       "The second argument of an array destroy function is not the size of the array") \
     X(RaiiDestroyNotReverseOrder, "CCW1207", "raii-destroy-not-reverse-order", \
       "A raii struct is destroyed before a later-declared raii struct") \
+    X(RaiiFieldNotDestroyed, "CCW1208", "raii-field-not-destroyed", \
+      "A raii field is never destroyed in the destroy function of its struct") \
+    X(RaiiFieldDestroyMisplaced, "CCW1209", "raii-field-destroy-misplaced", \
+      "A raii field is not destroyed directly in the destroy function body or directly inside an if statement there, together with the other raii fields") \
+    X(RaiiFieldMultipleDestroyCalls, "CCW1210", "raii-field-multiple-destroy-calls", \
+      "A raii field has multiple destroy calls in the destroy function of its struct") \
+    X(RaiiFieldDestroysInterrupted, "CCW1211", "raii-field-destroys-interrupted", \
+      "A return, goto or label between the raii field destroys may leave a struct partly destroyed") \
     /* 13 struct resource management: return values */ \
     X(RaiiReturnFunctionOutsideReturn, "CCW1301", "raii-return-function-outside-return", \
       "A raii return function is used outside of a return statement") \

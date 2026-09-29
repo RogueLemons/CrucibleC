@@ -72,6 +72,7 @@ set(SOURCES
     src/struct_init_rule.cpp
     src/struct_cleanup_rule.cpp
     src/struct_raii_discard_rule.cpp
+    src/struct_destroy_definition_rule.cpp
     src/rule_restricted_malloc.cpp
     src/rule_single_return.cpp
     src/rule_strict_switch.cpp

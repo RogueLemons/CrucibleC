@@ -279,6 +279,9 @@ void ConfigParser::applySetting(
     else if (key == "raii_destroy_in_reverse_order") {
         cfg.raiiDestroyInReverseOrder = parseBool(value);
     }
+    else if (key == "raii_standardized_destroy_definitions") {
+        cfg.raiiStandardizedDestroyDefinitions = parseBool(value);
+    }
 }
 
 std::string ConfigParser::unquote(const std::string &value) {

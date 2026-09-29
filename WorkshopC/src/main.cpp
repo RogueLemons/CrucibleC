@@ -94,6 +94,7 @@ private:
     std::unique_ptr<StructInitRule> structInitRule{};
     std::unique_ptr<StructCleanupRule> structCleanupRule{};
     std::unique_ptr<StructRaiiDiscardRule> structRaiiDiscardRule{};
+    std::unique_ptr<StructDestroyDefinitionRule> structDestroyDefinitionRule{};
 
 public:
     WorkshopFrontendAction(const Config &cfg, Diagnostics &diag)
@@ -424,6 +425,19 @@ public:
                 );
 
             structRaiiDiscardRule->bindFinder(finder);
+
+            // Raii struct destroy function definition rule
+            if (config.structResourceManagementRule.raiiStandardizedDestroyDefinitions) {
+                structDestroyDefinitionRule =
+                    std::make_unique<StructDestroyDefinitionRule>(
+                        config,
+                        suppressions,
+                        diagnostics,
+                        structDatabase
+                    );
+
+                structDestroyDefinitionRule->bindFinder(finder);
+            }
         }
 
         return std::make_unique<FinderAndFinalizerConsumer>(
@@ -432,7 +446,8 @@ public:
             structDatabaseRule.get(),
             structInitRule.get(),
             structCleanupRule.get(),
-            structRaiiDiscardRule.get()
+            structRaiiDiscardRule.get(),
+            structDestroyDefinitionRule.get()
         );
     }
 };

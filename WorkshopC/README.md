@@ -201,6 +201,10 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW1205` | `destroy-array-first-argument` | The first argument of an array destroy function is not the array itself |
 | `CCW1206` | `destroy-array-size` | The second argument of an array destroy function is not the size of the array |
 | `CCW1207` | `raii-destroy-not-reverse-order` | A raii struct is destroyed before a later-declared raii struct |
+| `CCW1208` | `raii-field-not-destroyed` | A raii field is never destroyed in the destroy function of its struct |
+| `CCW1209` | `raii-field-destroy-misplaced` | A raii field is not destroyed directly in the destroy function body or directly inside an if statement there, together with the other raii fields |
+| `CCW1210` | `raii-field-multiple-destroy-calls` | A raii field has multiple destroy calls in the destroy function of its struct |
+| `CCW1211` | `raii-field-destroys-interrupted` | A return, goto or label between the raii field destroys may leave a struct partly destroyed |
 | | **13 — [Struct resource management: return values](#raii-and-struct-resource-management)** | |
 | `CCW1301` | `raii-return-function-outside-return` | A raii return function is used outside of a return statement |
 | `CCW1302` | `pod-return` | A function returning a pod struct does not return a function return value or another struct variable |
@@ -996,6 +1000,7 @@ struct_resource_management:
     raii_use_after_destroy: false
     raii_struct_array_destroyer_suffix: _destroy_array
     raii_destroy_in_reverse_order: true
+    raii_standardized_destroy_definitions: true
     free_struct_creator_suffix: _init
 ```
 
@@ -1004,6 +1009,57 @@ struct_resource_management:
 - `raii_struct_array_destroyer_suffix` (default empty): enables arrays of raii structs outside of structs, see [arrays of raii structs](#arrays-of-raii-structs). When empty, arrays of raii structs are only allowed inside structs.
 - `raii_may_only_move_value_ref` (default `false`): when `true`, a raii move function may only be given the address of a variable, e.g. `dynamic_string_move(&name)`, so that only an object owned by the calling scope can be moved from. A pointer (`dynamic_string_move(name_ptr)`), a struct field (`&holder.name`, `&holder->name`) or anything behind a pointer (`&*name_ptr`) is reported. The lifecycle functions of any struct may still work through their `self` pointer, e.g. a struct's own return function moving `self`, or the move function of a struct with a raii field moving `&self->field`.
 - `raii_may_only_destroy_value_ref` (default `false`): the same for the destroy function, e.g. `dynamic_string_destroy(&name)`. The destroy function of a struct with raii fields may still destroy them with `&self->field`. Fields of [free structs](#free-struct) are not affected and may be destroyed from anywhere, e.g. `dynamic_string_destroy(&holder.name)` or `dynamic_string_destroy(&holder->name)`, since free structs come with no rules.
+- `raii_standardized_destroy_definitions` (default `false`): when `true`, the destroy function of a raii struct must destroy each of its raii fields exactly once. A field is destroyed with `<field struct>_destroy(&self->field)`, or `<field struct>_destroy_array(self->field, count)` for an array field. All the field destroys are statements side by side in one block, either:
+  - the body of the destroy function, or
+  - the then-block of an `if` statement directly in the body. The condition can be anything.
+
+  Destroys in a nested `if`, an `else` branch, a nested `{ }` block, a loop or a `switch` are reported. So are destroys split between two blocks. A `return` or `goto` before all the destroys, e.g. an early return when `self` is null, skips the struct as a whole and is allowed by this rule, though e.g. the [single return rule](#single-return-rule) may not allow it. A `return` or `goto` between the destroys is reported, and so is a label between them: both would leave the struct partly destroyed. Other statements, e.g. freeing a buffer, may come anywhere. With `raii_destroy_in_reverse_order`, the fields must be destroyed in reverse declaration order. Pod, free and pointer fields are not owned raii fields and are not affected.
+
+  A raii struct is always either fully alive or fully destroyed, never partly. Its make function brings every raii field to life, and its destroy function destroys every raii field together. A condition in the destroy function decides whether the struct as a whole is destroyed, e.g. when it is null or has been moved from, never which of its fields are. When every raii type has a valid empty state, a moved-from struct usually needs no condition at all: its fields are already empty, so destroying them does nothing.
+
+  ```c
+  struct owner { first_t first; char* buffer; second_t second; bool moved; };
+
+  void owner_destroy(owner_t* self)
+  {
+      if (self != NULL && !self->moved)       // OK: any condition
+      {
+          second_destroy(&self->second);      // OK: reverse declaration order
+          memory_free(self->buffer);          // OK: other statements may come in between
+          first_destroy(&self->first);        // OK
+      }
+  }
+
+  void split_destroy(split_t* self)
+  {
+      second_destroy(&self->second);
+
+      if (self->buffer != NULL)
+      {
+          first_destroy(&self->first);        // Triggers parser, not in the same block as 'second'
+      }
+  }
+
+  void early_return_destroy(early_return_t* self)
+  {
+      if (self == NULL)
+          return;                             // OK: skips the struct as a whole
+
+      second_destroy(&self->second);          // OK
+      first_destroy(&self->first);            // OK
+  }
+
+  void return_between_destroy(return_between_t* self)
+  {
+      second_destroy(&self->second);
+
+      if (self->moved)
+          return;                             // Triggers parser, 'first' would be left alive
+
+      first_destroy(&self->first);
+  }
+  ```
+
 #### POD structs
 Plain Old Data (POD) structs come with only one rule: they must always be initialized correctly. A pod struct requires a create function of signature `struct <structname> <structname>_pod(...)`. They are used to avoid uninitialized variables and make sure they are always initialized correctly. Every value of a pod struct must come from a function return value or another struct variable, whether it initializes a variable, is passed as an argument or is returned, so `{0}` and brace literals are only allowed in the `_pod` function.
 
@@ -2000,8 +2056,8 @@ For Beta V1 it shall
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod
+- Add forbid goto rule
 
 For Beta V1.2 it shall
 - Add LSP support
-- Optionally enforce all raii struct fields inside a raii struct to have their make functions called in the make function, same with destroy function
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
