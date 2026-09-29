@@ -1,0 +1,6 @@
+error: goto 'done' is not allowed [CCW2501]
+error: goto 'again' is not allowed [CCW2501]
+error: goto 'out' is not allowed [CCW2501]
+error: goto 'skip' is not allowed [CCW2501]
+error: computed goto is not allowed [CCW2501]
+error: goto 'clamp' is not allowed [CCW2501]

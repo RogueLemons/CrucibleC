@@ -82,6 +82,7 @@ set(SOURCES
     src/rule_function_discard.cpp
     src/rule_array_struct.cpp
     src/rule_const_field.cpp
+    src/rule_no_goto.cpp
     src/rule_span_struct.cpp
 )
 

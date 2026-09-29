@@ -24,6 +24,7 @@
 #include "rule_array_struct.hpp"
 #include "rule_span_struct.hpp"
 #include "rule_const_field.hpp"
+#include "rule_no_goto.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -88,6 +89,7 @@ private:
     std::unique_ptr<ArrayStructRule> arrayStructRule{};
     std::unique_ptr<SpanStructRule> spanStructRule{};
     std::unique_ptr<ConstFieldRule> constFieldRule{};
+    std::unique_ptr<NoGotoRule> noGotoRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -362,6 +364,17 @@ public:
             );
 
             constFieldRule->bindFinder(finder);
+        }
+
+        // No goto rule
+        if (config.noGotoRule.level != RuleLevel::Off) {
+            noGotoRule = std::make_unique<NoGotoRule>(
+                config,
+                suppressions,
+                diagnostics
+            );
+
+            noGotoRule->bindFinder(finder);
         }
 
         // Tags of functions assigned or passed to function pointers,

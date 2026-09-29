@@ -25,6 +25,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
   - [Array struct rule](#array-struct-rule)
   - [Span struct rule](#span-struct-rule)
   - [Const field rule](#const-field-rule)
+  - [No goto rule](#no-goto-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -250,6 +251,8 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW2309` | `array-used-after-span` | An array that has a span is used directly instead of through its span |
 | | **24 — [Const field](#const-field-rule)** | |
 | `CCW2401` | `const-field` | A struct field is const itself, e.g. `const int` or `int* const`, a pointer to const is allowed |
+| | **25 — [No goto](#no-goto-rule)** | |
+| `CCW2501` | `goto-not-allowed` | A goto statement is used, including a computed goto |
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
@@ -1701,6 +1704,27 @@ struct values
 };
 ```
 
+### No goto rule
+This rule forbids `goto` statements. That covers `goto label;` and the computed `goto *address;` of GNU C, also when hidden in a macro. Loops, `break`, `continue` and `return` cover the same needs in a structured way. Labels on their own are not reported, only the jumps to them.
+
+```yaml
+no_goto:
+  level: Error
+```
+
+```c
+int scale(int value)
+{
+  if (value < 0)
+    goto done;        // Triggers parser
+
+  value = value * 2;
+
+done:                 // OK: a label is not a jump
+  return value;
+}
+```
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -2072,7 +2096,6 @@ For Beta V1 it shall
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod (vtable free even if no init func)
-- Add forbid goto rule
 
 For Beta V1.2 it shall
 - Add LSP support

@@ -161,3 +161,7 @@ rules:
   # Const field rule - forbids struct fields that are const (but not pointer to const)
   const_field:
     level: Warning
+
+  # No goto rule - forbids the use of goto statements
+  no_goto:
+    level: Error

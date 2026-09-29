@@ -1,0 +1,8 @@
+# No goto rule: goto statements are not allowed
+
+third_party_includes:
+  - external/
+
+rules:
+  no_goto:
+    level: Error

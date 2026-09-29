@@ -6,19 +6,19 @@
  * Every diagnostic WorkshopC can report has a code CCWrrcc (CrucibleC
  * WorkshopC): 'rr' is the rule and 'cc' the check within that rule.
  *
- *   00  WorkshopC itself (suppression comments)
- *   01  enum                                   13  struct resource management: return values
- *   02  private                                14  (reserved for future rules)
- *   03  private_alternative                    15  (reserved for future rules)
- *   04  function_pointer                       16  restricted_malloc
- *   05  typedef_struct                         17  single_return
- *   06  assignment                             18  strict_switch
- *   07  prefix_namespace                       19  global_variable
- *   08  null_check                             20  reference_pointer
- *   09  argument_pointer_movement              21  function_discard
- *   10  struct resource management: database   22  array_struct
- *   11  struct resource management: init       23  span_struct
- *   12  struct resource management: cleanup    24  const_field
+ *   00  WorkshopC itself (suppressions)        13  struct resource management: return values
+ *   01  enum                                   14  (reserved for future rules)
+ *   02  private                                15  (reserved for future rules)
+ *   03  private_alternative                    16  restricted_malloc
+ *   04  function_pointer                       17  single_return
+ *   05  typedef_struct                         18  strict_switch
+ *   06  assignment                             19  global_variable
+ *   07  prefix_namespace                       20  reference_pointer
+ *   08  null_check                             21  function_discard
+ *   09  argument_pointer_movement              22  array_struct
+ *   10  struct resource management: database   23  span_struct
+ *   11  struct resource management: init       24  const_field
+ *   12  struct resource management: cleanup    25  no_goto
  *
  * Codes are never renumbered or reused: a removed check keeps its code
  * unused, and a new check gets the next free number of its rule. The
@@ -257,7 +257,10 @@
       "An array that has a span is used directly instead of through its span") \
     /* 24 const_field */ \
     X(ConstField, "CCW2401", "const-field", \
-      "A struct field is const itself, e.g. 'const int' or 'int* const', a pointer to const is allowed")
+      "A struct field is const itself, e.g. 'const int' or 'int* const', a pointer to const is allowed") \
+    /* 25 no_goto */ \
+    X(GotoNotAllowed, "CCW2501", "goto-not-allowed", \
+      "A goto statement is used, including a computed goto")
 
 enum class DiagCode {
 #define WORKSHOPC_CODE_ENUM(enumerator, code, name, description) enumerator,

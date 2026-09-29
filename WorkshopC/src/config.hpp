@@ -219,6 +219,10 @@ struct ConstFieldRuleConfig {
     RuleLevel level = RuleLevel::Off;
 };
 
+struct NoGotoRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -240,6 +244,7 @@ struct Config {
     ArrayStructRuleConfig arrayStructRule;
     SpanStructRuleConfig spanStructRule;
     ConstFieldRuleConfig constFieldRule;
+    NoGotoRuleConfig noGotoRule;
 
     // List of paths to third-party include directories, relative to the config file
     std::vector<std::string> thirdPartyIncludes;

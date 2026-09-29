@@ -421,6 +421,16 @@ void ConfigParser::applySetting(
 }
 
 void ConfigParser::applySetting(
+    NoGotoRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+}
+
+void ConfigParser::applySetting(
     GlobalVariableRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -579,6 +589,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "const_field") {
         applySetting(config.constFieldRule, key, value);
+    }
+    else if (currentRule == "no_goto") {
+        applySetting(config.noGotoRule, key, value);
     }
 }
 
