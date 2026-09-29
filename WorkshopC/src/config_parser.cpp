@@ -405,6 +405,16 @@ void ConfigParser::applySetting(
 }
 
 void ConfigParser::applySetting(
+    ConstFieldRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+}
+
+void ConfigParser::applySetting(
     GlobalVariableRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -560,6 +570,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "span_struct") {
         applySetting(config.spanStructRule, key, value);
+    }
+    else if (currentRule == "const_field") {
+        applySetting(config.constFieldRule, key, value);
     }
 }
 

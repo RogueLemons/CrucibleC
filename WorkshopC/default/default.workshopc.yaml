@@ -155,3 +155,7 @@ rules:
     only_allow_span_data_passing_in_one_line_static_functions: false
     allow_spans_to_be_given_fewer_elements_than_their_size: true
     require_span_immediately_after_array: false
+
+  # Const field rule - forbids struct fields that are const (but not pointer to const)
+  const_field:
+    level: Warning

@@ -23,6 +23,7 @@
 #include "rule_function_discard.hpp"
 #include "rule_array_struct.hpp"
 #include "rule_span_struct.hpp"
+#include "rule_const_field.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -86,6 +87,7 @@ private:
     std::unique_ptr<FunctionDiscardRule> functionDiscardRule{};
     std::unique_ptr<ArrayStructRule> arrayStructRule{};
     std::unique_ptr<SpanStructRule> spanStructRule{};
+    std::unique_ptr<ConstFieldRule> constFieldRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -348,6 +350,17 @@ public:
             );
 
             spanStructRule->bindFinder(finder);
+        }
+
+        // Const field rule
+        if (config.constFieldRule.level != RuleLevel::Off) {
+            constFieldRule = std::make_unique<ConstFieldRule>(
+                config,
+                suppressions,
+                diagnostics
+            );
+
+            constFieldRule->bindFinder(finder);
         }
 
         // Tags of functions assigned or passed to function pointers,

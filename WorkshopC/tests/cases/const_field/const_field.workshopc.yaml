@@ -1,0 +1,8 @@
+# Const field rule: struct fields may not be const themselves, but may point to const data
+
+third_party_includes:
+  - external/
+
+rules:
+  const_field:
+    level: Warning

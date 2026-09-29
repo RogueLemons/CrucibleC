@@ -24,6 +24,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
   - [Function discard rule](#function-discard-rule)
   - [Array struct rule](#array-struct-rule)
   - [Span struct rule](#span-struct-rule)
+  - [Const field rule](#const-field-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -243,6 +244,8 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW2307` | `span-missing-after-array` | An array outside of a struct is not followed right away by a span variable holding the whole array |
 | `CCW2308` | `span-data-outside-wrapper` | The data of a span is passed on outside of a static function with a single statement |
 | `CCW2309` | `array-used-after-span` | An array that has a span is used directly instead of through its span |
+| | **24 — [Const field](#const-field-rule)** | |
+| `CCW2401` | `const-field` | A struct field is const itself, e.g. `const int` or `int* const`, a pointer to const is allowed |
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
@@ -1603,6 +1606,29 @@ void foo()
 }
 ```
 
+### Const field rule
+This rule forbids struct and union fields that are const themselves. A const field makes the whole struct impossible to assign or to set up in place after its declaration. For example, a make function can't fill in a struct through a pointer. A pointer field may still point to const data, since the field itself can still be assigned.
+
+```yaml
+const_field:
+  level: Warning
+```
+
+```c
+struct values
+{
+  const int* pointer_to_const;      // OK: only the data it points to is const
+  const char* name;                 // OK
+  int* const* to_const_pointer;     // OK: the field itself is not const
+
+  const int constant;               // Triggers parser
+  int* const const_pointer;         // Triggers parser, only the data it points to may be const
+  const int* const both;            // Triggers parser
+  const int constants[3];           // Triggers parser, an array of const elements
+  const_int_t typedef_constant;     // Triggers parser, const through a typedef
+};
+```
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -1974,7 +2000,6 @@ For Beta V1 it shall
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod
-- Add rule for forbidding const struct fields
 
 For Beta V1.2 it shall
 - Add LSP support

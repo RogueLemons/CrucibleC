@@ -105,6 +105,12 @@ private:
     );
 
     static void applySetting(
+        ConstFieldRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    static void applySetting(
         GlobalVariableRuleConfig &cfg,
         const std::string &key,
         const std::string &value

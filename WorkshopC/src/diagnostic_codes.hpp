@@ -7,18 +7,18 @@
  * WorkshopC): 'rr' is the rule and 'cc' the check within that rule.
  *
  *   00  WorkshopC itself (suppression comments)
- *   01  enum                                   12  struct resource management: cleanup
- *   02  private                                13  struct resource management: return values
- *   03  private_alternative                    14  (reserved for future rules)
- *   04  function_pointer                       15  (reserved for future rules)
- *   05  typedef_struct                         16  restricted_malloc
- *   06  assignment                             17  single_return
- *   07  prefix_namespace                       18  strict_switch
- *   08  null_check                             19  global_variable
- *   09  argument_pointer_movement              20  reference_pointer
- *   10  struct resource management: database   21  function_discard
- *   11  struct resource management: init       22  array_struct
- *                                              23  span_struct
+ *   01  enum                                   13  struct resource management: return values
+ *   02  private                                14  (reserved for future rules)
+ *   03  private_alternative                    15  (reserved for future rules)
+ *   04  function_pointer                       16  restricted_malloc
+ *   05  typedef_struct                         17  single_return
+ *   06  assignment                             18  strict_switch
+ *   07  prefix_namespace                       19  global_variable
+ *   08  null_check                             20  reference_pointer
+ *   09  argument_pointer_movement              21  function_discard
+ *   10  struct resource management: database   22  array_struct
+ *   11  struct resource management: init       23  span_struct
+ *   12  struct resource management: cleanup    24  const_field
  *
  * Codes are never renumbered or reused: a removed check keeps its code
  * unused, and a new check gets the next free number of its rule. The
@@ -246,7 +246,10 @@
     X(SpanDataOutsideWrapper, "CCW2308", "span-data-outside-wrapper", \
       "The data of a span is passed on outside of a static function with a single statement") \
     X(ArrayUsedAfterSpan, "CCW2309", "array-used-after-span", \
-      "An array that has a span is used directly instead of through its span")
+      "An array that has a span is used directly instead of through its span") \
+    /* 24 const_field */ \
+    X(ConstField, "CCW2401", "const-field", \
+      "A struct field is const itself, e.g. 'const int' or 'int* const', a pointer to const is allowed")
 
 enum class DiagCode {
 #define WORKSHOPC_CODE_ENUM(enumerator, code, name, description) enumerator,

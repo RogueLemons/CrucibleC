@@ -189,6 +189,10 @@ struct SpanStructRuleConfig {
     bool onlyAllowSpanDataPassingInOneLineStaticFunctions = false;
 };
 
+struct ConstFieldRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -209,6 +213,7 @@ struct Config {
     FunctionDiscardRuleConfig functionDiscardRule;
     ArrayStructRuleConfig arrayStructRule;
     SpanStructRuleConfig spanStructRule;
+    ConstFieldRuleConfig constFieldRule;
 
     // List of paths to third-party include directories, relative to the config file
     std::vector<std::string> thirdPartyIncludes;

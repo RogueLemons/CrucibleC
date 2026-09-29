@@ -19,7 +19,8 @@ file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
 
 add_library(workshopc_tests OBJECT ${TEST_SOURCES})
 
-# Lets the tests include the shared "headers/..." and "external/..."
+# Lets the tests include the shared "headers/...", "external/..." and
+# "system/..." (headers marked with '#pragma GCC system_header')
 target_include_directories(workshopc_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
