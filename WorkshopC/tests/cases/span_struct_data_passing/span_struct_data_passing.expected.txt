@@ -1,0 +1,7 @@
+warning: 'span.data' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass 'span' itself instead [CCW2306]
+warning: 'span.data' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass 'span' itself instead [CCW2306]
+warning: 'span_ptr->data' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass '*span_ptr' itself instead [CCW2306]
+warning: 'view.data' of const span struct 'int_const_span' may only be passed to a standard-library or third-party function, pass 'view' itself instead [CCW2306]
+warning: 'span.data' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass 'span' itself instead [CCW2306]
+warning: 'span.data' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass 'span' itself instead [CCW2306]
+warning: 'span.data' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass 'span' itself instead [CCW2306]

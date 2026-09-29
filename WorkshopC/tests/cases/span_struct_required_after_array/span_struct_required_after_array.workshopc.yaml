@@ -1,0 +1,17 @@
+# Span struct checks where every array outside of a struct must be followed by its span
+
+third_party_includes:
+  - external/
+
+rules:
+  span_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions_and_spans: false
+    span_struct_suffix: _span
+    const_span_struct_suffix: _const_span
+    require_span_immediately_after_array: true
+
+  struct_resource_management:
+    level: Warning
+    pod_struct_creator_suffix: _pod
+    free_struct_creator_suffix: _init

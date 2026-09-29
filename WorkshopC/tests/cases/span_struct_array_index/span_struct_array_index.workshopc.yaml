@@ -1,0 +1,17 @@
+# Span struct checks for spans that start inside an array
+
+third_party_includes:
+  - external/
+
+rules:
+  span_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions_and_spans: true
+    span_struct_suffix: _span
+    const_span_struct_suffix: _const_span
+    allow_spans_to_be_given_fewer_elements_than_their_size: false
+
+  struct_resource_management:
+    level: Warning
+    pod_struct_creator_suffix: _pod
+    free_struct_creator_suffix: _init

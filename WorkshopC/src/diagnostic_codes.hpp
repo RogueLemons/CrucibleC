@@ -18,6 +18,7 @@
  *   09  argument_pointer_movement              20  reference_pointer
  *   10  struct resource management: database   21  function_discard
  *   11  struct resource management: init       22  array_struct
+ *                                              23  span_struct
  *
  * Codes are never renumbered or reused: a removed check keeps its code
  * unused, and a new check gets the next free number of its rule. The
@@ -222,7 +223,26 @@
     X(ArrayOutsideStruct, "CCW2201", "array-outside-struct", \
       "An array may only be declared as a field inside a struct") \
     X(ArrayPassedToNonLibraryFunction, "CCW2202", "array-passed-to-non-library-function", \
-      "An array field may only be passed directly to a standard-library or third-party function")
+      "An array field may only be passed directly to a standard-library or third-party function") \
+    /* 23 span_struct */ \
+    X(SpanInvalidDefinition, "CCW2301", "span-invalid-definition", \
+      "A span struct must contain only a pointer field named data and then a size_t field named size") \
+    X(SpanUninitialized, "CCW2302", "span-uninitialized", \
+      "A span struct must be initialized at declaration") \
+    X(SpanArrayCount, "CCW2303", "span-array-count", \
+      "A span struct array initializer must use the array element count") \
+    X(SpanArrayPassedToNonLibraryFunction, "CCW2304", "span-array-passed-to-non-library-function", \
+      "An array may only be passed to a standard-library, third-party, span, or pod function") \
+    X(SpanConstMismatch, "CCW2305", "span-const-mismatch", \
+      "A span struct holds a pointer to const data, or a const span struct a pointer to non-const data") \
+    X(SpanDataPassedToNonLibraryFunction, "CCW2306", "span-data-passed-to-non-library-function", \
+      "The data of a span, or a pointer returned by a function named after it, is passed to a function that is not a standard-library or third-party function") \
+    X(SpanMissingAfterArray, "CCW2307", "span-missing-after-array", \
+      "An array outside of a struct is not followed right away by a span variable holding the whole array") \
+    X(SpanDataOutsideWrapper, "CCW2308", "span-data-outside-wrapper", \
+      "The data of a span is passed on outside of a static function with a single statement") \
+    X(ArrayUsedAfterSpan, "CCW2309", "array-used-after-span", \
+      "An array that has a span is used directly instead of through its span")
 
 enum class DiagCode {
 #define WORKSHOPC_CODE_ENUM(enumerator, code, name, description) enumerator,

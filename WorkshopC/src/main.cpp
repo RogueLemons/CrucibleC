@@ -22,6 +22,7 @@
 #include "rule_function_pointer_tags.hpp"
 #include "rule_function_discard.hpp"
 #include "rule_array_struct.hpp"
+#include "rule_span_struct.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -84,6 +85,7 @@ private:
     std::unique_ptr<FunctionPointerTagRule> functionPointerTagRule{};
     std::unique_ptr<FunctionDiscardRule> functionDiscardRule{};
     std::unique_ptr<ArrayStructRule> arrayStructRule{};
+    std::unique_ptr<SpanStructRule> spanStructRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -335,6 +337,17 @@ public:
             );
 
             arrayStructRule->bindFinder(finder);
+        }
+
+        // Span struct rule
+        if (config.spanStructRule.level != RuleLevel::Off) {
+            spanStructRule = std::make_unique<SpanStructRule>(
+                config,
+                suppressions,
+                diagnostics
+            );
+
+            spanStructRule->bindFinder(finder);
         }
 
         // Tags of functions assigned or passed to function pointers,

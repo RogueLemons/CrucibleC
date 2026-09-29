@@ -1,0 +1,6 @@
+warning: array 'values' may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: 'int_span_data(...)' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass the span itself instead [CCW2306]
+warning: 'int_span_data(...)' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass the span itself instead [CCW2306]
+warning: 'int_const_span_data(...)' of const span struct 'int_const_span' may only be passed to a standard-library or third-party function, pass the span itself instead [CCW2306]
+warning: 'span.data' of span struct 'int_span' may only be passed to a standard-library or third-party function, pass 'span' itself instead [CCW2306]
+warning: private field 'data' may only be accessed from a function named starting with 'int_span' that takes a pointer to 'int_span' named 'self' as its first parameter [CCW0302]

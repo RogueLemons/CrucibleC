@@ -23,6 +23,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
   - [Reference pointer rule](#reference-pointer-rule)
   - [Function discard rule](#function-discard-rule)
   - [Array struct rule](#array-struct-rule)
+  - [Span struct rule](#span-struct-rule)
   - [Disable section](#disable-section)
   - [Adjust code for parser](#adjust-code-for-parser)
 - [WorkshopC Build System Documentation](#workshopc-build-system-documentation)
@@ -230,6 +231,16 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | | **22 — [Array struct](#array-struct-rule)** | |
 | `CCW2201` | `array-outside-struct` | An array is declared outside a struct field |
 | `CCW2202` | `array-passed-to-non-library-function` | A struct array field is passed to a non-standard-library and non-third-party function |
+| | **23 — [Span struct](#span-struct-rule)** | |
+| `CCW2301` | `span-invalid-definition` | A span struct does not contain only `data` and `size` fields |
+| `CCW2302` | `span-uninitialized` | A span struct is not initialized at declaration |
+| `CCW2303` | `span-array-count` | A span array initializer or pod creator does not use the array element count |
+| `CCW2304` | `span-array-passed-to-non-library-function` | An array is passed to a function that is not a standard-library, third-party, span, or pod function |
+| `CCW2305` | `span-const-mismatch` | A span struct holds a pointer to const data, or a const span struct a pointer to non-const data |
+| `CCW2306` | `span-data-passed-to-non-library-function` | The data of a span, or a pointer returned by a function named after it, is passed to a function that is not a standard-library or third-party function |
+| `CCW2307` | `span-missing-after-array` | An array outside of a struct is not followed right away by a span variable holding the whole array |
+| `CCW2308` | `span-data-outside-wrapper` | The data of a span is passed on outside of a static function with a single statement |
+| `CCW2309` | `array-used-after-span` | An array that has a span is used directly instead of through its span |
 
 ## Config behavior
 The config is a yaml file that must have a certain format, as shown in the default (linked above). It first sets a list of third party folders which become unaffected by the parser, and the folder containing `compile_commands.json` (`compile_commands_dir`, relative to the config file), and then provides multiple individual rules can be set to `Off`, `Warning`, or `Error` in their `level` setting. This way the user can selectively enable only the rules that help their project.
@@ -1451,6 +1462,116 @@ int loose_buffer[4]; // Triggers parser: not a struct field
 
 Standard-library functions are recognized from system headers. Third-party functions are recognized when their declarations come from a path listed in `third_party_includes`.
 
+### Span struct rule
+This rule standardizes span types that pair a pointer with an element count. Any struct whose name ends with `span_struct_suffix` or `const_span_struct_suffix` must contain exactly two fields: a pointer named `data` and a `size_t` named `size`.
+
+```yaml
+span_struct:
+  level: Warning
+  only_allow_array_passing_to_library_functions_and_spans: true
+  span_struct_suffix: _span
+  const_span_struct_suffix: _const_span
+  allow_spans_to_be_given_fewer_elements_than_their_size: false
+  require_span_immediately_after_array: false
+  only_allow_span_data_passing_in_one_line_static_functions: false
+```
+
+A const span is a read-only view: it works exactly like a span, but holds a pointer to const data and is named with `const_span_struct_suffix`. A span may change the data it points to, so its pointer may not point to const data, and a const span may not, so its pointer must. A const span may still view data that can change, e.g. a normal array. The const suffix is checked first, so it may end with the span suffix, as `_const_span` ends with `_span`.
+
+```c
+struct int_span { int* data; size_t size; };                    // OK
+struct int_const_span { const int* data; size_t size; };        // OK
+struct const_data_span { const int* data; size_t size; };       // Triggers parser, const data needs a const span
+struct mutable_data_const_span { int* data; size_t size; };     // Triggers parser, a const span needs const data
+
+const int constants[2] = { 4, 5 };
+int_const_span_t view = { constants, 2 };                       // OK
+```
+
+Only the data decides the kind of span: a const pointer to non-const data, `int* const data`, is a normal span.
+
+A span variable must be initialized at declaration. When an array is used in its initializer, the `size` value must be a constant expression equal to the array's element count. When struct resource management is enabled, the same count is required when an array is passed to the span's pod creator: a function named `<span struct name><pod struct creator suffix>` that returns the span, e.g. `int_span_t int_span_pod(int* data, size_t size)`. A function that only has a name like it, e.g. one ending with the pod suffix for a span that does not exist, or one that returns something else, is a normal project function. With `allow_spans_to_be_given_fewer_elements_than_their_size: true`, the count may also be smaller than the array's element count, so a span can cover only the start of an array, e.g. `{ values, 2 }` for a 3 element array. It may never be larger, and it must still be a constant so it can be checked.
+
+A span can also start inside an array, at `&array[index]` or `array + index`. Its count is then checked against the elements left from that index, so `{ &values[3], 7 }` is right for a 10 element array. The index must be a constant within the array, and an index past its end is reported.
+
+```c
+int values[10];
+int_span_t tail = { &values[3], 7 };           // OK, the 7 elements left from index 3
+int_span_t rest = { values + 3, 7 };           // OK, the same
+int_span_t wrong = { &values[3], 10 };         // Triggers parser, only 7 elements are left
+int_span_t outside = { &values[12], 1 };       // Triggers parser, index 12 is outside of the array
+```
+
+With `require_span_immediately_after_array: true`, every array outside of a struct, local, static or global, must be followed right away by a span or const span variable holding the whole array: for a local array in the next statement, for a global in the next declaration of the file. The span must start at the beginning of the array, `values` or `&values[0]`, and hold its full size, with an initializer or the span's pod creator. After that, the span is the one way to reach the array: the array may not be named again, except in the span's initializer and in code that is never evaluated, `sizeof`, `_Alignof` and `__typeof__`. Elements are reached through the span, e.g. `values_span.data[1]`, or through the span's functions, and a matrix through its span of rows, e.g. `matrix_span.data[1][2]`. An array without its span only gets the missing span reported, not every use of it.
+
+```c
+int values[3] = { 1, 2, 3 };
+int_span_t values_span = { values, 3 };          // OK
+
+int a[2], b[3];
+int_span_t a_span = { a, 2 }, b_span = { b, 3 }; // OK, one declaration for both
+
+int lonely[3];                                   // Triggers parser, no span follows
+int count = 0;
+
+values_span.data[1] = 4;                         // OK, through the span
+size_t bytes = sizeof(values);                   // OK, never evaluated
+values[1] = 4;                                   // Triggers parser, use values_span instead
+int* pointer = values;                           // Triggers parser, same
+```
+
+With `only_allow_span_data_passing_in_one_line_static_functions: true`, the data of a span, including a pointer returned by a function named after it, may only be passed on inside a static function whose body is a single statement: one expression or one `return`, and not a comma expression. Every place that hands raw data to an unsafe function, e.g. from the standard library, is then a small wrapper that takes spans and is easy to review on its own, and all other code passes the spans themselves. Combined with `only_allow_array_passing_to_library_functions_and_spans`, a wrapper may still only hand the data to standard-library and third-party functions.
+
+```c
+static void int_span_copy(int_span_t destination, int_span_t source)
+{
+  memcpy(destination.data, source.data, source.size * sizeof(int));   // OK, a one-statement static wrapper
+}
+
+void example(int_span_t a, int_span_t b)
+{
+  int_span_copy(a, b);                                                // OK, spans all the way
+  memcpy(a.data, b.data, 3 * sizeof(int));                            // Triggers parser, raw data outside a wrapper
+}
+```
+
+With `only_allow_array_passing_to_library_functions_and_spans: false`, only the span shape and initialization/count rules apply. With it set to `true`, arrays may only be passed directly to standard-library functions, configured third-party functions, span pod creators, or struct initializers. This prevents array-to-pointer decay from hiding the array length and helps avoid passing an incorrect size to a function. The data of a span or const span is the array it views, so it is restricted too: `span.data`, `span->data` and pointer arithmetic on it such as `span.data + 1` may only be passed to standard-library and third-party functions. A project function takes the span itself instead of its data and size separately, and not even a pod creator may get the data, since the size given with it could not be checked. The same goes for the pointer returned by a function named after the span, e.g. a getter `int* int_span_data(const int_span_t* self)`, when it is passed on directly. A pointer to a single element, e.g. `&span.data[i]`, reading or writing elements, and a pointer to the span itself are not restricted.
+
+```c
+void process_ints(int* data, size_t size);
+void process_span(int_span_t span);
+
+process_span(span);                                     // OK
+memcpy(span.data, other, 3 * sizeof(int));              // OK, standard library
+edit_value(&span.data[0]);                              // OK, a single element
+process_ints(span.data, span.size);                     // Triggers parser, pass the span instead
+process_ints(int_span_data(&span), 3);                  // Triggers parser, the getter returns the span's data
+int_span_t rest = int_span_pod(span.data + 1, 2);       // Triggers parser, the size can not be checked
+```
+
+Making a smaller span from a span belongs in the span's own functions, where the data can be combined with a checked size, e.g. with an initializer. Together with the [private alternative rule](#private-alternative-rule) and private `data` and `size` fields, only those functions can reach them at all.
+
+```c
+struct integer_span
+{
+  int* data;
+  size_t size;
+};
+typedef struct integer_span integer_span_t;
+
+integer_span_t integer_span_pod(int* data, size_t size)
+{
+  return (integer_span_t){ data , size };
+}
+
+void foo()
+{
+  int array[110] = { 0 };
+  integer_span_t array_span = integer_span_pod(array, 110);
+  use_integers(&array_span);
+}
+```
+
 ### Disable section
 Rules can be temporarily and locally disabled with a comment saying `// WorkshopC off` and then `// WorkshopC on`.
 
@@ -1817,10 +1938,13 @@ For Beta V1 it shall
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
 - Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
+- Add arg for treating warnings as errors
+- Make config strings empty by default and validate all strings are given values for configs that are turned on
 
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod
-- Add rules for span struct, shall require suffix, compatible with pod
+- Add rule for forbidding const struct fields
+- Enforce array struct name (primitives and structs separately)
 
 For Beta V1.2 it shall
 - Add LSP support

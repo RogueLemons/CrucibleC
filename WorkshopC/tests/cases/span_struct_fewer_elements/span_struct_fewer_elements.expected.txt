@@ -1,0 +1,6 @@
+warning: span struct variable 'too_many' must use a constant count of at most the array element count in its initializer [CCW2303]
+warning: span struct variable 'negative' must use a constant count of at most the array element count in its initializer [CCW2303]
+warning: span struct variable 'unknown' must use a constant count of at most the array element count in its initializer [CCW2303]
+warning: const span struct variable 'const_too_many' must use a constant count of at most the array element count in its initializer [CCW2303]
+warning: array 'values' passed to 'index_span_pod' must use a constant count of at most its element count [CCW2303]
+warning: span struct variable 'tail_too_many' must use a constant count of at most 2, the elements left in 'values' from index 1 [CCW2303]

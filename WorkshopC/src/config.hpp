@@ -147,6 +147,29 @@ struct ArrayStructRuleConfig {
     bool onlyAllowArrayPassingToLibraryFunctions = false;
 };
 
+struct SpanStructRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    bool onlyAllowArrayPassingToLibraryFunctionsAndSpans = false;
+    std::string spanStructSuffix = "_span";
+
+    // A span of const data, e.g. 'const int* data'. Checked before
+    // spanStructSuffix, which it usually ends with too.
+    std::string constSpanStructSuffix = "_const_span";
+
+    // A span may cover only the start of an array: its count may be less
+    // than the array's element count, but never more
+    bool allowSpansToBeGivenFewerElementsThanTheirSize = false;
+
+    // Every array outside of a struct must be followed right away by a
+    // span variable holding the whole array
+    bool requireSpanImmediatelyAfterArray = false;
+
+    // The data of a span may only be passed on inside a static function
+    // with a single statement, a wrapper that takes the span
+    bool onlyAllowSpanDataPassingInOneLineStaticFunctions = false;
+};
+
 struct Config {
     SuppressionReasonRuleConfig suppressionReasonRule;
     EnumRuleConfig enumRule;
@@ -166,6 +189,7 @@ struct Config {
     ReferencePointerRuleConfig referencePointerRule;
     FunctionDiscardRuleConfig functionDiscardRule;
     ArrayStructRuleConfig arrayStructRule;
+    SpanStructRuleConfig spanStructRule;
 
     // List of paths to third-party include directories, relative to the config file
     std::vector<std::string> thirdPartyIncludes;
