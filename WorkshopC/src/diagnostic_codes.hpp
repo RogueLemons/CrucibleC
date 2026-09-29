@@ -224,6 +224,10 @@
       "An array may only be declared as a field inside a struct") \
     X(ArrayPassedToNonLibraryFunction, "CCW2202", "array-passed-to-non-library-function", \
       "An array field may only be passed directly to a standard-library or third-party function") \
+    X(ArrayStructNameEnding, "CCW2203", "array-struct-name-ending", \
+      "A struct holding only an array does not end with the array struct suffix and/or the element counts of the array") \
+    X(ArrayStructNamePrefix, "CCW2204", "array-struct-name-prefix", \
+      "A struct holding only an array of project structs does not start with the name of the element struct") \
     /* 23 span_struct */ \
     X(SpanInvalidDefinition, "CCW2301", "span-invalid-definition", \
       "A span struct must contain only a pointer field named data and then a size_t field named size") \

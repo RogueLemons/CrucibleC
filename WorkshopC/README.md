@@ -231,6 +231,8 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | | **22 — [Array struct](#array-struct-rule)** | |
 | `CCW2201` | `array-outside-struct` | An array is declared outside a struct field |
 | `CCW2202` | `array-passed-to-non-library-function` | A struct array field is passed to a non-standard-library and non-third-party function |
+| `CCW2203` | `array-struct-name-ending` | A struct holding only an array does not end with the array struct suffix and/or the element counts of the array |
+| `CCW2204` | `array-struct-name-prefix` | A struct holding only an array of project structs does not start with the name of the element struct |
 | | **23 — [Span struct](#span-struct-rule)** | |
 | `CCW2301` | `span-invalid-definition` | A span struct does not contain only `data` and `size` fields |
 | `CCW2302` | `span-uninitialized` | A span struct is not initialized at declaration |
@@ -1438,6 +1440,12 @@ This safety feature requires arrays to be declared only as fields inside structs
 array_struct:
   level: Warning
   only_allow_array_passing_to_library_functions: true
+  enforce_size_suffix_for_array_structs: true
+  size_suffix_with_underscore: true
+  flexible_size_name: flexible
+  enforce_suffix_for_array_structs: true
+  array_struct_suffix: _array
+  struct_name_as_prefix: false
 ```
 
 With `only_allow_array_passing_to_library_functions: false`, the rule only checks that arrays are struct fields. With it set to `true`, an array field may only be passed directly to a function declared by the standard library or by a configured `third_party_includes` path. Calls to project functions are reported, so project code must expose a safer wrapper or another deliberate interface instead.
@@ -1461,6 +1469,29 @@ int loose_buffer[4]; // Triggers parser: not a struct field
 ```
 
 Standard-library functions are recognized from system headers. Third-party functions are recognized when their declarations come from a path listed in `third_party_includes`.
+
+#### Naming array structs
+The naming options only apply to a struct whose single field is an array. They are all off by default.
+
+- `enforce_suffix_for_array_structs`: the name must end with `array_struct_suffix`.
+- `enforce_size_suffix_for_array_structs`: the name must end with the element count of every dimension, e.g. `_5_10_15` for `int values[5][10][15]`. A flexible array, with no count, uses `flexible_size_name` instead, e.g. `_flexible` for `unsigned char bytes[]`. With `size_suffix_with_underscore: false`, the counts get no underscores, e.g. `51015`.
+- When both are on, the array struct suffix comes first, e.g. `_array_5`.
+- `struct_name_as_prefix`: when the elements are structs of the project, the name must start with the element struct's name, e.g. `point` for `point_t points[7]`. An anonymous element struct is named by its typedef. Elements that are structs from the standard library or a third party, or that are not structs at all, need no prefix.
+
+An anonymous array struct is checked by its typedef name. With every option on:
+
+```c
+struct int_array_5 { int values[5]; };                  // OK
+struct float_array_5_10 { float values[5][10]; };       // OK
+struct bytes_array_flexible { unsigned char bytes[]; }; // OK
+struct point_array_7 { point_t points[7]; };            // OK
+struct time_array_2 { struct tm times[2]; };            // OK: struct tm is from the standard library
+struct polygon { point_t points[4]; size_t count; };    // OK: more than one field
+
+struct int_array_6 { int values[5]; };                  // Triggers parser, must end with '_array_5'
+struct int_5_array { int values[5]; };                  // Triggers parser, the suffix comes before the count
+struct path_array_7 { point_t points[7]; };             // Triggers parser, must start with 'point'
+```
 
 ### Span struct rule
 This rule standardizes span types that pair a pointer with an element count. Any struct whose name ends with `span_struct_suffix` or `const_span_struct_suffix` must contain exactly two fields: a pointer named `data` and a `size_t` named `size`.
@@ -1944,7 +1975,6 @@ For Beta V1 it shall
 For Beta V1.1 it shall
 - Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod
 - Add rule for forbidding const struct fields
-- Enforce array struct name (primitives and structs separately)
 
 For Beta V1.2 it shall
 - Add LSP support

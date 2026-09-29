@@ -1,0 +1,2 @@
+warning: struct 'int_array_5' holds only the array 'values' and must end with '_array' [CCW2203]
+warning: struct 'int_values' holds only the array 'values' and must end with '_array' [CCW2203]

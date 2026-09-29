@@ -36,6 +36,25 @@ private:
         const std::string &message,
         const SourceManager &sm) const;
 
+    bool isLibraryDeclaration(
+        const Decl *declaration,
+        const SourceManager &sm) const;
+
+    /*
+     * The size suffix of an array type, e.g. '_5_10' for 'int[5][10]',
+     * or false when a dimension has no count known at compile time.
+     */
+    bool getSizeSuffix(
+        QualType type,
+        const ASTContext &context,
+        std::string &suffix) const;
+
+    // The naming options for a struct whose single field is an array
+    void checkArrayStructName(
+        const RecordDecl *record,
+        const SourceManager &sm,
+        const ASTContext &context) const;
+
 public:
     ArrayStructRule(
         const Config &cfg,

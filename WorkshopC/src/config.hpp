@@ -145,6 +145,25 @@ struct ArrayStructRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
     bool onlyAllowArrayPassingToLibraryFunctions = false;
+
+    // The naming options below only apply to structs whose single field
+    // is an array.
+
+    // The name ends with the element count of each dimension, e.g.
+    // '_5_10' for 'int values[5][10]'
+    bool enforceSizeSuffixForArrayStructs = false;
+    bool sizeSuffixWithUnderscore = true;
+
+    // Used instead of a count for a flexible array, e.g. 'int values[]'
+    std::string flexibleSizeName = "flexible";
+
+    // The name ends with arrayStructSuffix, before any size suffix
+    bool enforceSuffixForArrayStructs = false;
+    std::string arrayStructSuffix = "_array";
+
+    // The name starts with the name of the element struct, unless that
+    // struct comes from the standard library or a third party
+    bool structNameAsPrefix = false;
 };
 
 struct SpanStructRuleConfig {

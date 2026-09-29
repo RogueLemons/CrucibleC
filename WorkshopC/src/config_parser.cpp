@@ -356,6 +356,24 @@ void ConfigParser::applySetting(
     else if (key == "only_allow_array_passing_to_library_functions") {
         cfg.onlyAllowArrayPassingToLibraryFunctions = parseBool(value);
     }
+    else if (key == "enforce_size_suffix_for_array_structs") {
+        cfg.enforceSizeSuffixForArrayStructs = parseBool(value);
+    }
+    else if (key == "size_suffix_with_underscore") {
+        cfg.sizeSuffixWithUnderscore = parseBool(value);
+    }
+    else if (key == "flexible_size_name") {
+        cfg.flexibleSizeName = value;
+    }
+    else if (key == "enforce_suffix_for_array_structs") {
+        cfg.enforceSuffixForArrayStructs = parseBool(value);
+    }
+    else if (key == "array_struct_suffix") {
+        cfg.arrayStructSuffix = value;
+    }
+    else if (key == "struct_name_as_prefix") {
+        cfg.structNameAsPrefix = parseBool(value);
+    }
 }
 
 void ConfigParser::applySetting(

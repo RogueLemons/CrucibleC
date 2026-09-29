@@ -68,6 +68,143 @@ void ArrayStructRule::report(
         message);
 }
 
+bool ArrayStructRule::isLibraryDeclaration(
+    const Decl *declaration,
+    const SourceManager &sm) const
+{
+    if (!declaration)
+        return false;
+
+    const SourceLocation spelling = sm.getSpellingLoc(declaration->getLocation());
+
+    if (sm.isInSystemHeader(spelling))
+        return true;
+
+    const std::string path = sm.getFilename(spelling).str();
+    return !path.empty() && isThirdParty(path);
+}
+
+bool ArrayStructRule::getSizeSuffix(
+    QualType type,
+    const ASTContext &context,
+    std::string &suffix) const
+{
+    const ArrayStructRuleConfig &rule = config.arrayStructRule;
+    const std::string separator = rule.sizeSuffixWithUnderscore ? "_" : "";
+
+    suffix.clear();
+
+    while (const ArrayType *array = context.getAsArrayType(type)) {
+        if (const auto *constant = dyn_cast<ConstantArrayType>(array))
+            suffix += separator + std::to_string(constant->getZExtSize());
+        else if (isa<IncompleteArrayType>(array))
+            suffix += separator + rule.flexibleSizeName;
+        else
+            return false;
+
+        type = array->getElementType();
+    }
+
+    return true;
+}
+
+void ArrayStructRule::checkArrayStructName(
+    const RecordDecl *record,
+    const SourceManager &sm,
+    const ASTContext &context) const
+{
+    const ArrayStructRuleConfig &rule = config.arrayStructRule;
+
+    if (!rule.enforceSizeSuffixForArrayStructs &&
+        !rule.enforceSuffixForArrayStructs &&
+        !rule.structNameAsPrefix)
+    {
+        return;
+    }
+
+    // Only structs whose single field is an array
+    const FieldDecl *field = nullptr;
+
+    for (const FieldDecl *candidate : record->fields()) {
+        if (field)
+            return;
+
+        field = candidate;
+    }
+
+    if (!field || !context.getAsArrayType(field->getType()))
+        return;
+
+    // An anonymous struct is named by its typedef
+    std::string name = record->getNameAsString();
+
+    if (name.empty()) {
+        if (const TypedefNameDecl *typedefName = record->getTypedefNameForAnonDecl())
+            name = typedefName->getNameAsString();
+    }
+
+    if (name.empty())
+        return;
+
+    const std::string description =
+        "struct '" + name + "' holds only the array '" +
+        field->getNameAsString() + "'";
+
+    std::string ending;
+
+    if (rule.enforceSuffixForArrayStructs)
+        ending += rule.arrayStructSuffix;
+
+    if (rule.enforceSizeSuffixForArrayStructs) {
+        std::string sizeSuffix;
+
+        if (getSizeSuffix(field->getType(), context, sizeSuffix))
+            ending += sizeSuffix;
+    }
+
+    if (!ending.empty() &&
+        (name.size() < ending.size() ||
+         name.compare(name.size() - ending.size(), ending.size(), ending) != 0))
+    {
+        report(
+            DiagCode::ArrayStructNameEnding,
+            record->getLocation(),
+            description + " and must end with '" + ending + "'",
+            sm);
+    }
+
+    if (!rule.structNameAsPrefix)
+        return;
+
+    // The element struct, below all dimensions of a matrix
+    QualType element = field->getType();
+
+    while (const ArrayType *array = context.getAsArrayType(element))
+        element = array->getElementType();
+
+    const RecordDecl *elementRecord = element->getAsRecordDecl();
+
+    if (!elementRecord || isLibraryDeclaration(elementRecord, sm))
+        return;
+
+    std::string prefix = elementRecord->getNameAsString();
+
+    if (prefix.empty()) {
+        if (const TypedefNameDecl *typedefName = elementRecord->getTypedefNameForAnonDecl())
+            prefix = typedefName->getNameAsString();
+    }
+
+    if (prefix.empty() || name.compare(0, prefix.size(), prefix) == 0)
+        return;
+
+    report(
+        DiagCode::ArrayStructNamePrefix,
+        record->getLocation(),
+        description + " of '" + prefix + "' and must start with '" +
+            prefix + "'",
+        sm);
+}
+
 ArrayStructRule::ArrayStructRule(
     const Config &cfg,
     SuppressionManager &sup,
@@ -92,6 +229,14 @@ void ArrayStructRule::bindFinder(MatchFinder &finder)
             unless(isExpansionInSystemHeader())
         ).bind("arrayCall"),
         this);
+
+    finder.addMatcher(
+        recordDecl(
+            isStruct(),
+            isDefinition(),
+            unless(isExpansionInSystemHeader())
+        ).bind("arrayStruct"),
+        this);
 }
 
 void ArrayStructRule::run(const MatchFinder::MatchResult &result)
@@ -103,6 +248,13 @@ void ArrayStructRule::run(const MatchFinder::MatchResult &result)
     }
 
     const SourceManager &sm = *result.SourceManager;
+
+    if (const auto *record = result.Nodes.getNodeAs<RecordDecl>("arrayStruct")) {
+        if (result.Context)
+            checkArrayStructName(record, sm, *result.Context);
+
+        return;
+    }
 
     if (const auto *array =
             result.Nodes.getNodeAs<VarDecl>("arrayDeclaration"))

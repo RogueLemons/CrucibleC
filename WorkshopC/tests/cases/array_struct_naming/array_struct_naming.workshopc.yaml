@@ -1,0 +1,16 @@
+# Array struct rule naming a struct that holds only an array: element struct
+# name first, then the array struct suffix, then the counts of the array
+
+third_party_includes:
+  - external/
+
+rules:
+  array_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions: false
+    enforce_size_suffix_for_array_structs: true
+    size_suffix_with_underscore: true
+    flexible_size_name: flexible
+    enforce_suffix_for_array_structs: true
+    array_struct_suffix: _array
+    struct_name_as_prefix: true
