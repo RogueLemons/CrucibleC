@@ -1564,6 +1564,7 @@ span_struct:
   allow_spans_to_be_given_fewer_elements_than_their_size: false
   require_span_immediately_after_array: false
   only_allow_span_data_passing_in_one_line_static_functions: false
+  allow_pod_span_to_be_initialized_manually_if_static: false
 ```
 
 A const span is a read-only view: it works exactly like a span, but holds a pointer to const data and is named with `const_span_struct_suffix`. A span may change the data it points to, so its pointer may not point to const data, and a const span may not, so its pointer must. A const span may still view data that can change, e.g. a normal array. The const suffix is checked first, so it may end with the span suffix, as `_const_span` ends with `_span`.
@@ -1590,6 +1591,21 @@ int_span_t tail = { &values[3], 7 };           // OK, the 7 elements left from i
 int_span_t rest = { values + 3, 7 };           // OK, the same
 int_span_t wrong = { &values[3], 10 };         // Triggers parser, only 7 elements are left
 int_span_t outside = { &values[12], 1 };       // Triggers parser, index 12 is outside of the array
+```
+
+When [struct resource management](#raii-and-struct-resource-management) is enabled and a span has a pod creator, the span is a pod struct, and a pod struct may only be initialized from a function or another struct variable. A span with static storage duration can't call its pod creator, though: a global or `static` initializer must be a constant expression. With `allow_pod_span_to_be_initialized_manually_if_static: true`, a span or const span with static storage duration may therefore be initialized with braces. That covers globals, `static` globals and `static` locals. The braces are still checked like any span initializer, e.g. the count of the array. Other spans, other pod structs, and brace-built spans passed as arguments or returned are still reported.
+
+```c
+int g_values[4];
+static int_span_t s_span = { g_values, 4 };      // OK with the option, static storage duration
+static int_span_t s_long = { g_values, 5 };      // Triggers parser, the count is still checked
+static pos_t s_origin = { 0, 0 };                // Triggers parser, not a span
+
+void example(void)
+{
+  static int_span_t local = { g_values, 4 };     // OK with the option, a static local
+  int_span_t span = { g_values, 4 };             // Triggers parser, not static, use int_span_pod
+}
 ```
 
 With `require_span_immediately_after_array: true`, every array outside of a struct, local, static or global, must be followed right away by a span or const span variable holding the whole array: for a local array in the next statement, for a global in the next declaration of the file. The span must start at the beginning of the array, `values` or `&values[0]`, and hold its full size, with an initializer or the span's pod creator. After that, the span is the one way to reach the array: the array may not be named again, except in the span's initializer and in code that is never evaluated, `sizeof`, `_Alignof` and `__typeof__`. Elements are reached through the span, e.g. `values_span.data[1]`, or through the span's functions, and a matrix through its span of rows, e.g. `matrix_span.data[1][2]`. An array without its span only gets the missing span reported, not every use of it.
@@ -2055,7 +2071,7 @@ For Beta V1 it shall
 - Make config strings empty by default and validate all strings are given values for configs that are turned on
 
 For Beta V1.1 it shall
-- Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod
+- Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod (vtable free even if no init func)
 - Add forbid goto rule
 
 For Beta V1.2 it shall

@@ -534,6 +534,18 @@ bool StructInitRule::exprIsStructValue(const Expr *expr, std::string *structName
         exprIsStructVariableReference(expr, structName);
 }
 
+bool StructInitRule::isAllowedManualSpanInit(const VarDecl *var, const std::string &structName) const
+{
+    const SpanStructRuleConfig &span = config.spanStructRule;
+
+    return span.level != RuleLevel::Off &&
+           span.allowPodSpanToBeInitializedManuallyIfStatic &&
+           span.isSpanStructName(structName) &&
+           var->hasGlobalStorage() &&
+           var->getInit() &&
+           isa<InitListExpr>(var->getInit()->IgnoreImplicit());
+}
+
 bool StructInitRule::exprIsNonPointerStructValue(const Expr *expr, std::string *structName) const
 {
     expr = unwrapExpr(expr);
@@ -740,7 +752,7 @@ void StructInitRule::checkVarDecl(
                     "' of type '" + structName +
                     "' should be initialized from a function return value or another struct variable");
         }
-        else if (!exprIsStructValue(init)) {
+        else if (!exprIsStructValue(init) && !isAllowedManualSpanInit(varDecl, structName)) {
             reportUsageIssue(
                 DiagCode::PodInit,
                 varDecl->getLocation(),

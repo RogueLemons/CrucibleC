@@ -40,13 +40,6 @@ bool SpanStructRule::shouldIgnore(
 
 namespace {
 
-bool endsWith(const std::string &name, const std::string &suffix)
-{
-    return !suffix.empty() &&
-           name.size() >= suffix.size() &&
-           name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
-
 const RecordDecl *recordOf(QualType type)
 {
     const auto *recordType =
@@ -69,20 +62,13 @@ std::string SpanStructRule::getSpanStructName(const RecordDecl *record) const
 
     const std::string name = record->getNameAsString();
 
-    if (isConstSpan(record) ||
-        endsWith(name, config.spanStructRule.spanStructSuffix))
-    {
-        return name;
-    }
-
-    return "";
+    return config.spanStructRule.isSpanStructName(name) ? name : "";
 }
 
 bool SpanStructRule::isConstSpan(const RecordDecl *record) const
 {
     return record &&
-           endsWith(record->getNameAsString(),
-                    config.spanStructRule.constSpanStructSuffix);
+           config.spanStructRule.isConstSpanStructName(record->getNameAsString());
 }
 
 std::string SpanStructRule::spanKindText(const RecordDecl *record) const

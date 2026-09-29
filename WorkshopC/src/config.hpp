@@ -188,6 +188,31 @@ struct SpanStructRuleConfig {
     // The data of a span may only be passed on inside a static function
     // with a single statement, a wrapper that takes the span
     bool onlyAllowSpanDataPassingInOneLineStaticFunctions = false;
+
+    // With the struct resource management rule, a span with static storage
+    // duration may be initialized with braces, e.g. '{ values, 4 }', since
+    // a static initializer can not call the span's pod function
+    bool allowPodSpanToBeInitializedManuallyIfStatic = false;
+
+    bool isConstSpanStructName(const std::string &name) const
+    {
+        return endsWithSuffix(name, constSpanStructSuffix);
+    }
+
+    // A span or const span struct name
+    bool isSpanStructName(const std::string &name) const
+    {
+        return isConstSpanStructName(name) ||
+               endsWithSuffix(name, spanStructSuffix);
+    }
+
+private:
+    static bool endsWithSuffix(const std::string &name, const std::string &suffix)
+    {
+        return !suffix.empty() &&
+               name.size() >= suffix.size() &&
+               name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
+    }
 };
 
 struct ConstFieldRuleConfig {

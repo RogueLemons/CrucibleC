@@ -107,6 +107,13 @@ private:
 
     bool exprIsStructValue(const Expr *expr, std::string *structName = nullptr) const;
 
+    /*
+     * With allow_pod_span_to_be_initialized_manually_if_static of the span
+     * struct rule, a span with static storage duration may be initialized
+     * with braces, since a static initializer can not call its pod function
+     */
+    bool isAllowedManualSpanInit(const VarDecl *var, const std::string &structName) const;
+
     bool exprIsNonPointerStructValue(const Expr *expr, std::string *structName = nullptr) const;
 
     void reportUsageIssue(

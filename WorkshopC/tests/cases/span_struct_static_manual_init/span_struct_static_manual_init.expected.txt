@@ -1,0 +1,6 @@
+warning: span struct variable 's_too_long' must use the array element count in its initializer [CCW2303]
+warning: span struct variable 's_empty' of type 'int_span' must be initialized at declaration [CCW2302]
+warning: struct variable 's_empty' of type 'int_span' should be initialized from a function return value or another struct variable [CCW1101]
+warning: struct variable 's_origin' of type 'pos' should be initialized from a function return value or another struct variable [CCW1101]
+warning: struct variable 'span' of type 'int_span' should be initialized from a function return value or another struct variable [CCW1101]
+warning: struct 'int_span' argument 'span' passed to function 'use_ints' should be passed from a function return value or another struct variable [CCW1109]

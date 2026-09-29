@@ -405,6 +405,9 @@ void ConfigParser::applySetting(
     else if (key == "only_allow_span_data_passing_in_one_line_static_functions") {
         cfg.onlyAllowSpanDataPassingInOneLineStaticFunctions = parseBool(value);
     }
+    else if (key == "allow_pod_span_to_be_initialized_manually_if_static") {
+        cfg.allowPodSpanToBeInitializedManuallyIfStatic = parseBool(value);
+    }
 }
 
 void ConfigParser::applySetting(
