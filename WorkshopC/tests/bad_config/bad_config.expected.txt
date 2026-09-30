@@ -1,0 +1,11 @@
+rules.private.private_field must be set when the rule is not Off
+rules.prefix_namespace.seperator must be set when the rule is not Off
+rules.struct_resource_management.raii_struct_copy_suffix must be set when the rule is not Off
+rules.struct_resource_management.raii_struct_array_destroyer_suffix must be set when allow_raii_struct_arrays is true
+rules.interfaces.const_interface_suffix must be set when the rule is not Off
+rules.global_variable.prefix must be set when the rule is not Off
+rules.private.getter_contains and rules.private.setter_contains must be different, both are 'pacc'
+rules.prefix_namespace.stop_at_count may not be negative, it is -1
+rules.prefix_namespace.top_dir './src/' may not be one of the third_party_includes
+rules.struct_resource_management.pod_struct_creator_suffix and rules.struct_resource_management.raii_struct_creator_suffix must be different, both are '_make'
+rules.interfaces.interface_suffix and rules.array_struct.flexible_size_name must be different, both are 'flexible'

@@ -1,0 +1,60 @@
+# A config that breaks every check of the config validation. Each broken
+# setting is marked with the error it causes, and bad_config.expected.txt
+# lists them all.
+
+third_party_includes:
+  - external/
+  - src/
+
+rules:
+  private:
+    level: Error
+    # private_field is missing
+    getter_contains: pacc
+    # Same as getter_contains
+    setter_contains: pacc
+
+  prefix_namespace:
+    level: Warning
+    # One of the third_party_includes
+    top_dir: ./src/
+    # Negative
+    stop_at_count: -1
+    # seperator is missing
+
+  struct_resource_management:
+    level: Error
+    # Same as raii_struct_creator_suffix
+    pod_struct_creator_suffix: _make
+    raii_struct_creator_suffix: _make
+    raii_struct_destroyer_suffix: _destroy
+    # raii_struct_copy_suffix is missing
+    raii_struct_move_suffix: _move
+    raii_struct_return_suffix: _return
+    raii_struct_valid_suffix: _valid
+    free_struct_creator_suffix: _init
+    allow_raii_struct_arrays: true
+    # raii_struct_array_destroyer_suffix is missing, required by allow_raii_struct_arrays
+
+  interfaces:
+    level: Error
+    vtable_suffix: _vtable
+    # Same as array_struct flexible_size_name
+    interface_suffix: flexible
+    # const_interface_suffix is missing
+
+  array_struct:
+    level: Warning
+    flexible_size_name: flexible
+    array_struct_suffix: _array
+
+  global_variable:
+    level: Warning
+    # prefix is missing
+    local_static_prefix: s_
+
+  # Off, so nothing here is checked: a missing const_span_struct_suffix,
+  # and a span_struct_suffix that is the same as vtable_suffix
+  span_struct:
+    level: Off
+    span_struct_suffix: _vtable

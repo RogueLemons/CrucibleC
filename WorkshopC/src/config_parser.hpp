@@ -198,6 +198,35 @@ private:
         const std::vector<std::string> &values
     );
 
+    // A string setting, named as in the config, e.g. "rules.private.private_field"
+    struct NamedSetting {
+        std::string name;
+        std::string value;
+    };
+
+    /*
+     * Adds the setting to 'settings' when the rule is not Off and the
+     * value is set, since an empty value is already reported.
+     */
+    static void addSetting(
+        std::vector<NamedSetting> &settings,
+        const std::string &rule,
+        RuleLevel level,
+        const std::string &key,
+        const std::string &value
+    );
+
+    /*
+     * Adds an error for every two settings that have the same value.
+     */
+    static void requireDistinct(
+        std::vector<std::string> &errors,
+        const std::vector<NamedSetting> &settings
+    );
+
+    // A path without './' in front or '/' behind, for comparing folders
+    static std::string normalizeFolder(const std::string &path);
+
 public:
     static bool loadFromFile(
         const std::string &filepath,
@@ -207,7 +236,9 @@ public:
     /*
      * Checks that the loaded config is usable, adding one message per
      * problem to errors. Every string setting of a rule that is not Off
-     * must be given a value, since no string setting has a default.
+     * must be given a value, since no string setting has a default, and
+     * settings that name different things must not have the same value.
+     * Rules that are Off are not checked.
      */
     static bool validateConfig(
         const Config &config,

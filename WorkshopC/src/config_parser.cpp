@@ -774,6 +774,47 @@ void ConfigParser::requireStrings(
     }
 }
 
+void ConfigParser::addSetting(
+    std::vector<NamedSetting> &settings,
+    const std::string &rule,
+    RuleLevel level,
+    const std::string &key,
+    const std::string &value
+) {
+    if (level != RuleLevel::Off && !value.empty())
+        settings.push_back({ "rules." + rule + "." + key, value });
+}
+
+void ConfigParser::requireDistinct(
+    std::vector<std::string> &errors,
+    const std::vector<NamedSetting> &settings
+) {
+    for (size_t i = 0; i < settings.size(); ++i) {
+        for (size_t j = i + 1; j < settings.size(); ++j) {
+            if (settings[i].value == settings[j].value) {
+                errors.push_back(
+                    settings[i].name + " and " + settings[j].name +
+                    " must be different, both are '" + settings[i].value + "'"
+                );
+            }
+        }
+    }
+}
+
+std::string ConfigParser::normalizeFolder(const std::string &path) {
+    std::string folder = path;
+
+    std::replace(folder.begin(), folder.end(), '\\', '/');
+
+    while (folder.starts_with("./"))
+        folder.erase(0, 2);
+
+    while (!folder.empty() && folder.back() == '/')
+        folder.pop_back();
+
+    return folder;
+}
+
 bool ConfigParser::validateConfig(
     const Config &config,
     std::vector<std::string> &errors
@@ -827,6 +868,59 @@ bool ConfigParser::validateConfig(
     const SpanStructRuleConfig &span = config.spanStructRule;
     requireString(errors, "span_struct", span.level, "span_struct_suffix", span.spanStructSuffix);
     requireString(errors, "span_struct", span.level, "const_span_struct_suffix", span.constSpanStructSuffix);
+
+    // Settings that name different things may not have the same value
+
+    std::vector<NamedSetting> accessors;
+    addSetting(accessors, "private", priv.level, "getter_contains", priv.getterContains);
+    addSetting(accessors, "private", priv.level, "setter_contains", priv.setterContains);
+    requireDistinct(errors, accessors);
+
+    if (prefix.level != RuleLevel::Off) {
+        if (prefix.stopAtCount < 0) {
+            errors.push_back(
+                "rules.prefix_namespace.stop_at_count may not be negative, it is " +
+                std::to_string(prefix.stopAtCount)
+            );
+        }
+
+        const std::string topDir = normalizeFolder(prefix.topDir);
+
+        for (const std::string &include : config.thirdPartyIncludes) {
+            if (!topDir.empty() && normalizeFolder(include) == topDir) {
+                errors.push_back(
+                    "rules.prefix_namespace.top_dir '" + prefix.topDir +
+                    "' may not be one of the third_party_includes"
+                );
+                break;
+            }
+        }
+    }
+
+    std::vector<NamedSetting> structFunctions;
+    addSetting(structFunctions, "struct_resource_management", srm.level, "pod_struct_creator_suffix", srm.podStructCreatorSuffix);
+    addSetting(structFunctions, "struct_resource_management", srm.level, "raii_struct_creator_suffix", srm.raiiStructCreatorSuffix);
+    addSetting(structFunctions, "struct_resource_management", srm.level, "raii_struct_destroyer_suffix", srm.raiiStructDestroyerSuffix);
+    addSetting(structFunctions, "struct_resource_management", srm.level, "raii_struct_copy_suffix", srm.raiiStructCopySuffix);
+    addSetting(structFunctions, "struct_resource_management", srm.level, "raii_struct_move_suffix", srm.raiiStructMoveSuffix);
+    addSetting(structFunctions, "struct_resource_management", srm.level, "raii_struct_return_suffix", srm.raiiStructReturnSuffix);
+    addSetting(structFunctions, "struct_resource_management", srm.level, "raii_struct_valid_suffix", srm.raiiStructValidSuffix);
+    addSetting(structFunctions, "struct_resource_management", srm.level, "free_struct_creator_suffix", srm.freeStructCreatorSuffix);
+
+    if (srm.allowRaiiStructArrays)
+        addSetting(structFunctions, "struct_resource_management", srm.level, "raii_struct_array_destroyer_suffix", srm.raiiStructArrayDestroyerSuffix);
+
+    requireDistinct(errors, structFunctions);
+
+    std::vector<NamedSetting> structNames;
+    addSetting(structNames, "interfaces", interfaces.level, "vtable_suffix", interfaces.vtableSuffix);
+    addSetting(structNames, "interfaces", interfaces.level, "interface_suffix", interfaces.interfaceSuffix);
+    addSetting(structNames, "interfaces", interfaces.level, "const_interface_suffix", interfaces.constInterfaceSuffix);
+    addSetting(structNames, "array_struct", array.level, "flexible_size_name", array.flexibleSizeName);
+    addSetting(structNames, "array_struct", array.level, "array_struct_suffix", array.arrayStructSuffix);
+    addSetting(structNames, "span_struct", span.level, "span_struct_suffix", span.spanStructSuffix);
+    addSetting(structNames, "span_struct", span.level, "const_span_struct_suffix", span.constSpanStructSuffix);
+    requireDistinct(errors, structNames);
 
     return errors.size() == errorsBefore;
 }

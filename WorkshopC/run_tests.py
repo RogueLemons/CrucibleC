@@ -21,6 +21,9 @@ TESTS_OUTPUT = TESTS / "output"
 # The folder given whole to the parser, instead of a single file
 FOLDER_INPUT = TESTS / "folder_input"
 
+# A config that breaks every check of the config validation
+BAD_CONFIG = TESTS / "bad_config"
+
 # The test whose diagnostics are written to every output format at once
 OUTPUT_FILES_TEST = CASES / "suppression_balance" / "suppression_balance.c"
 
@@ -363,6 +366,72 @@ def run_folder_input_test(exe):
     return True
 
 
+def run_bad_config_test(exe):
+    """
+    Gives the parser a config that breaks every check of the config
+    validation, and checks that it reports exactly the expected problems,
+    one per line under 'Invalid config', and stops before any analysis.
+    """
+    print("\n==============================")
+    print("Running: bad config")
+    print("==============================")
+
+    result = subprocess.run(
+        [
+            str(exe),
+            "--config", str(BAD_CONFIG / "bad_config.workshopc.yaml"),
+            "-p", str(TESTS_COMPDB),
+            str(OUTPUT_FILES_TEST)
+        ],
+        text=True,
+        capture_output=True
+    )
+
+    combined_output = result.stdout + "\n" + result.stderr
+
+    if combined_output.strip():
+        print(combined_output)
+
+    problems = []
+
+    expected = Counter(
+        line.strip()
+        for line in (BAD_CONFIG / "bad_config.expected.txt").read_text().splitlines()
+        if line.strip()
+    )
+
+    # The problems are listed indented under the 'Invalid config' line
+    lines = result.stderr.splitlines()
+    header = next((i for i, line in enumerate(lines) if line.startswith("Invalid config:")), None)
+
+    check(header is not None, "no 'Invalid config' line was printed", problems)
+
+    if header is not None:
+        actual = Counter(
+            line.strip()
+            for line in lines[header + 1:]
+            if line.startswith("  ")
+        )
+
+        for msg in expected - actual:
+            problems.append(f"missing: {msg}")
+
+        for msg in actual - expected:
+            problems.append(f"unexpected: {msg}")
+
+    check(not collect_messages(combined_output),
+          "diagnostics were reported, the analysis should not have run", problems)
+
+    check(result.returncode == 65,
+          f"exit code {result.returncode}, expected 65 (config failed)", problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    print("--PASSED--")
+    return True
+
+
 def report_output_problems(problems):
     print("--FAILED--")
 
@@ -465,7 +534,12 @@ def main():
 
             failed += 1
 
-    special_tests = [run_output_files_test, run_warnings_as_errors_test, run_folder_input_test]
+    special_tests = [
+        run_output_files_test,
+        run_warnings_as_errors_test,
+        run_folder_input_test,
+        run_bad_config_test
+    ]
 
     for special_test in special_tests:
         if special_test(exe):

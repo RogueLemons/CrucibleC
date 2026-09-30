@@ -2173,7 +2173,6 @@ For Beta V1 it shall
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
 - Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
-- Make config strings empty by default and validate all strings are given values for configs that are turned on
 
 For Beta V1.1 it shall
 - Add LSP support
