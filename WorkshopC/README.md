@@ -56,9 +56,12 @@ workshopc src/
 - `--sarif <file>` — Also write the diagnostics as SARIF 2.1.0 to a file, the standard format read by e.g. GitHub code scanning and many IDEs.
 - `-q, --quiet` — Print nothing to the terminal: no diagnostics and no warning and error summary. Clang's compile errors and problems that stop the analysis (e.g. a missing config) are still printed, and the exit code is unaffected.
 - `--warnings-as-errors` — Report every warning as an error: on the terminal, in the `--text`, `--json` and `--sarif` files, in the counts, and in the exit code. The config still decides which rules run and how serious they normally are, and the flag decides how strict one run is. One config can then serve both a relaxed local run and a strict CI run.
+- `--dump-config` — Print the config as it was read, with every setting, and exit without analyzing anything, so no files or folders are needed. The output is a valid config, e.g. `workshopc --dump-config > full.workshopc.yaml` gives a config with every setting written out. It is printed even when the config is invalid, to see how it was read. Empty string settings are left out, since they are empty when not given.
 - `-h, --help` — Show the help.
 
 The diagnostics are always printed to the terminal (stderr) unless `--quiet` is given, and `--text`, `--json` and `--sarif` can be combined freely to write any set of files in a single run. Give `-` as the file to write that format to stdout instead (only one format can use stdout). Compile errors from clang are always printed as text and never appear in the files, the exit code tells when they happened.
+
+Before the analysis, the config file and the build folder that are used are printed (unless `--quiet` is given), e.g. `Config: /repo/workshopc.yaml` and `Build folder: /repo/build (compile_commands_dir in the config)`, so a CI log shows which files a run used.
 
 Each diagnostic is printed as `file:line:column: level: message [code]`, see [Diagnostic codes](#diagnostic-codes).
 
@@ -71,6 +74,7 @@ workshopc -q --sarif results.sarif src/         # only a SARIF file, e.g. for CI
 workshopc --text out.txt --json out.json src/   # terminal output plus a text and a JSON file
 workshopc -q --json - src/ | jq .errors         # JSON to stdout, for piping
 workshopc --warnings-as-errors src/             # fail on any finding, e.g. in CI
+workshopc --dump-config                         # the config found, with every setting
 ```
 
 **Exit codes:**
@@ -2173,6 +2177,9 @@ For Beta V1 it shall
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
 - Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
+- Override third party includes with arg?
+- interface_must_have_fields_that_are_private_alternative may not be true if private alternative is off
+- Enforce array struct naming without forcing all arrays to be in structs
 
 For Beta V1.1 it shall
 - Add LSP support

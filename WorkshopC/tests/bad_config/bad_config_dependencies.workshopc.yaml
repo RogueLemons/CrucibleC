@@ -1,0 +1,45 @@
+# A config whose settings need another setting or rule that is not turned
+# on. bad_config_dependencies.expected.txt lists the errors.
+
+third_party_includes:
+  - external/
+
+rules:
+  # Naming rules for one array field structs, but no naming rule is enabled
+  array_struct:
+    level: Warning
+    flexible_size_name: flexible
+    array_struct_suffix: _array
+    use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
+    enforce_size_suffix_for_array_structs: false
+    enforce_suffix_for_array_structs: false
+    struct_name_as_prefix: false
+
+  # Needs struct_resource_management, which is Off
+  span_struct:
+    level: Warning
+    span_struct_suffix: _span
+    const_span_struct_suffix: _const_span
+    allow_pod_span_to_be_initialized_manually_if_static: true
+
+  struct_resource_management:
+    level: Off
+
+  # Needs private_alternative, which is Off
+  interfaces:
+    level: Error
+    vtable_suffix: _vtable
+    interface_suffix: _interface
+    const_interface_suffix: _const_interface
+    interface_must_have_fields_that_are_private_alternative: true
+
+  private_alternative:
+    level: Off
+
+  # Needs null_check, which is Off
+  reference_pointer:
+    level: Warning
+    disable_null_check_rule_for_reference_pointers: true
+
+  null_check:
+    level: Off

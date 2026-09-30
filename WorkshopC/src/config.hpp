@@ -218,6 +218,9 @@ struct ArrayStructRuleConfig {
     // The name starts with the name of the element struct, unless that
     // struct comes from the standard library or a third party
     bool structNameAsPrefix = false;
+
+    // Parsed only, not enforced yet
+    bool useNamingRulesOnOneArrayFieldStructsWithoutForbiddingPublicArrays = false;
 };
 
 struct SpanStructRuleConfig {

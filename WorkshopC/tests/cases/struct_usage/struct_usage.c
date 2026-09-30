@@ -687,3 +687,14 @@ void initializer_outside_of_lifecycle_functions(void)
     color_holder_t holder = { .color = color_make(1, 2, 3, 4), .count = 1 }; // bad: only the lifecycle functions may use an initializer
     color_holder_destroy(&holder);
 }
+
+// A variadic function: the arguments after the last parameter have no
+// parameter to check them against
+void log_message(const char* format, ...);
+
+void variadic_call(void)
+{
+    pos_t pos = pos_pod(1, 2);                     // good
+    log_message("%d %d", pos.x, pos.y);            // good: extra arguments of a variadic function
+    log_message("%d", 5);                          // good
+}

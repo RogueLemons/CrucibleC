@@ -578,6 +578,8 @@ static const char *kUsage =
     "                                    problems that stop the analysis.\n"
     "  --warnings-as-errors              Report every warning as an error, e.g. to fail\n"
     "                                    a CI run on any finding.\n"
+    "  --dump-config                     Print the config as it was read, with every\n"
+    "                                    setting, and exit. Needs no files or folders.\n"
     "  -h, --help                        Show this help.\n";
 
 struct Options {
@@ -589,6 +591,7 @@ struct Options {
     std::vector<std::string> inputs;
     bool quiet = false;
     bool warningsAsErrors = false;
+    bool dumpConfig = false;
     bool help = false;
 };
 
@@ -631,6 +634,11 @@ static bool parseArguments(int argc, const char **argv, Options &options) {
 
         if (arg == "--warnings-as-errors") {
             options.warningsAsErrors = true;
+            continue;
+        }
+
+        if (arg == "--dump-config") {
+            options.dumpConfig = true;
             continue;
         }
 
@@ -844,7 +852,7 @@ int main(int argc, const char **argv) {
         return ExitClean;
     }
 
-    if (options.inputs.empty()) {
+    if (options.inputs.empty() && !options.dumpConfig) {
         std::cerr << "No files or folders to analyze\n\n" << kUsage;
         return ExitBadUsage;
     }
@@ -868,6 +876,18 @@ int main(int argc, const char **argv) {
         std::cerr << "Failed to load config: " << options.configPath << "\n";
         return ExitConfigFailed;
     }
+
+    // Before the validation, so that an invalid config can be looked at
+    // as it was read
+    if (options.dumpConfig) {
+        ConfigParser::writeConfig(config, std::cout);
+        return ExitClean;
+    }
+
+    // Which files are used, for reading CI logs. On stderr, like the
+    // diagnostics, so stdout only carries an output file written to '-'
+    if (!options.quiet)
+        std::cerr << "Config: " << realPathOf(options.configPath) << "\n";
 
     std::vector<std::string> configErrors;
     if (!ConfigParser::validateConfig(config, configErrors)) {
@@ -902,6 +922,14 @@ int main(int argc, const char **argv) {
         std::cerr << "No compilation database: pass -p/--build-path <folder> or set "
                      "compile_commands_dir in the config\n";
         return ExitCompilationDatabaseFailed;
+    }
+
+    if (!options.quiet) {
+        std::cerr << "Build folder: " << realPathOf(compdbDir)
+                  << (options.compileCommandsDir.empty()
+                          ? " (compile_commands_dir in the config)"
+                          : " (-p/--build-path)")
+                  << "\n";
     }
 
     std::string errorMsg;

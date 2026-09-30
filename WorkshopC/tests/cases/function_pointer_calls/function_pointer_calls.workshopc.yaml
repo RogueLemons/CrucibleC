@@ -6,7 +6,7 @@ third_party_includes:
 rules:
   reference_pointer:
     level: Warning
-    disable_null_check_rule_for_reference_pointers: true
+    disable_null_check_rule_for_reference_pointers: false
   argument_pointer_movement:
     level: Warning
     require_operator_for_move_callsite: true

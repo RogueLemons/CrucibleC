@@ -1,0 +1,4 @@
+rules.array_struct.use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays needs at least one of enforce_size_suffix_for_array_structs, enforce_suffix_for_array_structs or struct_name_as_prefix to be true
+rules.span_struct.allow_pod_span_to_be_initialized_manually_if_static is true, which needs the struct_resource_management rule to be Warning or Error, not Off
+rules.interfaces.interface_must_have_fields_that_are_private_alternative is true, which needs the private_alternative rule to be Warning or Error, not Off
+rules.reference_pointer.disable_null_check_rule_for_reference_pointers is true, which needs the null_check rule to be Warning or Error, not Off

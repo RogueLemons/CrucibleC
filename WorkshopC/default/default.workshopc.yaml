@@ -155,6 +155,7 @@ rules:
     enforce_suffix_for_array_structs: true
     array_struct_suffix: _array
     struct_name_as_prefix: false
+    use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
   span_struct:

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -224,6 +225,19 @@ private:
         const std::vector<NamedSetting> &settings
     );
 
+    /*
+     * Adds an error if a boolean setting is true in a rule that is not Off,
+     * while the other rule it works together with is Off.
+     */
+    static void requireRuleOn(
+        std::vector<std::string> &errors,
+        RuleLevel settingRuleLevel,
+        bool setting,
+        const std::string &settingName,
+        const std::string &requiredRule,
+        RuleLevel requiredRuleLevel
+    );
+
     // A path without './' in front or '/' behind, for comparing folders
     static std::string normalizeFolder(const std::string &path);
 
@@ -243,5 +257,16 @@ public:
     static bool validateConfig(
         const Config &config,
         std::vector<std::string> &errors
+    );
+
+    /*
+     * Writes the config in the format loadFromFile reads, with every
+     * setting, so it can be saved and used as a config file. Empty strings
+     * are left out, since an empty value can not be written in the format
+     * and a missing string setting is empty.
+     */
+    static void writeConfig(
+        const Config &config,
+        std::ostream &out
     );
 };

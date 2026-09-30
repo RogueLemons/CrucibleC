@@ -58,3 +58,8 @@ rules:
   span_struct:
     level: Off
     span_struct_suffix: _vtable
+
+  # Off, so it does not matter that null_check is Off too
+  reference_pointer:
+    level: Off
+    disable_null_check_rule_for_reference_pointers: true

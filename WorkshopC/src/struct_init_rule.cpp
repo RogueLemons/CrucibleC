@@ -1199,7 +1199,12 @@ void StructInitRule::checkCallArguments(
     const std::string functionName =
         functionDecl->getNameAsString();
 
-    for (unsigned i = 0; i < call->getNumArgs(); ++i) {
+    // The arguments of a variadic function after its last parameter, e.g.
+    // printf("%d", x), have no parameter to check against
+    const unsigned count =
+        std::min(call->getNumArgs(), functionDecl->getNumParams());
+
+    for (unsigned i = 0; i < count; ++i) {
         const Expr *arg = call->getArg(i);
 
         if (!arg)
