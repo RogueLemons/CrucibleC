@@ -219,7 +219,8 @@ struct ArrayStructRuleConfig {
     // struct comes from the standard library or a third party
     bool structNameAsPrefix = false;
 
-    // Parsed only, not enforced yet
+    // Only the naming options above apply, and arrays may be declared
+    // outside of structs too
     bool useNamingRulesOnOneArrayFieldStructsWithoutForbiddingPublicArrays = false;
 };
 

@@ -1,0 +1,18 @@
+# Array struct rule with use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays:
+# arrays may be declared outside of structs, but a struct that holds only
+# an array still follows the naming rules
+
+third_party_includes:
+  - external/
+
+rules:
+  array_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions: false
+    enforce_size_suffix_for_array_structs: true
+    size_suffix_with_underscore: true
+    flexible_size_name: flexible
+    enforce_suffix_for_array_structs: true
+    array_struct_suffix: _array
+    struct_name_as_prefix: true
+    use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true

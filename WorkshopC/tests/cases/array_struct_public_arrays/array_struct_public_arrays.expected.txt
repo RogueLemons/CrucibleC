@@ -1,0 +1,3 @@
+warning: struct 'int_values' holds only the array 'values' and must end with '_array_5' [CCW2203]
+warning: struct 'path_array_3' holds only the array 'points' of 'point' and must start with 'point' [CCW2204]
+warning: struct 'int_array_2' holds only the array 'values' and must end with '_array_2_4' [CCW2203]

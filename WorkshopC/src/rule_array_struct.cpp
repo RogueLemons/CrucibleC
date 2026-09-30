@@ -256,8 +256,13 @@ void ArrayStructRule::run(const MatchFinder::MatchResult &result)
         return;
     }
 
-    if (const auto *array =
-            result.Nodes.getNodeAs<VarDecl>("arrayDeclaration"))
+    // With use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays
+    // only the naming rules above apply, and arrays may be declared anywhere
+    const auto *array =
+        result.Nodes.getNodeAs<VarDecl>("arrayDeclaration");
+
+    if (array &&
+        !config.arrayStructRule.useNamingRulesOnOneArrayFieldStructsWithoutForbiddingPublicArrays)
     {
         const SourceLocation loc = array->getLocation();
 

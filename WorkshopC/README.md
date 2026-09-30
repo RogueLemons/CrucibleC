@@ -1594,6 +1594,7 @@ array_struct:
   enforce_suffix_for_array_structs: true
   array_struct_suffix: _array
   struct_name_as_prefix: false
+  use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: false
 ```
 
 With `only_allow_array_passing_to_library_functions: false`, the rule only checks that arrays are struct fields. With it set to `true`, an array field may only be passed directly to a function declared by the standard library or by a configured `third_party_includes` path. Calls to project functions are reported, so project code must expose a safer wrapper or another deliberate interface instead.
@@ -1639,6 +1640,14 @@ struct polygon { point_t points[4]; size_t count; };    // OK: more than one fie
 struct int_array_6 { int values[5]; };                  // Triggers parser, must end with '_array_5'
 struct int_5_array { int values[5]; };                  // Triggers parser, the suffix comes before the count
 struct path_array_7 { point_t points[7]; };             // Triggers parser, must start with 'point'
+```
+
+#### Naming rules without forbidding arrays
+With `use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true`, arrays may be declared anywhere, e.g. as globals or local variables, and only the naming options above apply. This fits a project that wants consistent names for its array structs without moving every array into a struct. `only_allow_array_passing_to_library_functions` still applies to array fields. At least one of the naming options must be on, or the config is reported as invalid, since the rule would then check nothing.
+
+```c
+int loose_buffer[4];                                    // OK with the option
+struct int_values { int values[5]; };                   // Triggers parser, must end with '_array_5'
 ```
 
 ### Span struct rule
@@ -2178,8 +2187,6 @@ For Beta V1 it shall
 - Use githubs release system to make linux and windows releases
 - Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
 - Override third party includes with arg?
-- interface_must_have_fields_that_are_private_alternative may not be true if private alternative is off
-- Enforce array struct naming without forcing all arrays to be in structs
 
 For Beta V1.1 it shall
 - Add LSP support
