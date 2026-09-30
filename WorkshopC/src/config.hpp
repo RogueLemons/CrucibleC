@@ -100,6 +100,27 @@ struct StructResourceManagementRuleConfig {
     bool raiiStandardizedDestroyDefinitions = false;
 };
 
+struct InterfacesRuleConfig {
+    RuleLevel level = RuleLevel::Off;
+
+    // A vtable struct holds only function pointers taking a void* or
+    // const void* first, and its variables are static const, fully
+    // initialized with functions
+    std::string vtableSuffix;
+
+    // Not checked yet: the interface part of the rule
+    std::string interfaceSuffix;
+    std::string constInterfaceSuffix;
+    bool interfaceMustHaveFieldsThatArePrivateAlternative = false;
+
+    bool isVtableName(const std::string &name) const
+    {
+        return !vtableSuffix.empty() &&
+               name.size() >= vtableSuffix.size() &&
+               name.compare(name.size() - vtableSuffix.size(), vtableSuffix.size(), vtableSuffix) == 0;
+    }
+};
+
 struct RestrictedMallocRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
@@ -245,6 +266,7 @@ struct Config {
     SpanStructRuleConfig spanStructRule;
     ConstFieldRuleConfig constFieldRule;
     NoGotoRuleConfig noGotoRule;
+    InterfacesRuleConfig interfacesRule;
 
     // List of paths to third-party include directories, relative to the config file
     std::vector<std::string> thirdPartyIncludes;

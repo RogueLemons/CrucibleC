@@ -7,8 +7,8 @@
  * WorkshopC): 'rr' is the rule and 'cc' the check within that rule.
  *
  *   00  WorkshopC itself (suppressions)        13  struct resource management: return values
- *   01  enum                                   14  (reserved for future rules)
- *   02  private                                15  (reserved for future rules)
+ *   01  enum                                   14  interfaces: vtables
+ *   02  private                                15  interfaces: interfaces (reserved)
  *   03  private_alternative                    16  restricted_malloc
  *   04  function_pointer                       17  single_return
  *   05  typedef_struct                         18  strict_switch
@@ -189,6 +189,19 @@
       "A member is accessed directly on a raii struct returned by a function") \
     X(RaiiReturnDiscarded, "CCW1305", "raii-return-discarded", \
       "A raii struct returned by a function is discarded") \
+    /* 14 interfaces: vtables */ \
+    X(VtableFieldNotFunctionPointer, "CCW1401", "vtable-field-not-function-pointer", \
+      "A field of a vtable struct is not a function pointer") \
+    X(VtableFunctionMissingObjectParameter, "CCW1402", "vtable-function-missing-object-parameter", \
+      "A function pointer in a vtable struct does not take a void* or const void* as its first parameter") \
+    X(VtableNotStaticConst, "CCW1403", "vtable-not-static-const", \
+      "A vtable variable is not declared static const") \
+    X(VtableNotInitialized, "CCW1404", "vtable-not-initialized", \
+      "A vtable variable is not initialized at declaration with braces") \
+    X(VtableMissingFunction, "CCW1405", "vtable-missing-function", \
+      "A vtable initializer does not give an element for every function pointer of the vtable struct") \
+    X(VtableElementNotFunction, "CCW1406", "vtable-element-not-function", \
+      "A vtable initializer element is not a function, e.g. NULL or 0") \
     /* 16 restricted_malloc */ \
     X(RestrictedMalloc, "CCW1601", "restricted-malloc", \
       "A memory function is used outside of the allowed functions") \

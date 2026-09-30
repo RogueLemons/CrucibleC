@@ -42,6 +42,10 @@ public:
         // Optional, only required when an array of the struct is declared
         bool hasArrayDestroy = false;
 
+        // A struct that is free when it has no creator function, e.g. a
+        // vtable, instead of invalid
+        bool freeWithoutCreator = false;
+
         Kind kind = Kind::Invalid;
     };
 

@@ -431,6 +431,28 @@ void ConfigParser::applySetting(
 }
 
 void ConfigParser::applySetting(
+    InterfacesRuleConfig &cfg,
+    const std::string &key,
+    const std::string &value
+) {
+    if (key == "level") {
+        cfg.level = parseLevel(value);
+    }
+    else if (key == "vtable_suffix") {
+        cfg.vtableSuffix = value;
+    }
+    else if (key == "interface_suffix") {
+        cfg.interfaceSuffix = value;
+    }
+    else if (key == "const_interface_suffix") {
+        cfg.constInterfaceSuffix = value;
+    }
+    else if (key == "interface_must_have_fields_that_are_private_alternative") {
+        cfg.interfaceMustHaveFieldsThatArePrivateAlternative = parseBool(value);
+    }
+}
+
+void ConfigParser::applySetting(
     GlobalVariableRuleConfig &cfg,
     const std::string &key,
     const std::string &value
@@ -592,6 +614,9 @@ void ConfigParser::applyRuleSetting(
     }
     else if (currentRule == "no_goto") {
         applySetting(config.noGotoRule, key, value);
+    }
+    else if (currentRule == "interfaces") {
+        applySetting(config.interfacesRule, key, value);
     }
 }
 

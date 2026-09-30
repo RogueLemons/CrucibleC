@@ -75,7 +75,15 @@ void StructDatabaseRule::registerStruct(
 
     seen.insert(canon);
 
-    database.registerStruct(RD);
+    StructDatabase::StructInfo &info = database.registerStruct(RD);
+
+    // A vtable is only a set of functions: without a creator function
+    // it is a free struct, not an invalid one
+    if (config.interfacesRule.level != RuleLevel::Off &&
+        config.interfacesRule.isVtableName(RD->getNameAsString()))
+    {
+        info.freeWithoutCreator = true;
+    }
 }
 
 const RecordDecl *StructDatabaseRule::getStructDecl(QualType type) const

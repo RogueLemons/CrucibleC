@@ -1,0 +1,20 @@
+# Interfaces rule, vtable part: vtable structs and variables
+
+third_party_includes:
+  - external/
+
+rules:
+  interfaces:
+    level: Error
+    vtable_suffix: _vtable
+
+  struct_resource_management:
+    level: Error
+    pod_struct_creator_suffix: _pod
+    raii_struct_creator_suffix: _make
+    raii_struct_destroyer_suffix: _destroy
+    raii_struct_copy_suffix: _copy
+    raii_struct_move_suffix: _move
+    raii_struct_return_suffix: _return
+    raii_struct_valid_suffix: _valid
+    free_struct_creator_suffix: _init

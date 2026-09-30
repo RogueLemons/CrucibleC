@@ -25,6 +25,7 @@
 #include "rule_span_struct.hpp"
 #include "rule_const_field.hpp"
 #include "rule_no_goto.hpp"
+#include "rule_vtable.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -90,6 +91,7 @@ private:
     std::unique_ptr<SpanStructRule> spanStructRule{};
     std::unique_ptr<ConstFieldRule> constFieldRule{};
     std::unique_ptr<NoGotoRule> noGotoRule{};
+    std::unique_ptr<VtableRule> vtableRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -375,6 +377,17 @@ public:
             );
 
             noGotoRule->bindFinder(finder);
+        }
+
+        // Interfaces rule: vtables
+        if (config.interfacesRule.level != RuleLevel::Off) {
+            vtableRule = std::make_unique<VtableRule>(
+                config,
+                suppressions,
+                diagnostics
+            );
+
+            vtableRule->bindFinder(finder);
         }
 
         // Tags of functions assigned or passed to function pointers,

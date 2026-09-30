@@ -117,6 +117,12 @@ private:
     );
 
     static void applySetting(
+        InterfacesRuleConfig &cfg,
+        const std::string &key,
+        const std::string &value
+    );
+
+    static void applySetting(
         GlobalVariableRuleConfig &cfg,
         const std::string &key,
         const std::string &value

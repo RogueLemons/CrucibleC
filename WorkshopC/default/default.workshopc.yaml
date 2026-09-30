@@ -96,6 +96,31 @@ rules:
     raii_standardized_destroy_definitions: true
     free_struct_creator_suffix: _init
 
+  # Interfaces rule - standardizes how interfaces and vtables are used
+  interfaces:
+    level: Error
+    vtable_suffix: _vtable
+    interface_suffix: _interface
+    const_interface_suffix: _const_interface
+    interface_must_have_fields_that_are_private_alternative: true
+
+  # Vtables must be static const and may ONLY consist of function pointers 
+  # where the first argument is always a void* or const void*.
+  # A vtable struct must be initialized at declaration with initializer
+  # brackets {} with an element for each function pointer in the vtable struct.
+  # Each initializer element must be an actual function (no NULL or 0 init).
+  # If struct_resource_management is not Off (ie it is Warning or Error) then
+  # it shall treat a struct as free if it has no creator function 
+  # (no make, pod, or init function).
+  # Interfaces may only consist of two fields: the first is a void* object
+  # and the other is a const pointer to a vtable struct. 
+  # If the interface has the const interface suffix then it must instead 
+  # have a const void* as its first argument.
+  # If interface_must_have_fields_that_are_private_alternative is true and
+  # private alternative rule is active then the two fields in the interface
+  # must be marked private according to the private alternative rule.
+  # The rule for vtables is number 14 and rule for interfaces is 15.
+
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
   restricted_malloc:
     level: Error

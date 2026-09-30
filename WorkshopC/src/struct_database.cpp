@@ -63,6 +63,11 @@ void StructDatabase::finalize()
             static_cast<int>(info.hasPodCreator) +
             static_cast<int>(info.hasRaiiCreator);
 
+        if (creators == 0 && info.freeWithoutCreator) {
+            info.kind = Kind::Free;
+            continue;
+        }
+
         if (creators != 1) {
             info.kind = Kind::Invalid;
             continue;

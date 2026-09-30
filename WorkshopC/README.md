@@ -16,6 +16,7 @@ A configurable analyzer that enforces safer C: RAII-style structs, explicit poin
   - [Null check rule](#null-check-rule)
   - [Argument pointer movement rule](#argument-pointer-movement-rule)
   - [RAII and struct resource management](#raii-and-struct-resource-management)
+  - [Interfaces rule](#interfaces-rule)
   - [Restricted malloc rule](#restricted-malloc-rule)
   - [Single return rule](#single-return-rule)
   - [Strict switch rule](#strict-switch-rule)
@@ -212,6 +213,13 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW1303` | `raii-return` | A function returning a raii struct does not return a function call |
 | `CCW1304` | `raii-return-member-access` | A member is accessed directly on a raii struct returned by a function |
 | `CCW1305` | `raii-return-discarded` | A raii struct returned by a function is discarded |
+| | **14 — [Interfaces: vtables](#interfaces-rule)** | |
+| `CCW1401` | `vtable-field-not-function-pointer` | A field of a vtable struct is not a function pointer |
+| `CCW1402` | `vtable-function-missing-object-parameter` | A function pointer in a vtable struct does not take a `void*` or `const void*` as its first parameter |
+| `CCW1403` | `vtable-not-static-const` | A vtable variable is not declared `static const` |
+| `CCW1404` | `vtable-not-initialized` | A vtable variable is not initialized at declaration with braces |
+| `CCW1405` | `vtable-missing-function` | A vtable initializer does not give an element for every function pointer of the vtable struct |
+| `CCW1406` | `vtable-element-not-function` | A vtable initializer element is not a function, e.g. `NULL` or `0` |
 | | **16 — [Restricted malloc](#restricted-malloc-rule)** | |
 | `CCW1601` | `restricted-malloc` | A memory function is used outside of the allowed functions |
 | | **17 — [Single return](#single-return-rule)** | |
@@ -1255,6 +1263,36 @@ The init function sets up the free struct itself, so it may assign the struct's 
 #### Standard and 3rd party structs
 Structs from the standard library or 3rd party libraries are unaffected. Therefore, to ensure that these are always properly initialized and their memory and resources are taken care of, they can be wrapped in pod and raii structs. 
 
+### Interfaces rule
+This rule standardizes how interfaces and their vtables are written. So far only the vtable part is checked.
+
+```yaml
+interfaces:
+  level: Error
+  vtable_suffix: _vtable
+```
+
+A vtable struct is a struct whose name ends with `vtable_suffix`. It may only hold function pointers, directly or through a typedef. Every function pointer takes a `void*` or `const void*` as its first parameter: the object the function works on.
+
+A vtable variable must be `static const`, and it must be initialized at declaration with braces, with an element for every function pointer. Designated elements and `&function` are fine. Every element must be an actual function, never `NULL` or `0`. A vtable is used through a pointer to it, so a vtable parameter passed by value is reported too.
+
+When [struct resource management](#raii-and-struct-resource-management) is on, a vtable struct without a creator function (no make, pod or init function) is a free struct instead of an invalid one.
+
+```c
+struct shape_vtable
+{
+  double (*area)(const void* self);             // OK
+  void (*scale)(void* self, double factor);     // OK
+  int count;                                    // Triggers parser, not a function pointer
+  void (*reset)(void);                          // Triggers parser, no void* or const void* first
+};
+
+static const shape_vtable_t circle_vtable = { circle_area, circle_scale };           // OK
+static const shape_vtable_t square_vtable = { .area = square_area, .scale = NULL };  // Triggers parser, NULL is not a function
+const shape_vtable_t shared_vtable = { circle_area, circle_scale };                  // Triggers parser, not static
+static const shape_vtable_t partial_vtable = { circle_area };                        // Triggers parser, 'scale' is missing
+```
+
 ### Restricted malloc rule
 This rule keeps all dynamic memory handling in one place. The memory functions `malloc`, `calloc`, `realloc`, `free`, `strdup`, `strndup`, `asprintf`, `getline` and `realpath` may only be used inside the functions listed in the config. All of them either allocate or free memory, some of them without it being obvious (`getline` grows the buffer it is given and `realpath` allocates when given `NULL`).
 
@@ -2095,7 +2133,7 @@ For Beta V1 it shall
 - Make config strings empty by default and validate all strings are given values for configs that are turned on
 
 For Beta V1.1 it shall
-- Add rules for vtables and interfaces (the rule codes shall be 14 and 15), shall require struct name suffixes, compatible with pod (vtable free even if no init func)
+- Add rules for interfaces (the rule code shall be 15), shall require struct name suffixes
 
 For Beta V1.2 it shall
 - Add LSP support
