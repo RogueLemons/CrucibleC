@@ -1,0 +1,9 @@
+# Folder input: every .c file under the folder is parsed, except in
+# third-party folders
+
+third_party_includes:
+  - external/
+
+rules:
+  no_goto:
+    level: Error

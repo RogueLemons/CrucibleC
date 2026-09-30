@@ -18,6 +18,9 @@ TESTS_COMPDB = ROOT / "build-tests"
 # Where the output files test writes its text, JSON and SARIF files
 TESTS_OUTPUT = TESTS / "output"
 
+# The folder given whole to the parser, instead of a single file
+FOLDER_INPUT = TESTS / "folder_input"
+
 # The test whose diagnostics are written to every output format at once
 OUTPUT_FILES_TEST = CASES / "suppression_balance" / "suppression_balance.c"
 
@@ -305,6 +308,61 @@ def run_warnings_as_errors_test(exe):
     return True
 
 
+def run_folder_input_test(exe):
+    """
+    Gives the parser a folder instead of a file, and checks that it parses
+    every .c file in it, also in subfolders, but no header and nothing in
+    a third-party folder.
+    """
+    print("\n==============================")
+    print("Running: folder input")
+    print("==============================")
+
+    result = subprocess.run(
+        [
+            str(exe),
+            "--config", str(FOLDER_INPUT / "folder_input.workshopc.yaml"),
+            "-p", str(TESTS_COMPDB),
+            str(FOLDER_INPUT)
+        ],
+        text=True,
+        capture_output=True
+    )
+
+    combined_output = result.stdout + "\n" + result.stderr
+
+    if combined_output.strip():
+        print(combined_output)
+
+    problems = []
+
+    expected = Counter(
+        normalize(x)
+        for x in (FOLDER_INPUT / "folder_input.expected.txt").read_text().splitlines()
+        if normalize(x) is not None
+    )
+
+    actual = Counter(collect_messages(combined_output))
+    check(actual == expected,
+          "the diagnostics do not match folder_input.expected.txt", problems)
+
+    # Each diagnostic comes from the file it belongs to
+    for name in ("top_level.c", "nested.c"):
+        check(name in combined_output, f"{name} was not parsed", problems)
+
+    for name in ("not_a_source.h", "third_party.c"):
+        check(name not in combined_output, f"{name} was parsed", problems)
+
+    check(result.returncode == 1,
+          f"exit code {result.returncode}, expected 1 (errors only)", problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    print("--PASSED--")
+    return True
+
+
 def report_output_problems(problems):
     print("--FAILED--")
 
@@ -407,7 +465,7 @@ def main():
 
             failed += 1
 
-    special_tests = [run_output_files_test, run_warnings_as_errors_test]
+    special_tests = [run_output_files_test, run_warnings_as_errors_test, run_folder_input_test]
 
     for special_test in special_tests:
         if special_test(exe):

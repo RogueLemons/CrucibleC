@@ -17,6 +17,13 @@ file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/cases/*/*.c
 )
 
+# The folder passed whole to the parser by the folder input test
+file(GLOB_RECURSE FOLDER_INPUT_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/folder_input/*.c
+)
+
+list(APPEND TEST_SOURCES ${FOLDER_INPUT_SOURCES})
+
 add_library(workshopc_tests OBJECT ${TEST_SOURCES})
 
 # Lets the tests include the shared "headers/...", "external/..." and

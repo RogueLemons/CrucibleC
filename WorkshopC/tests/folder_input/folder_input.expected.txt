@@ -1,0 +1,2 @@
+error: goto 'top_level_file' is not allowed [CCW2501]
+error: goto 'nested_file' is not allowed [CCW2501]
