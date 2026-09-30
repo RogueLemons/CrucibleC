@@ -267,6 +267,9 @@ void ConfigParser::applySetting(
     else if (key == "raii_struct_array_destroyer_suffix") {
         cfg.raiiStructArrayDestroyerSuffix = value;
     }
+    else if (key == "allow_raii_struct_arrays") {
+        cfg.allowRaiiStructArrays = parseBool(value);
+    }
     else if (key == "raii_use_after_destroy") {
         cfg.raiiUseAfterDestroy = parseBool(value);
     }
@@ -738,4 +741,92 @@ bool ConfigParser::loadFromFile(
     }
 
     return true;
+}
+
+void ConfigParser::requireString(
+    std::vector<std::string> &errors,
+    const std::string &rule,
+    RuleLevel level,
+    const std::string &key,
+    const std::string &value
+) {
+    if (level != RuleLevel::Off && value.empty()) {
+        errors.push_back(
+            "rules." + rule + "." + key + " must be set when the rule is not Off"
+        );
+    }
+}
+
+void ConfigParser::requireStrings(
+    std::vector<std::string> &errors,
+    const std::string &rule,
+    RuleLevel level,
+    const std::string &key,
+    const std::vector<std::string> &values
+) {
+    for (const std::string &value : values) {
+        if (level != RuleLevel::Off && value.empty()) {
+            errors.push_back(
+                "rules." + rule + "." + key + " may not contain an empty item when the rule is not Off"
+            );
+            return;
+        }
+    }
+}
+
+bool ConfigParser::validateConfig(
+    const Config &config,
+    std::vector<std::string> &errors
+) {
+    const size_t errorsBefore = errors.size();
+
+    const PrivateRuleConfig &priv = config.privateRule;
+    requireString(errors, "private", priv.level, "private_field", priv.privateField);
+    requireString(errors, "private", priv.level, "getter_contains", priv.getterContains);
+    requireString(errors, "private", priv.level, "setter_contains", priv.setterContains);
+
+    const PrefixNamespaceRuleConfig &prefix = config.prefixNamespaceRule;
+    requireString(errors, "prefix_namespace", prefix.level, "top_dir", prefix.topDir);
+    requireString(errors, "prefix_namespace", prefix.level, "seperator", prefix.separator);
+
+    const StructResourceManagementRuleConfig &srm = config.structResourceManagementRule;
+    requireString(errors, "struct_resource_management", srm.level, "pod_struct_creator_suffix", srm.podStructCreatorSuffix);
+    requireString(errors, "struct_resource_management", srm.level, "raii_struct_creator_suffix", srm.raiiStructCreatorSuffix);
+    requireString(errors, "struct_resource_management", srm.level, "raii_struct_destroyer_suffix", srm.raiiStructDestroyerSuffix);
+    requireString(errors, "struct_resource_management", srm.level, "raii_struct_copy_suffix", srm.raiiStructCopySuffix);
+    requireString(errors, "struct_resource_management", srm.level, "raii_struct_move_suffix", srm.raiiStructMoveSuffix);
+    requireString(errors, "struct_resource_management", srm.level, "raii_struct_return_suffix", srm.raiiStructReturnSuffix);
+    requireString(errors, "struct_resource_management", srm.level, "raii_struct_valid_suffix", srm.raiiStructValidSuffix);
+    requireString(errors, "struct_resource_management", srm.level, "free_struct_creator_suffix", srm.freeStructCreatorSuffix);
+
+    if (srm.level != RuleLevel::Off &&
+        srm.allowRaiiStructArrays &&
+        srm.raiiStructArrayDestroyerSuffix.empty())
+    {
+        errors.push_back(
+            "rules.struct_resource_management.raii_struct_array_destroyer_suffix must be set when allow_raii_struct_arrays is true"
+        );
+    }
+
+    const InterfacesRuleConfig &interfaces = config.interfacesRule;
+    requireString(errors, "interfaces", interfaces.level, "vtable_suffix", interfaces.vtableSuffix);
+    requireString(errors, "interfaces", interfaces.level, "interface_suffix", interfaces.interfaceSuffix);
+    requireString(errors, "interfaces", interfaces.level, "const_interface_suffix", interfaces.constInterfaceSuffix);
+
+    const RestrictedMallocRuleConfig &restrictedMalloc = config.restrictedMallocRule;
+    requireStrings(errors, "restricted_malloc", restrictedMalloc.level, "list_of_allowed_malloc_functions", restrictedMalloc.listOfAllowedMallocFunctions);
+
+    const GlobalVariableRuleConfig &global = config.globalVariableRule;
+    requireString(errors, "global_variable", global.level, "prefix", global.prefix);
+    requireString(errors, "global_variable", global.level, "local_static_prefix", global.localStaticPrefix);
+
+    const ArrayStructRuleConfig &array = config.arrayStructRule;
+    requireString(errors, "array_struct", array.level, "flexible_size_name", array.flexibleSizeName);
+    requireString(errors, "array_struct", array.level, "array_struct_suffix", array.arrayStructSuffix);
+
+    const SpanStructRuleConfig &span = config.spanStructRule;
+    requireString(errors, "span_struct", span.level, "span_struct_suffix", span.spanStructSuffix);
+    requireString(errors, "span_struct", span.level, "const_span_struct_suffix", span.constSpanStructSuffix);
+
+    return errors.size() == errorsBefore;
 }

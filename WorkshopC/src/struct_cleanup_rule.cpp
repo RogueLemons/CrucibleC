@@ -1864,7 +1864,7 @@ StructCleanupRule::StructCleanupRule(
       returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
       validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix),
       freeSuffix(cfg.structResourceManagementRule.freeStructCreatorSuffix),
-      arrayDestroySuffix(cfg.structResourceManagementRule.raiiStructArrayDestroyerSuffix)
+      arrayDestroySuffix(cfg.structResourceManagementRule.activeRaiiStructArrayDestroyerSuffix())
 {
 }
 

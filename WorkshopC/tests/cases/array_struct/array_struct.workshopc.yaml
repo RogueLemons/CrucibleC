@@ -3,4 +3,6 @@
 rules:
   array_struct:
     level: Warning
+    flexible_size_name: flexible
+    array_struct_suffix: _array
     only_allow_array_passing_to_library_functions: false

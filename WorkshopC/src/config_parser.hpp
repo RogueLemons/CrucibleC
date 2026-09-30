@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "config.hpp"
 
@@ -174,9 +175,42 @@ private:
         const std::string &value
     );
 
+    /*
+     * Adds an error if the rule is not Off and the setting is empty.
+     */
+    static void requireString(
+        std::vector<std::string> &errors,
+        const std::string &rule,
+        RuleLevel level,
+        const std::string &key,
+        const std::string &value
+    );
+
+    /*
+     * Adds an error if the rule is not Off and any item of the list is
+     * empty. An empty list is allowed.
+     */
+    static void requireStrings(
+        std::vector<std::string> &errors,
+        const std::string &rule,
+        RuleLevel level,
+        const std::string &key,
+        const std::vector<std::string> &values
+    );
+
 public:
     static bool loadFromFile(
         const std::string &filepath,
         Config &config
+    );
+
+    /*
+     * Checks that the loaded config is usable, adding one message per
+     * problem to errors. Every string setting of a rule that is not Off
+     * must be given a value, since no string setting has a default.
+     */
+    static bool validateConfig(
+        const Config &config,
+        std::vector<std::string> &errors
     );
 };

@@ -17,4 +17,5 @@ rules:
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false
     raii_struct_array_destroyer_suffix: _destroy_array
+    allow_raii_struct_arrays: true
     free_struct_creator_suffix: _init

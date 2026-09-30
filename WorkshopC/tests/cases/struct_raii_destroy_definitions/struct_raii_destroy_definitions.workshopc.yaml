@@ -14,6 +14,7 @@ rules:
     raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
     raii_struct_array_destroyer_suffix: _destroy_array
+    allow_raii_struct_arrays: true
     raii_destroy_in_reverse_order: true
     raii_standardized_destroy_definitions: true
     free_struct_creator_suffix: _init

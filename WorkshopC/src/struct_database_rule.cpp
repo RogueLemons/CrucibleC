@@ -561,7 +561,7 @@ StructDatabaseRule::StructDatabaseRule(
     moveSuffix(cfg.structResourceManagementRule.raiiStructMoveSuffix),
     returnSuffix(cfg.structResourceManagementRule.raiiStructReturnSuffix),
     validSuffix(cfg.structResourceManagementRule.raiiStructValidSuffix),
-    arrayDestroySuffix(cfg.structResourceManagementRule.raiiStructArrayDestroyerSuffix)
+    arrayDestroySuffix(cfg.structResourceManagementRule.activeRaiiStructArrayDestroyerSuffix())
 {
 }
 

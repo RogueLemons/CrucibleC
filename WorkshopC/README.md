@@ -749,7 +749,7 @@ prefix_namespace:
     case_insensitive: false
 ```
 
-- `top_dir` (default `src`): the folder the namespaces start in. The prefix is built from the folders after the first folder with this name in the header's path, not including it. A header that is not inside such a folder is not checked.
+- `top_dir` (required, e.g. `src`): the folder the namespaces start in. The prefix is built from the folders after the first folder with this name in the header's path, not including it. A header that is not inside such a folder is not checked.
 - `stop_at_count` (default `10`) and `work_from_top` (default `false`): at most `stop_at_count` folders are used. With `work_from_top: true` these are the folders closest to `top_dir`, otherwise the folders closest to the file.
 - `use_seperator` and `seperator` (note the spelling of the keys): the separator is written between the folder names and after the last one. Without it the folder names are joined directly, e.g. `appchrono`.
 - `apply_to_functions`, `apply_to_structs` and `apply_to_typedefs`: which names must have the prefix. Static functions never need it, since they are not visible outside the file.
@@ -1017,6 +1017,7 @@ struct_resource_management:
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false
     raii_struct_array_destroyer_suffix: _destroy_array
+    allow_raii_struct_arrays: true
     raii_destroy_in_reverse_order: true
     raii_standardized_destroy_definitions: true
     free_struct_creator_suffix: _init
@@ -1024,7 +1025,8 @@ struct_resource_management:
 
 - `raii_use_after_destroy` (default `true`): when `false`, a raii struct that has been destroyed with its destroy function may not be referenced again, neither passed to a function nor accessed through a field.
   - `raii_destroy_in_reverse_order` (default `false`): when `true`, raii structs must be destroyed in reverse declaration order. If `a`, `b` and `c` are initialized in that order, they must be destroyed as `c`, `b`, then `a`. When `false`, destruction order is unrestricted as before.
-- `raii_struct_array_destroyer_suffix` (default empty): enables arrays of raii structs outside of structs, see [arrays of raii structs](#arrays-of-raii-structs). When empty, arrays of raii structs are only allowed inside structs.
+- `allow_raii_struct_arrays` (default `false`): enables arrays of raii structs outside of structs, see [arrays of raii structs](#arrays-of-raii-structs). When `false`, arrays of raii structs are only allowed inside structs.
+- `raii_struct_array_destroyer_suffix`: the suffix of the array destroy function, required when `allow_raii_struct_arrays` is `true`.
 - `raii_may_only_move_value_ref` (default `false`): when `true`, a raii move function may only be given the address of a variable, e.g. `dynamic_string_move(&name)`, so that only an object owned by the calling scope can be moved from. A pointer (`dynamic_string_move(name_ptr)`), a struct field (`&holder.name`, `&holder->name`) or anything behind a pointer (`&*name_ptr`) is reported. The lifecycle functions of any struct may still work through their `self` pointer, e.g. a struct's own return function moving `self`, or the move function of a struct with a raii field moving `&self->field`.
 - `raii_may_only_destroy_value_ref` (default `false`): the same for the destroy function, e.g. `dynamic_string_destroy(&name)`. The destroy function of a struct with raii fields may still destroy them with `&self->field`. Fields of [free structs](#free-struct) are not affected and may be destroyed from anywhere, e.g. `dynamic_string_destroy(&holder.name)` or `dynamic_string_destroy(&holder->name)`, since free structs come with no rules.
 - `raii_standardized_destroy_definitions` (default `false`): when `true`, the destroy function of a raii struct must destroy each of its raii fields exactly once. A field is destroyed with `<field struct>_destroy(&self->field)`, or `<field struct>_destroy_array(self->field, count)` for an array field. All the field destroys are statements side by side in one block, either:
@@ -1235,7 +1237,7 @@ If building a field needs steps first, e.g. checking that it is valid, do them w
 This rule works better when combined with the [private members rule](#private-rule) or the [private alternative rule](#private-alternative-rule) since a major point to the raii struct is to make sure the internal state of the struct is always controlled.
 
 ##### Arrays of raii structs
-With `raii_struct_array_destroyer_suffix` set (e.g. `_destroy_array`), one-dimensional arrays of raii structs are allowed outside of structs. Every element must be initialized from a function return value, and the array must be destroyed before every scope exit with the array destroy function, whose first argument must be the array itself and whose second argument must be the size of the array. The function is not required for a raii struct in general, only once an array of it is declared, and it must have the signature `void <struct name><suffix>(<struct name>* self, size_t n)`.
+With `allow_raii_struct_arrays: true` and `raii_struct_array_destroyer_suffix` set (e.g. `_destroy_array`), one-dimensional arrays of raii structs are allowed outside of structs. Every element must be initialized from a function return value, and the array must be destroyed before every scope exit with the array destroy function, whose first argument must be the array itself and whose second argument must be the size of the array. The function is not required for a raii struct in general, only once an array of it is declared, and it must have the signature `void <struct name><suffix>(<struct name>* self, size_t n)`.
 
 ```c
 void dynamic_string_destroy_array(d_str* self, size_t n);

@@ -869,6 +869,16 @@ int main(int argc, const char **argv) {
         return ExitConfigFailed;
     }
 
+    std::vector<std::string> configErrors;
+    if (!ConfigParser::validateConfig(config, configErrors)) {
+        std::cerr << "Invalid config: " << options.configPath << "\n";
+
+        for (const std::string &error : configErrors)
+            std::cerr << "  " << error << "\n";
+
+        return ExitConfigFailed;
+    }
+
     // -------------------------
     // Locate the compilation database: -p, or the config setting which
     // is relative to the config file

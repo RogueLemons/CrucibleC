@@ -12,5 +12,5 @@ warning: array 'values' may only be passed to a standard-library, third-party, s
 warning: array 'values' may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
 warning: array 'constants' may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
 warning: array 'constants' may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
-error: struct 'score_const_span' is invalid: it requires exactly one of the following constructor functions: 'score_const_span score_const_span_pod(...)', 'score_const_span score_const_span(...)', or '<any> score_const_span(score_const_span* self, ...)' [CCW1001]
-error: struct 'score_span' is invalid: it requires exactly one of the following constructor functions: 'score_span score_span_pod(...)', 'score_span score_span(...)', or '<any> score_span(score_span* self, ...)' [CCW1001]
+error: struct 'score_const_span' is invalid: it requires exactly one of the following constructor functions: 'score_const_span score_const_span_pod(...)', 'score_const_span score_const_span_make(...)', or '<any> score_const_span_init(score_const_span* self, ...)' [CCW1001]
+error: struct 'score_span' is invalid: it requires exactly one of the following constructor functions: 'score_span score_span_pod(...)', 'score_span score_span_make(...)', or '<any> score_span_init(score_span* self, ...)' [CCW1001]

@@ -22,9 +22,9 @@ struct EnumRuleConfig {
 struct PrivateRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
-    std::string privateField = "_private";
-    std::string getterContains = "pget";
-    std::string setterContains = "pset";
+    std::string privateField;
+    std::string getterContains;
+    std::string setterContains;
 };
 
 struct PrivateAlternativeRuleConfig {
@@ -52,11 +52,11 @@ struct AssignmentRuleConfig {
 struct PrefixNamespaceRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
-    std::string topDir = "src";
+    std::string topDir;
     bool workFromTop = false;
     int stopAtCount = 10;
     bool useSeparator = false;
-    std::string separator = "_";
+    std::string separator;
     bool requireIfndefForFilepath = false;
     bool applyToFunctions = false;
     bool applyToStructs = false;
@@ -93,11 +93,22 @@ struct StructResourceManagementRuleConfig {
     std::string freeStructCreatorSuffix;
     std::string raiiStructArrayDestroyerSuffix;
 
+    // Arrays of raii structs outside of structs, destroyed with the array
+    // destroyer function. When false they are only allowed inside structs.
+    bool allowRaiiStructArrays = false;
+
     bool raiiUseAfterDestroy = true;
     bool raiiMayOnlyMoveValueRef = false;
     bool raiiMayOnlyDestroyValueRef = false;
     bool raiiDestroyInReverseOrder = false;
     bool raiiStandardizedDestroyDefinitions = false;
+
+    // The array destroyer suffix, or empty when arrays of raii structs are
+    // not allowed, which is how the rules tell the two cases apart
+    std::string activeRaiiStructArrayDestroyerSuffix() const
+    {
+        return allowRaiiStructArrays ? raiiStructArrayDestroyerSuffix : std::string();
+    }
 };
 
 struct InterfacesRuleConfig {
@@ -163,14 +174,14 @@ struct GlobalVariableRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
     bool requirePrefix = false;
-    std::string prefix = "g_";
+    std::string prefix;
     bool mustBeCaps = false;
     bool mustBeStatic = false;
     bool mustBeConst = false;
 
     bool treatLocalStaticAsGlobal = false;
     bool requireLocalStaticPrefix = false;
-    std::string localStaticPrefix = "s_";
+    std::string localStaticPrefix;
     bool forbidStaticInHeader = false;
 };
 
@@ -198,11 +209,11 @@ struct ArrayStructRuleConfig {
     bool sizeSuffixWithUnderscore = true;
 
     // Used instead of a count for a flexible array, e.g. 'int values[]'
-    std::string flexibleSizeName = "flexible";
+    std::string flexibleSizeName;
 
     // The name ends with arrayStructSuffix, before any size suffix
     bool enforceSuffixForArrayStructs = false;
-    std::string arrayStructSuffix = "_array";
+    std::string arrayStructSuffix;
 
     // The name starts with the name of the element struct, unless that
     // struct comes from the standard library or a third party
@@ -213,11 +224,11 @@ struct SpanStructRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
     bool onlyAllowArrayPassingToLibraryFunctionsAndSpans = false;
-    std::string spanStructSuffix = "_span";
+    std::string spanStructSuffix;
 
     // A span of const data, e.g. 'const int* data'. Checked before
     // spanStructSuffix, which it usually ends with too.
-    std::string constSpanStructSuffix = "_const_span";
+    std::string constSpanStructSuffix;
 
     // A span may cover only the start of an array: its count may be less
     // than the array's element count, but never more

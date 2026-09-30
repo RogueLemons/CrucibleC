@@ -6,6 +6,8 @@ third_party_includes:
 rules:
   interfaces:
     level: Error
+    interface_suffix: _interface
+    const_interface_suffix: _const_interface
     vtable_suffix: _vtable
 
   struct_resource_management:

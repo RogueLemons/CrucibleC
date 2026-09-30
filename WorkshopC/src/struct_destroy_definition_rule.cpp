@@ -146,8 +146,8 @@ StructDestroyDefinitionRule::getRaiiFields(const RecordDecl *record) const
         if (!info || info->kind != StructDatabase::Kind::Raii)
             continue;
 
-        const std::string &suffix =
-            isArray ? rule.raiiStructArrayDestroyerSuffix : rule.raiiStructDestroyerSuffix;
+        const std::string suffix =
+            isArray ? rule.activeRaiiStructArrayDestroyerSuffix() : rule.raiiStructDestroyerSuffix;
 
         if (suffix.empty())
             continue;

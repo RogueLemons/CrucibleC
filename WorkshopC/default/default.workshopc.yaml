@@ -19,7 +19,7 @@ rules:
   suppression_reason_rule:
     level: Error 
 
-  # Enum rule - enforces typedef and explciit enum casting, or forbids enums completely
+  # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
   enum:
     level: Warning
     allow_enum_typedef: true
@@ -91,6 +91,7 @@ rules:
     raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
     raii_use_after_destroy: false
+    allow_raii_struct_arrays: true
     raii_struct_array_destroyer_suffix: _destroy_array
     raii_destroy_in_reverse_order: true
     raii_standardized_destroy_definitions: true
