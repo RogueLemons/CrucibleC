@@ -186,6 +186,29 @@ private:
         const FunctionDecl *function,
         const RecordDecl *span) const;
 
+    /*
+     * True if 'call' destroys an array of raii structs, with 'argument'
+     * as its first argument: '<element struct><array destroyer suffix>'
+     * given the array itself, e.g. 'd_str_destroy_array(names, 2)'. The
+     * callee must have the exact array destroyer signature,
+     * 'void <struct><suffix>(<struct>* self, size_t n)', and the struct
+     * must be raii (see hasVisibleRaiiCreator). Only with struct resource
+     * management and allow_raii_struct_arrays.
+     */
+    bool isRaiiArrayDestroyCall(
+        const CallExpr *call,
+        const Expr *argument) const;
+
+    /*
+     * True if the raii creator of 'record', '<struct> <struct><raii
+     * creator suffix>(...)', is declared before 'loc'. Having it is what
+     * makes a struct raii, so no struct database is needed.
+     */
+    bool hasVisibleRaiiCreator(
+        const RecordDecl *record,
+        SourceLocation loc,
+        ASTContext &context) const;
+
     bool isInsideStructInitializer(
         const Expr *expr,
         ASTContext &context) const;

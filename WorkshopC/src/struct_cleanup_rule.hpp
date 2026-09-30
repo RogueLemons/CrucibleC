@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -120,6 +121,17 @@ private:
         void trackVar(
             const VarDecl *var);
 
+        /*
+         * Records 'var' as a view of a tracked raii array when it is a
+         * span or const span initialized from that array, with braces or
+         * a call taking the array first, e.g. '{ vectors, 2 }'. A use of
+         * the span then counts as a use of the array.
+         */
+        void trackSpanOfArray(
+            const VarDecl *var);
+
+        bool isTracked(const VarDecl *var) const;
+
         void markDestroyedIfNeeded(const CallExpr *call);
 
         void checkDestroyOrder(
@@ -206,6 +218,9 @@ private:
 
         std::unordered_set<ReportKey, ReportKeyHash>
             reportedUseAfterDestroy;
+
+        // Span variables that view a tracked raii array, and that array
+        std::unordered_map<const VarDecl *, const VarDecl *> spanArrays;
     };
 
     const Config &config;
@@ -251,6 +266,10 @@ private:
         const std::string &structName) const;
 
     const VarDecl *getReferencedVarDecl(
+        const Expr *expr) const;
+
+    // The variable reference 'expr' is made through, e.g. 'vec' in '&vec.data[0]'
+    const DeclRefExpr *getReferencedDeclRef(
         const Expr *expr) const;
 
     bool shouldTrackVar(
@@ -310,6 +329,12 @@ private:
     void reportUseAfterDestroy(
         SourceLocation loc,
         const VarDecl *target,
+        const std::string &structName) const;
+
+    void reportSpanUseAfterDestroy(
+        SourceLocation loc,
+        const VarDecl *span,
+        const VarDecl *array,
         const std::string &structName) const;
 
 public:

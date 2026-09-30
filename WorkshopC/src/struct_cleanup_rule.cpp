@@ -178,8 +178,10 @@ StructCleanupRule::CleanupAnalyzer::Flow StructCleanupRule::CleanupAnalyzer::sca
             const auto *var =
                 dyn_cast<VarDecl>(decl);
 
-            if (var)
+            if (var) {
                 trackVar(var);
+                trackSpanOfArray(var);
+            }
         }
 
         /*
@@ -763,6 +765,57 @@ void StructCleanupRule::CleanupAnalyzer::trackVar(
         tracked);
 }
 
+void StructCleanupRule::CleanupAnalyzer::trackSpanOfArray(
+    const VarDecl *var)
+{
+    const SpanStructRuleConfig &spanRule =
+        owner.config.spanStructRule;
+
+    if (!var ||
+        spanRule.level == RuleLevel::Off ||
+        !var->hasLocalStorage() ||
+        !var->getInit())
+        return;
+
+    if (!spanRule.isSpanStructName(owner.getStructName(var->getType())) ||
+        var->getType()->isArrayType())
+        return;
+
+    // The data a span starts from: '{ vectors, 2 }' or 'span_pod(vectors, 2)'
+    const Expr *init =
+        var->getInit()->IgnoreParenImpCasts();
+    const Expr *data = nullptr;
+
+    if (const auto *list = dyn_cast<InitListExpr>(init)) {
+        if (list->getNumInits() > 0)
+            data = list->getInit(0);
+    }
+    else if (const auto *call = dyn_cast<CallExpr>(init)) {
+        if (call->getNumArgs() > 0)
+            data = call->getArg(0);
+    }
+
+    const VarDecl *array =
+        owner.getReferencedVarDecl(data);
+
+    if (array &&
+        array->getType()->isArrayType() &&
+        isTracked(array))
+    {
+        spanArrays[var] = array;
+    }
+}
+
+bool StructCleanupRule::CleanupAnalyzer::isTracked(const VarDecl *var) const
+{
+    for (const auto &scope : scopes)
+        for (const auto &tracked : scope.vars)
+            if (tracked.decl == var)
+                return true;
+
+    return false;
+}
+
 void StructCleanupRule::CleanupAnalyzer::markDestroyedIfNeeded(const CallExpr *call)
 {
     if (!call)
@@ -967,6 +1020,36 @@ void StructCleanupRule::CleanupAnalyzer::checkUseAfterDestroy(const Expr *expr)
 
     if (!target)
         return;
+
+    // A span viewing a destroyed raii array. Reported at the span itself,
+    // since '&span.data[0]' is seen both as an argument and a member access.
+    const auto spanArray = spanArrays.find(target);
+
+    if (spanArray != spanArrays.end()) {
+        const VarDecl *array = spanArray->second;
+        const DeclRefExpr *spanRef = owner.getReferencedDeclRef(expr);
+
+        if (!spanRef || !isAlreadyDestroyed(array))
+            return;
+
+        const ReportKey key{
+            target,
+            spanRef->getLocation().getRawEncoding()
+        };
+
+        if (reportedUseAfterDestroy.count(key))
+            return;
+
+        reportedUseAfterDestroy.insert(key);
+
+        owner.reportSpanUseAfterDestroy(
+            spanRef->getLocation(),
+            target,
+            array,
+            owner.getStructName(array->getType()));
+
+        return;
+    }
 
     std::string structName;
 
@@ -1490,6 +1573,17 @@ bool StructCleanupRule::isInsideHelperFunction(
 const VarDecl *StructCleanupRule::getReferencedVarDecl(
     const Expr *expr) const
 {
+    const DeclRefExpr *declRef =
+        getReferencedDeclRef(expr);
+
+    return declRef
+        ? dyn_cast<VarDecl>(declRef->getDecl())
+        : nullptr;
+}
+
+const DeclRefExpr *StructCleanupRule::getReferencedDeclRef(
+    const Expr *expr) const
+{
     if (!expr)
         return nullptr;
 
@@ -1499,8 +1593,7 @@ const VarDecl *StructCleanupRule::getReferencedVarDecl(
     if (const auto *declRef =
             dyn_cast<DeclRefExpr>(expr)) {
 
-        return dyn_cast<VarDecl>(
-            declRef->getDecl());
+        return declRef;
     }
 
     if (const auto *unary =
@@ -1511,7 +1604,7 @@ const VarDecl *StructCleanupRule::getReferencedVarDecl(
             unary->getOpcode() ==
                 UO_AddrOf) {
 
-            return getReferencedVarDecl(
+            return getReferencedDeclRef(
                 unary->getSubExpr());
         }
     }
@@ -1519,14 +1612,14 @@ const VarDecl *StructCleanupRule::getReferencedVarDecl(
     if (const auto *memberExpr =
             dyn_cast<MemberExpr>(expr)) {
 
-        return getReferencedVarDecl(
+        return getReferencedDeclRef(
             memberExpr->getBase());
     }
 
     if (const auto *arraySubscript =
             dyn_cast<ArraySubscriptExpr>(expr)) {
 
-        return getReferencedVarDecl(
+        return getReferencedDeclRef(
             arraySubscript->getBase());
     }
 
@@ -1844,6 +1937,29 @@ void StructCleanupRule::reportUseAfterDestroy(
         structName +
         "' must not be used after being destroyed with '" +
         destroyFunctionFor(target, structName) +
+        "' (raii)");
+}
+
+void StructCleanupRule::reportSpanUseAfterDestroy(
+    SourceLocation loc,
+    const VarDecl *span,
+    const VarDecl *array,
+    const std::string &structName) const
+{
+    if (!span || !array)
+        return;
+
+    reportUsageIssue(
+        DiagCode::RaiiUseAfterDestroy,
+        loc,
+        "span '" +
+        span->getNameAsString() +
+        "' must not be used after its struct array '" +
+        array->getNameAsString() +
+        "' of type '" +
+        structName +
+        "' is destroyed with '" +
+        destroyFunctionFor(array, structName) +
         "' (raii)");
 }
 

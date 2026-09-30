@@ -200,7 +200,7 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | | **12 — [Struct resource management: destruction](#raii-and-struct-resource-management)** | |
 | `CCW1201` | `raii-not-destroyed` | A raii struct variable or array is not destroyed before scope exit |
 | `CCW1202` | `raii-parameter-not-destroyed` | A raii struct parameter is not destroyed before scope exit |
-| `CCW1203` | `raii-use-after-destroy` | A raii struct is used after being destroyed |
+| `CCW1203` | `raii-use-after-destroy` | A raii struct, or a span viewing an array of them, is used after being destroyed |
 | `CCW1204` | `destroy-not-value-ref` | A raii destroy function is given something other than the address of a variable |
 | `CCW1205` | `destroy-array-first-argument` | The first argument of an array destroy function is not the array itself |
 | `CCW1206` | `destroy-array-size` | The second argument of an array destroy function is not the size of the array |
@@ -1023,7 +1023,7 @@ struct_resource_management:
     free_struct_creator_suffix: _init
 ```
 
-- `raii_use_after_destroy` (default `true`): when `false`, a raii struct that has been destroyed with its destroy function may not be referenced again, neither passed to a function nor accessed through a field.
+- `raii_use_after_destroy` (default `true`): when `false`, a raii struct that has been destroyed with its destroy function may not be referenced again, neither passed to a function nor accessed through a field. The same goes for a span or const span initialized from a destroyed [array of raii structs](#arrays-of-raii-structs), e.g. `vectors_span.data[0]` after `int_vector_destroy_array(vectors, 2)`. Only the span declared from the array is followed, not copies of it.
   - `raii_destroy_in_reverse_order` (default `false`): when `true`, raii structs must be destroyed in reverse declaration order. If `a`, `b` and `c` are initialized in that order, they must be destroyed as `c`, `b`, then `a`. When `false`, destruction order is unrestricted as before.
 - `allow_raii_struct_arrays` (default `false`): enables arrays of raii structs outside of structs, see [arrays of raii structs](#arrays-of-raii-structs). When `false`, arrays of raii structs are only allowed inside structs.
 - `raii_struct_array_destroyer_suffix`: the suffix of the array destroy function, required when `allow_raii_struct_arrays` is `true`.
@@ -1250,7 +1250,7 @@ void foo()
 }
 ```
 
-An array destroyed element by element, with the wrong size, or through a pointer is reported, as is an array of arrays of raii structs.
+An array destroyed element by element, with the wrong size, or through a pointer is reported, as is an array of arrays of raii structs. With the span struct rule's `require_span_immediately_after_array: true`, the array destroy function is still given the array itself, not its span.
 
 #### Free struct
 Finally, there is also a free struct supported where no rules apply to how the struct is used. The pod struct and raii struct work on a safety-first rule and the assumption that the compilers can handle copy elision and `static inline` functions effectively. The free struct is instead about complete freedom for the programmer with no restrictions, other than needing a function called `<void or any> <struct name>_init(<struct name>* self, ...);`. This allows users to optimize without restriction when needed. Here is an example:
@@ -1693,7 +1693,7 @@ void example(void)
 }
 ```
 
-With `require_span_immediately_after_array: true`, every array outside of a struct, local, static or global, must be followed right away by a span or const span variable holding the whole array: for a local array in the next statement, for a global in the next declaration of the file. The span must start at the beginning of the array, `values` or `&values[0]`, and hold its full size, with an initializer or the span's pod creator. After that, the span is the one way to reach the array: the array may not be named again, except in the span's initializer and in code that is never evaluated, `sizeof`, `_Alignof` and `__typeof__`. Elements are reached through the span, e.g. `values_span.data[1]`, or through the span's functions, and a matrix through its span of rows, e.g. `matrix_span.data[1][2]`. An array without its span only gets the missing span reported, not every use of it.
+With `require_span_immediately_after_array: true`, every array outside of a struct, local, static or global, must be followed right away by a span or const span variable holding the whole array: for a local array in the next statement, for a global in the next declaration of the file. The span must start at the beginning of the array, `values` or `&values[0]`, and hold its full size, with an initializer or the span's pod creator. After that, the span is the one way to reach the array: the array may not be named again, except in the span's initializer, in code that is never evaluated, `sizeof`, `_Alignof` and `__typeof__`, and as the first argument of the array destroy function of an [array of raii structs](#arrays-of-raii-structs), e.g. `int_vector_destroy_array(vectors, 2)`, when that function has the exact signature `void <struct name><suffix>(<struct name>* self, size_t n)` and the struct is a raii struct, with its raii creator declared before the call, since the struct resource management rule tracks the array itself. Elements are reached through the span, e.g. `values_span.data[1]`, or through the span's functions, and a matrix through its span of rows, e.g. `matrix_span.data[1][2]`. An array without its span only gets the missing span reported, not every use of it.
 
 ```c
 int values[3] = { 1, 2, 3 };

@@ -553,6 +553,98 @@ const VarDecl *SpanStructRule::getSpanOfArray(
     return nullptr;
 }
 
+bool SpanStructRule::isRaiiArrayDestroyCall(
+    const CallExpr *call,
+    const Expr *argument) const
+{
+    const StructResourceManagementRuleConfig &rule =
+        config.structResourceManagementRule;
+    const std::string suffix = rule.activeRaiiStructArrayDestroyerSuffix();
+
+    if (rule.level == RuleLevel::Off || suffix.empty() ||
+        !call || !argument ||
+        call->getNumArgs() != 2 || call->getArg(0) != argument)
+        return false;
+
+    const FunctionDecl *callee = call->getDirectCallee();
+    const auto *array = dyn_cast<DeclRefExpr>(argument->IgnoreParenImpCasts());
+
+    if (!callee || !array || !array->getType()->isArrayType())
+        return false;
+
+    const RecordDecl *element = array->getType()
+        ->getAsArrayTypeUnsafe()
+        ->getElementType()
+        ->getAsRecordDecl();
+
+    if (!element ||
+        callee->getNameAsString() != element->getNameAsString() + suffix)
+        return false;
+
+    // The signature the struct database accepts for an array destroyer,
+    // 'void <struct><suffix>(<struct>* self, size_t n)', so only a real
+    // array destroyer is trusted with the array
+    if (callee->getNumParams() != 2 ||
+        !callee->getReturnType().getCanonicalType()->isVoidType())
+        return false;
+
+    const ParmVarDecl *self = callee->getParamDecl(0);
+    const ParmVarDecl *count = callee->getParamDecl(1);
+    const auto *selfPointer = self->getType().getCanonicalType()->getAs<PointerType>();
+
+    const QualType sizeType =
+        callee->getASTContext().getSizeType().getCanonicalType();
+
+    if (self->getNameAsString() != "self" ||
+        !selfPointer ||
+        !selfPointer->getPointeeType()->getAsRecordDecl() ||
+        selfPointer->getPointeeType()->getAsRecordDecl()->getCanonicalDecl() !=
+            element->getCanonicalDecl() ||
+        count->getType().getCanonicalType().getUnqualifiedType() != sizeType)
+        return false;
+
+    return hasVisibleRaiiCreator(element, call->getBeginLoc(), callee->getASTContext());
+}
+
+bool SpanStructRule::hasVisibleRaiiCreator(
+    const RecordDecl *record,
+    SourceLocation loc,
+    ASTContext &context) const
+{
+    const std::string &suffix =
+        config.structResourceManagementRule.raiiStructCreatorSuffix;
+
+    if (!record || suffix.empty())
+        return false;
+
+    const std::string name = record->getNameAsString() + suffix;
+    const SourceManager &sm = context.getSourceManager();
+
+    for (const NamedDecl *decl :
+         context.getTranslationUnitDecl()->lookup(&context.Idents.get(name)))
+    {
+        const auto *function = dyn_cast<FunctionDecl>(decl);
+
+        if (!function)
+            continue;
+
+        const RecordDecl *returned =
+            function->getReturnType()->getAsRecordDecl();
+
+        if (!returned ||
+            returned->getCanonicalDecl() != record->getCanonicalDecl())
+            continue;
+
+        // Any declaration of it before the call
+        for (const FunctionDecl *redeclaration : function->redecls()) {
+            if (sm.isBeforeInTranslationUnit(redeclaration->getLocation(), loc))
+                return true;
+        }
+    }
+
+    return false;
+}
+
 void SpanStructRule::checkArrayUse(
     const DeclRefExpr *use,
     const SourceManager &sm,
@@ -579,6 +671,13 @@ void SpanStructRule::checkArrayUse(
         // sizeof(values), _Alignof(values), __typeof__(values)
         if (parent.get<UnaryExprOrTypeTraitExpr>() || parent.get<TypeLoc>())
             return;
+
+        // An array of raii structs is destroyed through the array itself,
+        // which the struct resource management rule tracks
+        if (const auto *call = parent.get<CallExpr>()) {
+            if (isRaiiArrayDestroyCall(call, current.get<Expr>()))
+                return;
+        }
 
         // The span's initializer, or the array's own declaration
         if (const auto *variable = parent.get<VarDecl>()) {
@@ -1051,7 +1150,8 @@ void SpanStructRule::run(const MatchFinder::MatchResult &result)
 
         if (!config.spanStructRule.onlyAllowArrayPassingToLibraryFunctionsAndSpans ||
             isLibraryFunction(callee, sm) ||
-            isInsideStructInitializer(argument, context))
+            isInsideStructInitializer(argument, context) ||
+            isRaiiArrayDestroyCall(call, argument))
         {
             continue;
         }

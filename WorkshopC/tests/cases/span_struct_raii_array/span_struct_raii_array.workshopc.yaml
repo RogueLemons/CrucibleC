@@ -1,0 +1,28 @@
+# Span struct checks with require_span_immediately_after_array, combined with
+# arrays of raii structs, which are destroyed through the array itself
+
+third_party_includes:
+  - external/
+
+rules:
+  span_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions_and_spans: true
+    span_struct_suffix: _span
+    const_span_struct_suffix: _const_span
+    require_span_immediately_after_array: true
+    only_allow_span_data_passing_in_one_line_static_functions: true
+
+  struct_resource_management:
+    level: Error
+    pod_struct_creator_suffix: _pod
+    raii_struct_creator_suffix: _make
+    raii_struct_destroyer_suffix: _destroy
+    raii_struct_copy_suffix: _copy
+    raii_struct_move_suffix: _move
+    raii_struct_return_suffix: _return
+    raii_struct_valid_suffix: _valid
+    raii_struct_array_destroyer_suffix: _destroy_array
+    allow_raii_struct_arrays: true
+    raii_use_after_destroy: false
+    free_struct_creator_suffix: _init
