@@ -79,6 +79,10 @@ void Diagnostics::setStreamText(bool enabled) {
     streamText = enabled;
 }
 
+void Diagnostics::setWarningsAsErrors(bool enabled) {
+    warningsAsErrors = enabled;
+}
+
 void Diagnostics::report(
     RuleLevel level,
     DiagCode code,
@@ -118,6 +122,10 @@ void Diagnostics::report(
 ) {
     if (level == RuleLevel::Off)
         return;
+
+    // Every output, count and the exit code then treat it as an error
+    if (warningsAsErrors && level == RuleLevel::Warning)
+        level = RuleLevel::Error;
 
     const auto key = std::make_tuple(
         canonicalPath(file), line, column, static_cast<int>(level),

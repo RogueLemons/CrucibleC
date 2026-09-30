@@ -234,6 +234,77 @@ def run_output_files_test(exe):
     return True
 
 
+def run_warnings_as_errors_test(exe):
+    """
+    Runs a test with both warnings and errors with --warnings-as-errors,
+    and checks that every warning is reported as an error: on the terminal,
+    in the JSON file, in the counts and in the exit code.
+    """
+    print("\n==============================")
+    print("Running: --warnings-as-errors")
+    print("==============================")
+
+    TESTS_OUTPUT.mkdir(exist_ok=True)
+
+    json_file = TESTS_OUTPUT / "warnings_as_errors.json"
+    json_file.unlink(missing_ok=True)
+
+    result = subprocess.run(
+        [
+            str(exe),
+            "--warnings-as-errors",
+            "--config", str(OUTPUT_FILES_TEST.with_suffix(".workshopc.yaml")),
+            "-p", str(TESTS_COMPDB),
+            "--json", str(json_file),
+            str(OUTPUT_FILES_TEST)
+        ],
+        text=True,
+        capture_output=True
+    )
+
+    problems = []
+
+    # The expected diagnostics, with every warning turned into an error
+    original = [
+        normalize(x)
+        for x in load_expected(OUTPUT_FILES_TEST)
+        if normalize(x) is not None
+    ]
+
+    check(any(msg.startswith("warning:") for msg in original),
+          "the test has no warnings to turn into errors", problems)
+
+    expected = Counter(
+        "error:" + msg[len("warning:"):] if msg.startswith("warning:") else msg
+        for msg in original
+    )
+
+    terminal = Counter(collect_messages(result.stdout + "\n" + result.stderr))
+    check(terminal == expected,
+          "the terminal output does not report every warning as an error", problems)
+
+    # Errors only, no warnings
+    check(result.returncode == 1,
+          f"exit code {result.returncode}, expected 1 (errors only)", problems)
+
+    check(json_file.exists(), f"{json_file.name} was not written", problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    data = json.loads(json_file.read_text())
+    check(data["warnings"] == 0, "results.json still counts warnings", problems)
+    check(data["errors"] == len(original), "wrong error count in the JSON file", problems)
+    check(all(d["level"] == "error" for d in data["diagnostics"]),
+          "a diagnostic in the JSON file is not an error", problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    print("--PASSED--")
+    return True
+
+
 def report_output_problems(problems):
     print("--FAILED--")
 
@@ -336,15 +407,18 @@ def main():
 
             failed += 1
 
-    if run_output_files_test(exe):
-        passed += 1
-    else:
-        failed += 1
+    special_tests = [run_output_files_test, run_warnings_as_errors_test]
+
+    for special_test in special_tests:
+        if special_test(exe):
+            passed += 1
+        else:
+            failed += 1
 
     print("\n===================")
     print("Test Summary")
     print("===================")
-    print(f"Total : {len(test_files) + 1}")
+    print(f"Total : {len(test_files) + len(special_tests)}")
     print(f"Passed: {passed}")
     print(f"Failed: {failed}")
 

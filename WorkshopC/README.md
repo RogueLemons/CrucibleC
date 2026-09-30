@@ -55,6 +55,7 @@ workshopc src/
 - `--json <file>` — Also write the diagnostics as JSON to a file: the warning and error counts and a list of diagnostics, each with its file, line, column, level, code, name and message.
 - `--sarif <file>` — Also write the diagnostics as SARIF 2.1.0 to a file, the standard format read by e.g. GitHub code scanning and many IDEs.
 - `-q, --quiet` — Print nothing to the terminal: no diagnostics and no warning and error summary. Clang's compile errors and problems that stop the analysis (e.g. a missing config) are still printed, and the exit code is unaffected.
+- `--warnings-as-errors` — Report every warning as an error: on the terminal, in the `--text`, `--json` and `--sarif` files, in the counts, and in the exit code. The config still decides which rules run and how serious they normally are, and the flag decides how strict one run is. One config can then serve both a relaxed local run and a strict CI run.
 - `-h, --help` — Show the help.
 
 The diagnostics are always printed to the terminal (stderr) unless `--quiet` is given, and `--text`, `--json` and `--sarif` can be combined freely to write any set of files in a single run. Give `-` as the file to write that format to stdout instead (only one format can use stdout). Compile errors from clang are always printed as text and never appear in the files, the exit code tells when they happened.
@@ -69,6 +70,7 @@ workshopc --config ci.workshopc.yaml -p out/ src/  # another config and build fo
 workshopc -q --sarif results.sarif src/         # only a SARIF file, e.g. for CI
 workshopc --text out.txt --json out.json src/   # terminal output plus a text and a JSON file
 workshopc -q --json - src/ | jq .errors         # JSON to stdout, for piping
+workshopc --warnings-as-errors src/             # fail on any finding, e.g. in CI
 ```
 
 **Exit codes:**
@@ -86,7 +88,7 @@ The exit code reports the result of the analysis. Codes 0-3 form a bitmask (`1` 
 | `66` | The compilation database could not be loaded |
 | `67` | Clang failed to process the source file (e.g. it does not compile), so the analysis result is not reliable |
 
-Codes of `64` and above always mean the tool itself could not complete the analysis, so they can never be confused with rule results. Note that most build systems treat any non-zero exit code as a failure, so a run with warnings only (`2`) will fail a script using `set -e` unless the caller handles it.
+Codes of `64` and above always mean the tool itself could not complete the analysis, so they can never be confused with rule results. Note that most build systems treat any non-zero exit code as a failure, so a run with warnings only (`2`) will fail a script using `set -e` unless the caller handles it. With `--warnings-as-errors` there are no warnings, so the code is `0` or `1`.
 
 **Compiler output:**
 
@@ -2073,7 +2075,7 @@ Headers shared by the tests are in `tests/headers/`, and `tests/external/` stand
 
 The test files are a standalone project described by `tests/CMakeLists.txt`. They are never built: `run_tests.py` only **configures** that project into `build-tests/` (with clang and Ninja), which writes a `compile_commands.json` for the test files, and then passes that directory to the tool for every test. New test case folders are picked up automatically, since the project is configured again on every run.
 
-The expected files list every diagnostic with its code. One more test writes the diagnostics of `tests/cases/suppression_balance/suppression_balance.c` to a text, a JSON and a SARIF file in a single `--quiet` run, into `tests/output/` (ignored by git), and checks that nothing was printed and that all three files hold exactly the expected diagnostics.
+The expected files list every diagnostic with its code. One more test writes the diagnostics of `tests/cases/suppression_balance/suppression_balance.c` to a text, a JSON and a SARIF file in a single `--quiet` run, into `tests/output/` (ignored by git), and checks that nothing was printed and that all three files hold exactly the expected diagnostics. Another runs the same file with `--warnings-as-errors`, and checks that every warning is reported as an error on the terminal and in a JSON file, with no warnings left in the counts and an exit code of `1`.
 
 #### What makes this CMake portable
 
@@ -2169,7 +2171,6 @@ For Beta V1 it shall
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
 - Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
-- Add arg for treating warnings as errors
 - Make config strings empty by default and validate all strings are given values for configs that are turned on
 
 For Beta V1.1 it shall

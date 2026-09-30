@@ -576,6 +576,8 @@ static const char *kUsage =
     "                                    Use - as the file to write to stdout instead.\n"
     "  -q, --quiet                       Print nothing but clang's compile errors and\n"
     "                                    problems that stop the analysis.\n"
+    "  --warnings-as-errors              Report every warning as an error, e.g. to fail\n"
+    "                                    a CI run on any finding.\n"
     "  -h, --help                        Show this help.\n";
 
 struct Options {
@@ -586,6 +588,7 @@ struct Options {
     std::string sarifPath;
     std::vector<std::string> inputs;
     bool quiet = false;
+    bool warningsAsErrors = false;
     bool help = false;
 };
 
@@ -623,6 +626,11 @@ static bool parseArguments(int argc, const char **argv, Options &options) {
 
         if (arg == "-q" || arg == "--quiet") {
             options.quiet = true;
+            continue;
+        }
+
+        if (arg == "--warnings-as-errors") {
+            options.warningsAsErrors = true;
             continue;
         }
 
@@ -929,6 +937,7 @@ int main(int argc, const char **argv) {
     Diagnostics diagnostics;
 
     diagnostics.setStreamText(!options.quiet && options.textPath != "-");
+    diagnostics.setWarningsAsErrors(options.warningsAsErrors);
 
     WorkshopActionFactory factory(config, diagnostics);
 

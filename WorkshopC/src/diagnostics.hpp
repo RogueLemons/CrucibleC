@@ -30,6 +30,9 @@ private:
     // Print each diagnostic as text to stderr as soon as it is reported
     bool streamText = true;
 
+    // Report every warning as an error, for --warnings-as-errors
+    bool warningsAsErrors = false;
+
     int warnings = 0;
     int errors = 0;
 
@@ -39,6 +42,8 @@ private:
 
 public:
     void setStreamText(bool enabled);
+
+    void setWarningsAsErrors(bool enabled);
 
     void report(
         RuleLevel level,
