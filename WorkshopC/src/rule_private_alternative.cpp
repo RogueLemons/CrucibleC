@@ -9,7 +9,7 @@ bool PrivateAlternativeRule::isThirdParty(const std::string &path) const {
     return false;
 }
 
-bool PrivateAlternativeRule::isPrivateTagged(const FieldDecl *field) const {
+bool PrivateAlternativeRule::isPrivateTagged(const FieldDecl *field) {
     for (const auto *attr : field->attrs()) {
         if (const auto *A = dyn_cast<AnnotateAttr>(attr)) {
             if (A->getAnnotation() == kPrivateFieldTag)

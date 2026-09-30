@@ -108,16 +108,37 @@ struct InterfacesRuleConfig {
     // initialized with functions
     std::string vtableSuffix;
 
-    // Not checked yet: the interface part of the rule
+    // An interface struct holds a void* object and a pointer to a const
+    // vtable, a const interface a const void* object instead
     std::string interfaceSuffix;
     std::string constInterfaceSuffix;
+
+    // With the private alternative rule, both interface fields are private
     bool interfaceMustHaveFieldsThatArePrivateAlternative = false;
 
     bool isVtableName(const std::string &name) const
     {
-        return !vtableSuffix.empty() &&
-               name.size() >= vtableSuffix.size() &&
-               name.compare(name.size() - vtableSuffix.size(), vtableSuffix.size(), vtableSuffix) == 0;
+        return endsWithSuffix(name, vtableSuffix);
+    }
+
+    // Checked before isInterfaceName, which it usually ends with too
+    bool isConstInterfaceName(const std::string &name) const
+    {
+        return endsWithSuffix(name, constInterfaceSuffix);
+    }
+
+    // An interface or const interface struct name
+    bool isInterfaceName(const std::string &name) const
+    {
+        return isConstInterfaceName(name) || endsWithSuffix(name, interfaceSuffix);
+    }
+
+private:
+    static bool endsWithSuffix(const std::string &name, const std::string &suffix)
+    {
+        return !suffix.empty() &&
+               name.size() >= suffix.size() &&
+               name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
     }
 };
 

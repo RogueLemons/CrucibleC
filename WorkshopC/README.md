@@ -220,6 +220,11 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW1404` | `vtable-not-initialized` | A vtable variable is not initialized at declaration with braces |
 | `CCW1405` | `vtable-missing-function` | A vtable initializer does not give an element for every function pointer of the vtable struct |
 | `CCW1406` | `vtable-element-not-function` | A vtable initializer element is not a function, e.g. `NULL` or `0` |
+| | **15 — [Interfaces: interfaces](#interfaces-rule)** | |
+| `CCW1501` | `interface-field-count` | An interface struct does not have exactly two fields, an object and a vtable |
+| `CCW1502` | `interface-object-field` | The first field of an interface struct is not a `void*` named `object`, or a `const void*` for a const interface |
+| `CCW1503` | `interface-vtable-field` | The second field of an interface struct is not a pointer to a const vtable struct named `vtable` |
+| `CCW1504` | `interface-field-not-private` | A field of an interface struct is not marked private for the private alternative rule |
 | | **16 — [Restricted malloc](#restricted-malloc-rule)** | |
 | `CCW1601` | `restricted-malloc` | A memory function is used outside of the allowed functions |
 | | **17 — [Single return](#single-return-rule)** | |
@@ -1264,13 +1269,18 @@ The init function sets up the free struct itself, so it may assign the struct's 
 Structs from the standard library or 3rd party libraries are unaffected. Therefore, to ensure that these are always properly initialized and their memory and resources are taken care of, they can be wrapped in pod and raii structs. 
 
 ### Interfaces rule
-This rule standardizes how interfaces and their vtables are written. So far only the vtable part is checked.
+This rule standardizes how interfaces and their vtables are written. A vtable is a set of functions, and an interface pairs an object with the vtable of functions that work on it.
 
 ```yaml
 interfaces:
   level: Error
   vtable_suffix: _vtable
+  interface_suffix: _interface
+  const_interface_suffix: _const_interface
+  interface_must_have_fields_that_are_private_alternative: true
 ```
+
+#### Vtables
 
 A vtable struct is a struct whose name ends with `vtable_suffix`. It may only hold function pointers, directly or through a typedef. Every function pointer takes a `void*` or `const void*` as its first parameter: the object the function works on.
 
@@ -1291,6 +1301,36 @@ static const shape_vtable_t circle_vtable = { circle_area, circle_scale };      
 static const shape_vtable_t square_vtable = { .area = square_area, .scale = NULL };  // Triggers parser, NULL is not a function
 const shape_vtable_t shared_vtable = { circle_area, circle_scale };                  // Triggers parser, not static
 static const shape_vtable_t partial_vtable = { circle_area };                        // Triggers parser, 'scale' is missing
+```
+
+#### Interfaces
+An interface struct is a struct whose name ends with `interface_suffix`. It holds exactly two fields, in this order:
+- a `void*` named `object`: the object the functions work on;
+- a pointer to a const vtable struct named `vtable`, e.g. `const shape_vtable_t* vtable`. Any vtable struct will do.
+
+A const interface, whose name ends with `const_interface_suffix`, gives read-only access to its object, so it holds a `const void* object` instead. The const suffix is checked first, so it may end with the interface suffix, as `_const_interface` ends with `_interface`.
+
+With `interface_must_have_fields_that_are_private_alternative: true` and the [private alternative rule](#private-alternative-rule) on, both fields must be marked private. Only the interface's own functions can then reach the object and the vtable.
+
+```c
+struct shape_interface
+{
+  PRIVATE void* object;                   // OK
+  PRIVATE const shape_vtable_t* vtable;   // OK
+};
+
+struct shape_const_interface
+{
+  PRIVATE const void* object;             // OK: a const interface holds a const void*
+  PRIVATE const shape_vtable_t* vtable;   // OK
+};
+
+struct broken_interface
+{
+  PRIVATE void* self;                     // Triggers parser, must be named object
+  PRIVATE shape_vtable_t* vtable;         // Triggers parser, the vtable must be const
+  PRIVATE int count;                      // Triggers parser, only two fields are allowed
+};
 ```
 
 ### Restricted malloc rule
@@ -2133,8 +2173,5 @@ For Beta V1 it shall
 - Make config strings empty by default and validate all strings are given values for configs that are turned on
 
 For Beta V1.1 it shall
-- Add rules for interfaces (the rule code shall be 15), shall require struct name suffixes
-
-For Beta V1.2 it shall
 - Add LSP support
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS

@@ -8,7 +8,7 @@
  *
  *   00  WorkshopC itself (suppressions)        13  struct resource management: return values
  *   01  enum                                   14  interfaces: vtables
- *   02  private                                15  interfaces: interfaces (reserved)
+ *   02  private                                15  interfaces: interfaces
  *   03  private_alternative                    16  restricted_malloc
  *   04  function_pointer                       17  single_return
  *   05  typedef_struct                         18  strict_switch
@@ -202,6 +202,15 @@
       "A vtable initializer does not give an element for every function pointer of the vtable struct") \
     X(VtableElementNotFunction, "CCW1406", "vtable-element-not-function", \
       "A vtable initializer element is not a function, e.g. NULL or 0") \
+    /* 15 interfaces: interfaces */ \
+    X(InterfaceFieldCount, "CCW1501", "interface-field-count", \
+      "An interface struct does not have exactly two fields, an object and a vtable") \
+    X(InterfaceObjectField, "CCW1502", "interface-object-field", \
+      "The first field of an interface struct is not a void* named object, or a const void* for a const interface") \
+    X(InterfaceVtableField, "CCW1503", "interface-vtable-field", \
+      "The second field of an interface struct is not a pointer to a const vtable struct named vtable") \
+    X(InterfaceFieldNotPrivate, "CCW1504", "interface-field-not-private", \
+      "A field of an interface struct is not marked private for the private alternative rule") \
     /* 16 restricted_malloc */ \
     X(RestrictedMalloc, "CCW1601", "restricted-malloc", \
       "A memory function is used outside of the allowed functions") \

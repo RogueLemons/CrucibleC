@@ -26,6 +26,7 @@
 #include "rule_const_field.hpp"
 #include "rule_no_goto.hpp"
 #include "rule_vtable.hpp"
+#include "rule_interface.hpp"
 
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
@@ -92,6 +93,7 @@ private:
     std::unique_ptr<ConstFieldRule> constFieldRule{};
     std::unique_ptr<NoGotoRule> noGotoRule{};
     std::unique_ptr<VtableRule> vtableRule{};
+    std::unique_ptr<InterfaceRule> interfaceRule{};
     
     StructDatabase structDatabase{};
     std::unique_ptr<StructDatabaseRule> structDatabaseRule{};
@@ -388,6 +390,15 @@ public:
             );
 
             vtableRule->bindFinder(finder);
+
+            // Interfaces rule: interfaces
+            interfaceRule = std::make_unique<InterfaceRule>(
+                config,
+                suppressions,
+                diagnostics
+            );
+
+            interfaceRule->bindFinder(finder);
         }
 
         // Tags of functions assigned or passed to function pointers,

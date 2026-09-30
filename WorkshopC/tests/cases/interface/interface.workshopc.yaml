@@ -1,0 +1,15 @@
+# Interfaces rule, interface part: interface and const interface structs
+
+third_party_includes:
+  - external/
+
+rules:
+  interfaces:
+    level: Error
+    vtable_suffix: _vtable
+    interface_suffix: _interface
+    const_interface_suffix: _const_interface
+    interface_must_have_fields_that_are_private_alternative: true
+
+  private_alternative:
+    level: Error

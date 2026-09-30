@@ -45,8 +45,6 @@ private:
 private:
     bool isThirdParty(const std::string &path) const;
 
-    bool isPrivateTagged(const FieldDecl *field) const;
-
     const RecordDecl *resolveRecordDecl(QualType type) const;
 
     bool hasValidSelfAccessor(
@@ -58,6 +56,10 @@ private:
         const RecordDecl *owner) const;
 
 public:
+    // The field is marked private with the private field tag, also used
+    // by the interfaces rule
+    static bool isPrivateTagged(const FieldDecl *field);
+
     PrivateAlternativeRule(const Config &cfg,
                            SuppressionManager &sup,
                            Diagnostics &diag);
