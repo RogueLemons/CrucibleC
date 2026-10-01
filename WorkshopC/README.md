@@ -2193,8 +2193,7 @@ Beta
 - Verify build for Linux
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
-- Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
-- Add nevernull config
+- Embed config presets
 - Add LSP support
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
 - Override third party includes with arg? Override top dir?
