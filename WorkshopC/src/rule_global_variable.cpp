@@ -98,19 +98,10 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
 
     const bool isStaticLocal = var->isStaticLocal();
 
-    // Variables at file scope, and static locals when configured
-    if (isStaticLocal) {
-        if (!cfg.treatLocalStaticAsGlobal && !cfg.requireLocalStaticPrefix)
-            return;
-    }
-    else if (!var->isFileVarDecl()) {
+    // Variables at file scope and function-local statics are both checked.
+    if (!isStaticLocal && !var->isFileVarDecl()) {
         return;
     }
-
-    // Static locals only follow the global conventions (capital
-    // letters, const and the global prefix) when treated as globals
-    const bool followsGlobalRules =
-        !isStaticLocal || cfg.treatLocalStaticAsGlobal;
 
     // Check each variable once: at its definition, at its tentative
     // definition ('int x;'), or otherwise at its first declaration.
@@ -133,16 +124,20 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
     const std::string kind =
         isStaticLocal ? "static local variable" : "global variable";
 
-    // Static locals use their own prefix whenever it is required, and
-    // otherwise the global prefix settings if treated as globals
-    const bool useLocalPrefix =
-        isStaticLocal && cfg.requireLocalStaticPrefix;
-
-    const bool prefixRequired =
-        useLocalPrefix || (followsGlobalRules && cfg.requirePrefix);
-
-    const std::string &prefix =
-        useLocalPrefix ? cfg.localStaticPrefix : cfg.prefix;
+    const bool isConst = isDeepConst(var->getType(), *result.Context);
+    const bool prefixRequired = isStaticLocal
+        ? (isConst
+            ? cfg.constLocalStaticRequirePrefix
+            : cfg.mutableLocalStaticRequirePrefix)
+        : (isConst ? cfg.constRequirePrefix : cfg.mutableRequirePrefix);
+    const std::string &prefix = isStaticLocal
+        ? (isConst ? cfg.constLocalStaticPrefix : cfg.mutableLocalStaticPrefix)
+        : (isConst ? cfg.constPrefix : cfg.mutablePrefix);
+    const bool mustBeCaps = isStaticLocal
+        ? (isConst
+            ? cfg.constLocalStaticMustBeCaps
+            : cfg.mutableLocalStaticMustBeCaps)
+        : (isConst ? cfg.constMustBeCaps : cfg.mutableMustBeCaps);
 
     const std::string name = var->getNameAsString();
 
@@ -160,7 +155,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
         }
     }
 
-    if (followsGlobalRules && cfg.mustBeCaps) {
+    if (mustBeCaps) {
         bool hasLowercase = false;
 
         for (unsigned char c : nameAfterPrefix) {
@@ -185,8 +180,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
         report(DiagCode::GlobalNotStatic, sm, var, kind, "must be static");
     }
 
-    if (followsGlobalRules &&
-        cfg.mustBeConst &&
+    if (!isStaticLocal && cfg.mustBeConst &&
         !isDeepConst(var->getType(), *result.Context))
     {
         const bool involvesPointer =
@@ -204,8 +198,7 @@ void GlobalVariableRule::run(const MatchFinder::MatchResult &result) {
     // header its own separate copy of the variable. The same goes for a
     // static local in a function defined in a header, so it is checked
     // too when static locals are treated as globals.
-    if (followsGlobalRules &&
-        cfg.forbidStaticInHeader &&
+    if (cfg.forbidStaticInHeader &&
         var->getStorageClass() == SC_Static &&
         !sm.isInMainFile(sm.getExpansionLoc(var->getLocation())))
     {

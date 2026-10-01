@@ -15,16 +15,11 @@ using namespace clang;
 using namespace clang::ast_matchers;
 
 /*
- * Naming and qualifier conventions for global (file scope) variables:
- * a required prefix, capital letters, static and const, and optionally
- * no static globals in headers. A variable that is declared more than
- * once is only checked once, at its definition, or at its first
- * declaration if it is not defined in the file being analyzed.
- *
- * With treat_local_static_as_global, static variables inside functions
- * follow the prefix, capital letter and const conventions too, using
- * local_static_prefix when require_local_static_prefix is set and the
- * global prefix settings otherwise.
+ * Naming conventions are selected separately for mutable and deeply
+ * const globals, and for mutable and deeply const function-local
+ * statics. File-scope storage and const constraints apply only to
+ * globals. A declaration is checked once, at its definition or first
+ * declaration when no definition is available in the analyzed file.
  */
 class GlobalVariableRule : public MatchFinder::MatchCallback {
 private:

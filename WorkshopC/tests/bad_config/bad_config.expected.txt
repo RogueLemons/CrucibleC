@@ -3,7 +3,7 @@ rules.prefix_namespace.separator must be set when the rule is not Off
 rules.struct_resource_management.raii_struct_copy_suffix must be set when the rule is not Off
 rules.struct_resource_management.raii_struct_array_destroyer_suffix must be set when allow_raii_struct_arrays is true
 rules.interfaces.const_interface_suffix must be set when the rule is not Off
-rules.global_variable.prefix must be set when the rule is not Off
+rules.global_variable.mutable_prefix must be set when the rule is not Off
 rules.private.getter_contains and rules.private.setter_contains must be different, both are 'pacc'
 rules.prefix_namespace.stop_at_count may not be negative, it is -1
 rules.prefix_namespace.top_dir './src/' may not be one of the third_party_includes

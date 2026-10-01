@@ -1,0 +1,4 @@
+rules:
+  global_variable:
+    level: Warning
+    require_prefix: true

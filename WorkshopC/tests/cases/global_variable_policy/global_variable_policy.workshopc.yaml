@@ -6,12 +6,12 @@ third_party_includes:
 rules:
   global_variable:
     level: Warning
-    must_be_static: true
-    must_be_const: true
+    must_be_static: false
+    must_be_const: false
     forbid_static_in_header: false
     mutable_require_prefix: true
-    mutable_prefix: G_
-    mutable_must_be_caps: true
+    mutable_prefix: g_
+    mutable_must_be_caps: false
     const_require_prefix: true
     const_prefix: G_
     const_must_be_caps: true
@@ -19,5 +19,5 @@ rules:
     mutable_local_static_prefix: s_
     mutable_local_static_must_be_caps: false
     const_local_static_require_prefix: true
-    const_local_static_prefix: s_
-    const_local_static_must_be_caps: false
+    const_local_static_prefix: c_
+    const_local_static_must_be_caps: true

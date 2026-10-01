@@ -469,7 +469,7 @@ def run_dump_config_test(exe):
 
     TESTS_OUTPUT.mkdir(exist_ok=True)
 
-    original = ROOT / "default" / "default.workshopc.yaml"
+    original = ROOT / "default" / "configs" / "default.workshopc.yaml"
     dumped = TESTS_OUTPUT / "dumped.workshopc.yaml"
     dumped.unlink(missing_ok=True)
 

@@ -466,32 +466,61 @@ void ConfigParser::applySetting(
     if (key == "level") {
         cfg.level = parseLevel(value);
     }
-    else if (key == "require_prefix") {
-        cfg.requirePrefix = parseBool(value);
-    }
-    else if (key == "prefix") {
-        cfg.prefix = unquote(value);
-    }
-    else if (key == "must_be_caps") {
-        cfg.mustBeCaps = parseBool(value);
-    }
     else if (key == "must_be_static") {
         cfg.mustBeStatic = parseBool(value);
     }
     else if (key == "must_be_const") {
         cfg.mustBeConst = parseBool(value);
     }
-    else if (key == "treat_local_static_as_global") {
-        cfg.treatLocalStaticAsGlobal = parseBool(value);
-    }
-    else if (key == "require_local_static_prefix") {
-        cfg.requireLocalStaticPrefix = parseBool(value);
-    }
-    else if (key == "local_static_prefix") {
-        cfg.localStaticPrefix = unquote(value);
-    }
     else if (key == "forbid_static_in_header") {
         cfg.forbidStaticInHeader = parseBool(value);
+    }
+    else if (key == "mutable_require_prefix") {
+        cfg.mutableRequirePrefix = parseBool(value);
+    }
+    else if (key == "mutable_prefix") {
+        cfg.mutablePrefix = unquote(value);
+    }
+    else if (key == "mutable_must_be_caps") {
+        cfg.mutableMustBeCaps = parseBool(value);
+    }
+    else if (key == "const_require_prefix") {
+        cfg.constRequirePrefix = parseBool(value);
+    }
+    else if (key == "const_prefix") {
+        cfg.constPrefix = unquote(value);
+    }
+    else if (key == "const_must_be_caps") {
+        cfg.constMustBeCaps = parseBool(value);
+    }
+    else if (key == "mutable_local_static_require_prefix") {
+        cfg.mutableLocalStaticRequirePrefix = parseBool(value);
+    }
+    else if (key == "mutable_local_static_prefix") {
+        cfg.mutableLocalStaticPrefix = unquote(value);
+    }
+    else if (key == "mutable_local_static_must_be_caps") {
+        cfg.mutableLocalStaticMustBeCaps = parseBool(value);
+    }
+    else if (key == "const_local_static_require_prefix") {
+        cfg.constLocalStaticRequirePrefix = parseBool(value);
+    }
+    else if (key == "const_local_static_prefix") {
+        cfg.constLocalStaticPrefix = unquote(value);
+    }
+    else if (key == "const_local_static_must_be_caps") {
+        cfg.constLocalStaticMustBeCaps = parseBool(value);
+    }
+    else if (key == "require_prefix" || key == "prefix" ||
+             key == "must_be_caps" ||
+             key == "treat_local_static_as_global" ||
+             key == "require_local_static_prefix" ||
+             key == "local_static_prefix") {
+        if (std::find(cfg.legacySettings.begin(), cfg.legacySettings.end(), key) ==
+            cfg.legacySettings.end())
+        {
+            cfg.legacySettings.push_back(key);
+        }
     }
 }
 
@@ -880,8 +909,28 @@ bool ConfigParser::validateConfig(
     requireStrings(errors, "restricted_malloc", restrictedMalloc.level, "list_of_allowed_malloc_functions", restrictedMalloc.listOfAllowedMallocFunctions);
 
     const GlobalVariableRuleConfig &global = config.globalVariableRule;
-    requireString(errors, "global_variable", global.level, "prefix", global.prefix);
-    requireString(errors, "global_variable", global.level, "local_static_prefix", global.localStaticPrefix);
+    if (global.mutableRequirePrefix) {
+        requireString(errors, "global_variable", global.level,
+            "mutable_prefix", global.mutablePrefix);
+    }
+    if (global.constRequirePrefix) {
+        requireString(errors, "global_variable", global.level,
+            "const_prefix", global.constPrefix);
+    }
+    if (global.mutableLocalStaticRequirePrefix) {
+        requireString(errors, "global_variable", global.level,
+            "mutable_local_static_prefix", global.mutableLocalStaticPrefix);
+    }
+    if (global.constLocalStaticRequirePrefix) {
+        requireString(errors, "global_variable", global.level,
+            "const_local_static_prefix", global.constLocalStaticPrefix);
+    }
+    for (const std::string &key : global.legacySettings) {
+        errors.push_back(
+            "rules.global_variable." + key +
+            " is no longer supported; use the mutable/const naming settings"
+        );
+    }
 
     const ArrayStructRuleConfig &array = config.arrayStructRule;
     requireString(errors, "array_struct", array.level, "flexible_size_name", array.flexibleSizeName);
@@ -1130,15 +1179,21 @@ void ConfigParser::writeConfig(
     const GlobalVariableRuleConfig &global = config.globalVariableRule;
     rule("global_variable");
     level(global.level);
-    boolean("require_prefix", global.requirePrefix);
-    text("prefix", global.prefix);
-    boolean("must_be_caps", global.mustBeCaps);
     boolean("must_be_static", global.mustBeStatic);
     boolean("must_be_const", global.mustBeConst);
-    boolean("treat_local_static_as_global", global.treatLocalStaticAsGlobal);
-    boolean("require_local_static_prefix", global.requireLocalStaticPrefix);
-    text("local_static_prefix", global.localStaticPrefix);
     boolean("forbid_static_in_header", global.forbidStaticInHeader);
+    boolean("mutable_require_prefix", global.mutableRequirePrefix);
+    text("mutable_prefix", global.mutablePrefix);
+    boolean("mutable_must_be_caps", global.mutableMustBeCaps);
+    boolean("const_require_prefix", global.constRequirePrefix);
+    text("const_prefix", global.constPrefix);
+    boolean("const_must_be_caps", global.constMustBeCaps);
+    boolean("mutable_local_static_require_prefix", global.mutableLocalStaticRequirePrefix);
+    text("mutable_local_static_prefix", global.mutableLocalStaticPrefix);
+    boolean("mutable_local_static_must_be_caps", global.mutableLocalStaticMustBeCaps);
+    boolean("const_local_static_require_prefix", global.constLocalStaticRequirePrefix);
+    text("const_local_static_prefix", global.constLocalStaticPrefix);
+    boolean("const_local_static_must_be_caps", global.constLocalStaticMustBeCaps);
 
     rule("reference_pointer");
     level(config.referencePointerRule.level);

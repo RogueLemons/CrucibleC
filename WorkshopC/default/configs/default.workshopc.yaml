@@ -21,12 +21,12 @@ rules:
 
   # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
   enum:
-    level: Warning
+    level: Error
     allow_enum_typedef: true
 
   # Private rule - forbids access of a private struct field
   private:
-    level: Warning
+    level: Error
     private_field: _private
     setter_contains: pset
     getter_contains: pget
@@ -45,7 +45,7 @@ rules:
 
   # Assignment rule - require primitives to be assigned at declaration
   assignment:
-    level: Warning
+    level: Error
     forbid_null_assign: false
     forbid_null_as_arg: false
     forbid_zero_init_for_objects_with_pointers: false
@@ -54,17 +54,17 @@ rules:
 
   # Prefix namespace rule - require header declarations to include folder structure in name
   prefix_namespace:
-    level: Warning
-    top_dir: WorkshopC
+    level: Error
+    top_dir: src
     work_from_top: true
     stop_at_count: 10
     use_separator: true
-    separator: __
+    separator: _
     apply_to_functions: true
     apply_to_structs: true
     apply_to_typedefs: true
     require_ifndef_for_filepath: true
-    case_insensitive: false
+    case_insensitive: true
 
   # Null check rule - require first use of pointer argument to be checked if null
   null_check:
@@ -73,7 +73,7 @@ rules:
 
   # Argument pointer movement rule - require use of movement notation for non-const pointers
   argument_pointer_movement:
-    level: Warning
+    level: Error
     require_operator_for_move_callsite: true
     require_operator_for_out_callsite: true
     require_operator_for_modify_callsite: false
@@ -121,34 +121,40 @@ rules:
 
   # Strict switch rule - require all switch statements to have a default and all cases include a break/return
   strict_switch:
-    level: Warning
+    level: Error
 
   # Global variable rule - require naming and safety conventions
   global_variable:
-    level: Warning
-    require_prefix: true
-    prefix: g_
-    must_be_caps: false
+    level: Error
     must_be_static: true
     must_be_const: false
-    treat_local_static_as_global: false
-    require_local_static_prefix: true
-    local_static_prefix: s_
     forbid_static_in_header: true
+    mutable_require_prefix: true
+    mutable_prefix: g_
+    mutable_must_be_caps: false
+    const_require_prefix: false
+    const_prefix: G_
+    const_must_be_caps: true
+    mutable_local_static_require_prefix: true
+    mutable_local_static_prefix: s_
+    mutable_local_static_must_be_caps: false
+    const_local_static_require_prefix: true
+    const_local_static_prefix: s_
+    const_local_static_must_be_caps: false
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
   reference_pointer:
-    level: Warning
+    level: Error
     disable_null_check_rule_for_reference_pointers: true
 
   # Function discard rule - forbids discarding return values of functions that return a value
   function_discard:
-    level: Warning
+    level: Error
 
   # Array struct rule - only allows arrays to be declared in structs
   array_struct:
     level: Warning
-    only_allow_array_passing_to_library_functions: true
+    only_allow_array_passing_to_library_functions: false
     enforce_size_suffix_for_array_structs: true
     size_suffix_with_underscore: true
     flexible_size_name: flexible
@@ -159,7 +165,7 @@ rules:
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
   span_struct:
-    level: Warning
+    level: Error
     span_struct_suffix: _span
     const_span_struct_suffix: _const_span
     only_allow_array_passing_to_library_functions_and_spans: true
@@ -174,4 +180,4 @@ rules:
 
   # No goto rule - forbids the use of goto statements
   no_goto:
-    level: Error
+    level: Warning

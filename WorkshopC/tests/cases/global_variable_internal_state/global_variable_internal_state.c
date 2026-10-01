@@ -1,7 +1,6 @@
-// Globals as internal state: prefixed with 'global_' and static,
-// capital letters and const are not required. Static locals are
-// treated as globals but use their own prefix 's_', and static
-// globals are not allowed in headers.
+// Mutable globals use 'global_' and static storage. Static locals use
+// their own 's_' naming policy, and static variables in headers are
+// not allowed.
 
 #include "headers/global_variable_state.h"
 

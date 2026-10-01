@@ -1,0 +1,1 @@
+rules.global_variable.require_prefix is no longer supported; use the mutable/const naming settings

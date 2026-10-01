@@ -9,6 +9,4 @@ warning: global variable 'NESTED_POINTER' must be const, and so must everything 
 warning: global variable 'VALUES' must be const [CCW1904]
 warning: global variable 'POINTER_ARRAY' must be const, and so must everything it points to (e.g. 'const int* const') [CCW1904]
 warning: static local variable 'calls' must be written in capital letters [CCW1902]
-warning: static local variable 'calls' must be const [CCW1904]
 warning: static local variable 'lower_limit' must be written in capital letters [CCW1902]
-warning: static local variable 'MUTABLE_CALLS' must be const [CCW1904]

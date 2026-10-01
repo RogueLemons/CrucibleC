@@ -1,7 +1,6 @@
-// Globals as constants: capital letters and const (all the way down
-// for pointers), a prefix and static are not required. Static locals
-// are treated as globals and follow the global prefix settings, and
-// static globals are allowed in headers.
+// Globals as constants: mutable and const names use separate
+// capitalization settings. Static locals use their own naming settings,
+// and static globals are allowed in headers.
 
 #include "headers/global_variable_constants.h"
 

@@ -173,16 +173,27 @@ struct StrictSwitchRuleConfig {
 struct GlobalVariableRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
-    bool requirePrefix = false;
-    std::string prefix;
-    bool mustBeCaps = false;
     bool mustBeStatic = false;
     bool mustBeConst = false;
-
-    bool treatLocalStaticAsGlobal = false;
-    bool requireLocalStaticPrefix = false;
-    std::string localStaticPrefix;
     bool forbidStaticInHeader = false;
+
+    bool mutableRequirePrefix = false;
+    std::string mutablePrefix;
+    bool mutableMustBeCaps = false;
+
+    bool constRequirePrefix = false;
+    std::string constPrefix;
+    bool constMustBeCaps = false;
+
+    bool mutableLocalStaticRequirePrefix = false;
+    std::string mutableLocalStaticPrefix;
+    bool mutableLocalStaticMustBeCaps = false;
+
+    bool constLocalStaticRequirePrefix = false;
+    std::string constLocalStaticPrefix;
+    bool constLocalStaticMustBeCaps = false;
+
+    std::vector<std::string> legacySettings;
 };
 
 struct ReferencePointerRuleConfig {

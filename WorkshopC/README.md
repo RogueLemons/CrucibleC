@@ -291,7 +291,7 @@ rules:
     level: Error
 ```
 
-- A rule that is left out of the config is `Off`. An option that is left out gets its default, which is `false` for the on/off options unless its description below says otherwise. Starting from [the default config](./default/default.workshopc.yaml) is the easiest way to see every option.
+- A rule that is left out of the config is `Off`. An option that is left out gets its default, which is `false` for the on/off options unless its description below says otherwise. Starting from [the default config](./default/configs/default.workshopc.yaml) is the easiest way to see every option.
 - A file is third party when its path contains one of the `third_party_includes` entries, e.g. `external/` matches `project/external/json/json.h`. Code in third party files and system headers is never reported, but the project's own code that uses it still is.
 - `Warning` and `Error` only differ in how the result is reported (the level in the output and the [exit code](#how-to-use)), the checks are the same.
 
@@ -1463,38 +1463,43 @@ This rule enforces conventions for global (file scope) variables, which makes th
 ```yaml
 global_variable:
     level: Warning
-    require_prefix: true
-    prefix: g_
-    must_be_caps: false
     must_be_static: true
     must_be_const: false
-    treat_local_static_as_global: false
-    require_local_static_prefix: true
-    local_static_prefix: s_
     forbid_static_in_header: true
+  mutable_require_prefix: true
+  mutable_prefix: g_
+  mutable_must_be_caps: false
+  const_require_prefix: false
+  const_prefix: G_
+  const_must_be_caps: true
+  mutable_local_static_require_prefix: true
+  mutable_local_static_prefix: s_
+  mutable_local_static_must_be_caps: false
+  const_local_static_require_prefix: true
+  const_local_static_prefix: s_
+  const_local_static_must_be_caps: false
 ```
 
-- `require_prefix`: the name must start with `prefix`.
-- `must_be_caps`: the name may not contain lowercase letters. When `require_prefix` is also enabled, only the part after the prefix is checked, so `g_MAX_SIZE` is fine.
-- `must_be_static`: the variable must be `static`, so that it is only visible inside its own file. An `extern` declaration is therefore reported too.
-- `must_be_const`: the variable must be `const`. A pointer must be const on every level, both the pointer itself and what it points to, e.g. `const int* const`. For arrays the elements must be const.
-- `forbid_static_in_header`: a `static` global may not be declared in a header, since every file that includes the header would get its own separate copy of it. Together with `must_be_static` this means globals can not be declared in headers at all. When `treat_local_static_as_global` is `true`, this also covers static locals in functions defined in a header (e.g. `static inline` functions), which get a separate copy per file in the same way.
-- `treat_local_static_as_global`: static variables inside functions follow the capital letter and const settings too. They keep their value between calls just like globals, but look like ordinary local variables where they are used.
-- `require_local_static_prefix` and `local_static_prefix`: static locals must start with `local_static_prefix`, whether or not they are treated as globals, so that e.g. `g_` marks globals and `s_` marks static locals. When `require_local_static_prefix` is `false`, static locals treated as globals follow `require_prefix` and `prefix` like globals instead. Static locals are only left completely unchecked when both `treat_local_static_as_global` and `require_local_static_prefix` are `false`.
+- `mutable_*` and `const_*`: select the prefix and capitalization policy for mutable and deeply const globals. Deep const retains the rule's existing definition: pointer objects and every pointee level must be const, and arrays are classified by their elements. When a required prefix is present, capitalization is checked only after that prefix.
+- `mutable_local_static_*` and `const_local_static_*`: apply the same naming choices independently to mutable and deeply const function-local static variables. Static locals do not inherit global naming policies.
+- Each `*_require_prefix` controls whether its matching `*_prefix` is required; an unused prefix may be omitted. The old shared keys (`require_prefix`, `prefix`, `must_be_caps`, and the old local-static options) are rejected and must be migrated.
+- `must_be_static`: file-scope variables must have internal linkage through `static`. An `extern` declaration is therefore reported too.
+- `must_be_const`: file-scope variables must be deeply const. A pointer must be const on every level, both the pointer itself and what it points to, e.g. `const int* const`. For arrays the elements must be const. This constraint does not apply to function-local statics.
+- `forbid_static_in_header`: a static global or static local in a function defined in a header may not be declared there, since each including file would get its own separate copy.
 
 Two common setups are internal state and constants:
 
 ```c
-// require_prefix: true, prefix: g_, must_be_static: true
+// mutable_prefix: g_, must_be_static: true
 static int g_counter = 0;               // OK
-static int counter = 0;                 // Triggers parser, missing prefix
+static int counter = 0;                 // Triggers parser, missing mutable prefix
 int g_exported = 0;                     // Triggers parser, not static
 
-// must_be_caps: true, must_be_const: true
+// const_must_be_caps: true, const_require_prefix: false
 const int MAX_SIZE = 10;                // OK
 const char* const APP_NAME = "app";     // OK
-const char* NAME_POINTER = "name";      // Triggers parser, the pointer itself is not const
-int COUNTER = 0;                        // Triggers parser, not const
+const int lower_case = 1;               // Triggers parser, not capitalized
+const char* NAME_POINTER = "name";     // Triggers parser: mutable pointer and missing g_ prefix
 ```
 
 Local variables that are not static are never checked. A variable declared more than once (e.g. `extern` in a header and the definition in the source file) is only checked once, at its definition.

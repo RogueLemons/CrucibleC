@@ -1,0 +1,8 @@
+warning: global variable 'count' must start with the prefix 'g_' [CCW1901]
+warning: global variable 'G_limit' must be written in capital letters after the prefix 'G_' [CCW1902]
+warning: global variable 'LIMIT' must start with the prefix 'G_' [CCW1901]
+warning: global variable 'G_MUTABLE_POINTER' must start with the prefix 'g_' [CCW1901]
+warning: global variable 'G_MUTABLE_ARRAY' must start with the prefix 'g_' [CCW1901]
+warning: static local variable 'calls' must start with the prefix 's_' [CCW1901]
+warning: static local variable 'c_limit' must be written in capital letters after the prefix 'c_' [CCW1902]
+warning: static local variable 'LIMIT' must start with the prefix 'c_' [CCW1901]

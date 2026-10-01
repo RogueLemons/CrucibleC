@@ -1,7 +1,5 @@
-// Static locals are unaffected by the global conventions when
-// treat_local_static_as_global is false: the globals must have the 'G_'
-// prefix, be in capital letters, static and const, but static locals
-// only need the 's_' prefix, since require_local_static_prefix is true.
+// Globals use the 'G_' prefix and must be capitalized, static and const.
+// Static locals use only their dedicated 's_' naming policies.
 
 // Good
 

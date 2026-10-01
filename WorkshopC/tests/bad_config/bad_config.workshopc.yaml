@@ -50,8 +50,8 @@ rules:
 
   global_variable:
     level: Warning
-    # prefix is missing
-    local_static_prefix: s_
+    mutable_require_prefix: true
+    # mutable_prefix is missing
 
   # Off, so nothing here is checked: a missing const_span_struct_suffix,
   # and a span_struct_suffix that is the same as vtable_suffix

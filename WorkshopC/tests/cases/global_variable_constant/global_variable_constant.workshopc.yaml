@@ -6,12 +6,18 @@ third_party_includes:
 rules:
   global_variable:
     level: Warning
-    require_prefix: false
-    prefix: g_
-    must_be_caps: true
     must_be_static: false
     must_be_const: true
-    treat_local_static_as_global: true
-    require_local_static_prefix: false
-    local_static_prefix: s_
     forbid_static_in_header: false
+    mutable_require_prefix: false
+    mutable_prefix: g_
+    mutable_must_be_caps: true
+    const_require_prefix: false
+    const_prefix: G_
+    const_must_be_caps: true
+    mutable_local_static_require_prefix: false
+    mutable_local_static_prefix: s_
+    mutable_local_static_must_be_caps: true
+    const_local_static_require_prefix: false
+    const_local_static_prefix: s_
+    const_local_static_must_be_caps: true

@@ -160,9 +160,9 @@ add_custom_command(TARGET workshopc POST_BUILD
 # in the release folder
 add_custom_target(release_files ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RELEASE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/default/default.workshopc.yaml
-        ${RELEASE_DIR}/default.workshopc.yaml
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/default/configs
+        ${RELEASE_DIR}/configs
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/default/tags
         ${RELEASE_DIR}/tags
