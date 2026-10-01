@@ -20,7 +20,7 @@ rules:
     top_dir: ./src/
     # Negative
     stop_at_count: -1
-    # seperator is missing
+    # separator is missing
 
   struct_resource_management:
     level: Error

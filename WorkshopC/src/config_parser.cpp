@@ -177,10 +177,10 @@ void ConfigParser::applySetting(
     else if (key == "stop_at_count") {
         cfg.stopAtCount = parseInt(value, cfg.stopAtCount);
     }
-    else if (key == "use_seperator") {
+    else if (key == "use_separator") {
         cfg.useSeparator = parseBool(value);
     }
-    else if (key == "seperator") {
+    else if (key == "separator") {
         cfg.separator = value;
     }
     else if (key == "require_ifndef_for_filepath") {
@@ -850,7 +850,7 @@ bool ConfigParser::validateConfig(
 
     const PrefixNamespaceRuleConfig &prefix = config.prefixNamespaceRule;
     requireString(errors, "prefix_namespace", prefix.level, "top_dir", prefix.topDir);
-    requireString(errors, "prefix_namespace", prefix.level, "seperator", prefix.separator);
+    requireString(errors, "prefix_namespace", prefix.level, "separator", prefix.separator);
 
     const StructResourceManagementRuleConfig &srm = config.structResourceManagementRule;
     requireString(errors, "struct_resource_management", srm.level, "pod_struct_creator_suffix", srm.podStructCreatorSuffix);
@@ -1058,8 +1058,8 @@ void ConfigParser::writeConfig(
     text("top_dir", prefix.topDir);
     boolean("work_from_top", prefix.workFromTop);
     number("stop_at_count", prefix.stopAtCount);
-    boolean("use_seperator", prefix.useSeparator);
-    text("seperator", prefix.separator);
+    boolean("use_separator", prefix.useSeparator);
+    text("separator", prefix.separator);
     boolean("require_ifndef_for_filepath", prefix.requireIfndefForFilepath);
     boolean("apply_to_functions", prefix.applyToFunctions);
     boolean("apply_to_structs", prefix.applyToStructs);

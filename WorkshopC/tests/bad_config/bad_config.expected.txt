@@ -1,5 +1,5 @@
 rules.private.private_field must be set when the rule is not Off
-rules.prefix_namespace.seperator must be set when the rule is not Off
+rules.prefix_namespace.separator must be set when the rule is not Off
 rules.struct_resource_management.raii_struct_copy_suffix must be set when the rule is not Off
 rules.struct_resource_management.raii_struct_array_destroyer_suffix must be set when allow_raii_struct_arrays is true
 rules.interfaces.const_interface_suffix must be set when the rule is not Off

@@ -744,8 +744,8 @@ prefix_namespace:
     top_dir: src
     work_from_top: true
     stop_at_count: 10
-    use_seperator: true
-    seperator: __
+    use_separator: true
+    separator: __
     apply_to_functions: true
     apply_to_structs: true
     apply_to_typedefs: true
@@ -755,7 +755,7 @@ prefix_namespace:
 
 - `top_dir` (required, e.g. `src`): the folder the namespaces start in. The prefix is built from the folders after the first folder with this name in the header's path, not including it. A header that is not inside such a folder is not checked.
 - `stop_at_count` (default `10`) and `work_from_top` (default `false`): at most `stop_at_count` folders are used. With `work_from_top: true` these are the folders closest to `top_dir`, otherwise the folders closest to the file.
-- `use_seperator` and `seperator` (note the spelling of the keys): the separator is written between the folder names and after the last one. Without it the folder names are joined directly, e.g. `appchrono`.
+- `use_separator` and `separator` (note the spelling of the keys): the separator is written between the folder names and after the last one. Without it the folder names are joined directly, e.g. `appchrono`.
 - `apply_to_functions`, `apply_to_structs` and `apply_to_typedefs`: which names must have the prefix. Static functions never need it, since they are not visible outside the file.
 - `require_ifndef_for_filepath`: the first `#ifndef` in the first 10 lines of the header must be the path after `top_dir`, including the file name, in capital letters and joined with `_`, whatever the separator setting.
 - `case_insensitive` (default `false`): a name only needs the same letters as the prefix, in upper or lower case, so for the folders `App/Chrono` both `App__Chrono__start` and `app__chrono__start` are fine. Without it the case must match the folders exactly. The include guard is not affected, it is always in capital letters.
@@ -2181,13 +2181,23 @@ This ensures:
 
 ## TODO
 
-For Beta V1 it shall
+Beta
 - Verify build for Linux
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
 - Add config presets (e.g. embedded, safety, exisiting_project, new_project, opinionated, strict)
-- Override third party includes with arg?
-
-For Beta V1.1 it shall
+- Add nevernull config
 - Add LSP support
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
+- Override third party includes with arg? Override top dir?
+- Verify ref tag handles mismatch between function declaration and definition
+- Verify suppression works for ifndef namespace requirement at start of file
+- Add ability to make const globals all caps but mutable globals lowercase
+
+After V1
+- Allow ref variables and fields
+- Rule for forbidding int/long/long long/short
+- Allow #pragma once instead of ifndef guards?
+- Optional suppression lines logging
+- Add ability to let raii return be exempt from reverse order destroy
+- Add ability to let moved raii be able to be destroyed out of order (possibly allowing return function to be used in arguments/initializers or adding a move_destroy function or treating move as a destroy)
