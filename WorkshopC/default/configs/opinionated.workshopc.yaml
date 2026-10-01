@@ -69,7 +69,7 @@ rules:
   # Null check rule - require first use of pointer argument to be checked if null
   null_check:
     level: Error
-    allow_direct_ptr_in_if_statement: true
+    allow_direct_ptr_in_if_statement: false
 
   # Argument pointer movement rule - require use of movement notation for non-const pointers
   argument_pointer_movement:
