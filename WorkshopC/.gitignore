@@ -59,6 +59,8 @@ Thumbs.db
 # =========================
 # The built tool, copied here by windows_rebuild.py
 release/
+# Files generated during the build process
+generated/
 
 # Text, JSON and SARIF files written by the output files test
 tests/output/

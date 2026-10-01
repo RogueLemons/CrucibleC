@@ -1,13 +1,22 @@
-# WorkshopC Configuration File
+# WorkshopC Configuration File - Embedded preset
+#
+# For firmware on microcontrollers: no dynamic memory, every return value
+# and switch case handled, state kept visible, and the vendor HAL left
+# alone. Much of it follows the spirit of MISRA C.
 
 # Paths configuration
 # third_party_includes are not affected by rules
+# Drivers/, CMSIS/ and Middlewares/ are where vendor HALs and RTOS code
+# usually live (e.g. STM32Cube projects)
 third_party_includes:
   - external/
   - third_party/
   - vendor/
   - libs/
   - dependencies/
+  - Drivers/
+  - CMSIS/
+  - Middlewares/
 
 # Folder containing compile_commands.json, relative to this file (-p overrides it)
 compile_commands_dir: build
@@ -16,17 +25,19 @@ compile_commands_dir: build
 # Rules can be: Off, Warning, Error
 rules:
   # Suppression reason rule - requires a reason for each suppression
+  # Every deviation from the rules needs a written reason for reviews and audits
   suppression_reason_rule:
-    level: Error 
+    level: Error
 
   # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
+  # Enums are the natural fit for states and modes, but never mixed silently with integers
   enum:
     level: Error
     allow_enum_typedef: true
 
   # Private rule - forbids access of a private struct field
   private:
-    level: Error
+    level: Warning
     private_field: _private
     setter_contains: private_
     getter_contains: private_
@@ -36,6 +47,7 @@ rules:
     level: Error
 
   # Function pointer rule - requires typedef for all function pointers
+  # Callbacks and handler tables are common, a typedef keeps them readable
   function_pointer:
     level: Warning
 
@@ -44,6 +56,7 @@ rules:
     level: Warning
 
   # Assignment rule - require primitives to be assigned at declaration
+  # Zeroed static buffers and structs holding pointers are normal here, so {0} stays allowed
   assignment:
     level: Error
     forbid_null_assign: false
@@ -53,11 +66,12 @@ rules:
     forbid_mut_arg_pointer: true
 
   # Prefix namespace rule - require header declarations to include folder structure in name
+  # A flat C namespace across drivers, board support and application code needs prefixes
   prefix_namespace:
-    level: Error
+    level: Warning
     top_dir: src
     work_from_top: true
-    stop_at_count: 10
+    stop_at_count: 3
     use_separator: true
     separator: _
     apply_to_functions: true
@@ -67,18 +81,21 @@ rules:
     case_insensitive: true
 
   # Null check rule - require first use of pointer argument to be checked if null
+  # A null dereference may not fault on a microcontroller, it silently reads address 0
+  # Conditions are written out, 'ptr != NULL', not 'if (ptr)'
   null_check:
     level: Error
-    allow_direct_ptr_in_if_statement: true
+    allow_direct_ptr_in_if_statement: false
 
   # Argument pointer movement rule - require use of movement notation for non-const pointers
   argument_pointer_movement:
-    level: Error
+    level: Warning
     require_operator_for_move_callsite: true
     require_operator_for_out_callsite: true
-    require_operator_for_modify_callsite: false
+    require_operator_for_modify_callsite: true
 
   # Struct resource management rule - require use of RAII with structs that manage resources
+  # Without a heap, raii structs still own peripherals, DMA channels, locks and pool blocks
   struct_resource_management:
     level: Error
     pod_struct_creator_suffix: _pod
@@ -95,9 +112,10 @@ rules:
     raii_struct_array_destroyer_suffix: _destroy_array
     raii_destroy_in_reverse_order: true
     raii_standardized_destroy_definitions: true
-    free_struct_creator_suffix: _init
+    free_struct_creator_suffix: _initialize
 
   # Interfaces rule - standardizes how interfaces and vtables are used
+  # Static const vtables end up in flash, a good fit for driver interfaces
   interfaces:
     level: Error
     vtable_suffix: _vtable
@@ -106,55 +124,60 @@ rules:
     interface_must_have_fields_that_are_private_alternative: true
 
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
+  # No dynamic memory at all: fragmentation and allocation failure have no place in firmware
+  # A project that needs a pool allocator adds its functions to the list
   restricted_malloc:
     level: Error
-    list_of_allowed_malloc_functions:
-      - memory_alloc
-      - memory_alloc_array
-      - memory_free
+    list_of_allowed_malloc_functions: []
 
   # Single return rule - requires functions to have a single return statement
+  # One point of exit, which also makes cleanup and timing easier to follow
   single_return:
     level: Warning
-    allow_early_return: true
+    allow_early_return: false
     require_return_for_void: false
 
   # Strict switch rule - require all switch statements to have a default and all cases include a break/return
+  # State machines are everywhere, an unhandled state or a fallthrough is a real bug
   strict_switch:
     level: Error
 
   # Global variable rule - require naming and safety conventions
+  # Globals are unavoidable (driver state, data shared with interrupts), so they stay
+  # file local and clearly marked, including state kept in static locals
   global_variable:
-    level: Error
+    level: Warning
     must_be_static: true
     must_be_const: false
     forbid_static_in_header: true
     mutable_require_prefix: true
     mutable_prefix: g_
     mutable_must_be_caps: false
-    const_require_prefix: false
+    const_require_prefix: true
     const_prefix: G_
     const_must_be_caps: true
     mutable_local_static_require_prefix: true
     mutable_local_static_prefix: s_
     mutable_local_static_must_be_caps: false
     const_local_static_require_prefix: true
-    const_local_static_prefix: s_
-    const_local_static_must_be_caps: false
+    const_local_static_prefix: S_
+    const_local_static_must_be_caps: true
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
   reference_pointer:
-    level: Error
+    level: Warning
     disable_null_check_rule_for_reference_pointers: true
 
   # Function discard rule - forbids discarding return values of functions that return a value
+  # HAL and driver calls report failures through their return value, which must be handled
   function_discard:
     level: Error
 
   # Array struct rule - only allows arrays to be declared in structs
+  # Fixed size buffers carry their size in the type name
   array_struct:
     level: Warning
-    only_allow_array_passing_to_library_functions: false
+    only_allow_array_passing_to_library_functions: true
     enforce_size_suffix_for_array_structs: true
     size_suffix_with_underscore: true
     flexible_size_name: flexible
@@ -164,20 +187,24 @@ rules:
     use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
+  # Buffer overruns are the classic firmware bug, so raw buffer pointers only go to
+  # HAL and library calls through small wrappers that are easy to review
+  # Static buffers may be given their span with braces, since static initializers can not call functions
   span_struct:
     level: Error
     span_struct_suffix: _span
     const_span_struct_suffix: _const_span
     only_allow_array_passing_to_library_functions_and_spans: true
-    only_allow_span_data_passing_in_one_line_static_functions: false
+    only_allow_span_data_passing_in_one_line_static_functions: true
     allow_spans_to_be_given_fewer_elements_than_their_size: true
     require_span_immediately_after_array: true
     allow_pod_span_to_be_initialized_manually_if_static: true
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
+  # Make the whole object const instead, so tables are placed in flash as a whole
   const_field:
     level: Warning
 
   # No goto rule - forbids the use of goto statements
   no_goto:
-    level: Warning
+    level: Error

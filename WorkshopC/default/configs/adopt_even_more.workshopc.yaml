@@ -1,0 +1,183 @@
+# WorkshopC Configuration File
+
+# Paths configuration
+# third_party_includes are not affected by rules
+third_party_includes:
+  - external/
+  - third_party/
+  - vendor/
+  - libs/
+  - dependencies/
+
+# Folder containing compile_commands.json, relative to this file (-p overrides it)
+compile_commands_dir: build
+
+# Rules section
+# Rules can be: Off, Warning, Error
+rules:
+  # Suppression reason rule - requires a reason for each suppression
+  suppression_reason_rule:
+    level: Error 
+
+  # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
+  enum:
+    level: Error
+    allow_enum_typedef: true
+
+  # Private rule - forbids access of a private struct field
+  private:
+    level: Error
+    private_field: _private
+    setter_contains: private_
+    getter_contains: private_
+
+  # Private alternative rule - limits access of tagged struct fields
+  private_alternative:
+    level: Error
+
+  # Function pointer rule - requires typedef for all function pointers
+  function_pointer:
+    level: Error
+
+  # Typedef struct rule - requires typedef for all structs
+  typedef_struct:
+    level: Off
+
+  # Assignment rule - require primitives to be assigned at declaration
+  assignment:
+    level: Error
+    forbid_null_assign: false
+    forbid_null_as_arg: false
+    forbid_zero_init_for_objects_with_pointers: false
+    forbid_arg_reassign: true
+    forbid_mut_arg_pointer: true
+
+  # Prefix namespace rule - require header declarations to include folder structure in name
+  prefix_namespace:
+    level: Error
+    top_dir: src
+    work_from_top: true
+    stop_at_count: 10
+    use_separator: true
+    separator: _
+    apply_to_functions: false
+    apply_to_structs: false
+    apply_to_typedefs: false
+    require_ifndef_for_filepath: true
+    case_insensitive: true
+
+  # Null check rule - require first use of pointer argument to be checked if null
+  null_check:
+    level: Error
+    allow_direct_ptr_in_if_statement: true
+
+  # Argument pointer movement rule - require use of movement notation for non-const pointers
+  argument_pointer_movement:
+    level: Warning
+    require_operator_for_move_callsite: false
+    require_operator_for_out_callsite: false
+    require_operator_for_modify_callsite: false
+
+  # Struct resource management rule - require use of RAII with structs that manage resources
+  struct_resource_management:
+    level: Warning
+    pod_struct_creator_suffix: _pod
+    raii_struct_creator_suffix: _make
+    raii_struct_destroyer_suffix: _destroy
+    raii_may_only_destroy_value_ref: true
+    raii_struct_copy_suffix: _copy
+    raii_struct_move_suffix: _move
+    raii_may_only_move_value_ref: true
+    raii_struct_return_suffix: _return
+    raii_struct_valid_suffix: _valid
+    raii_use_after_destroy: false
+    allow_raii_struct_arrays: true
+    raii_struct_array_destroyer_suffix: _destroy_array
+    raii_destroy_in_reverse_order: true
+    raii_standardized_destroy_definitions: true
+    free_struct_creator_suffix: _init
+
+  # Interfaces rule - standardizes how interfaces and vtables are used
+  interfaces:
+    level: Error
+    vtable_suffix: _vtable
+    interface_suffix: _interface
+    const_interface_suffix: _const_interface
+    interface_must_have_fields_that_are_private_alternative: true
+
+  # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
+  restricted_malloc:
+    level: Off
+    list_of_allowed_malloc_functions:
+      - memory_alloc
+      - memory_alloc_array
+      - memory_free
+
+  # Single return rule - requires functions to have a single return statement
+  single_return:
+    level: Warning
+    allow_early_return: true
+    require_return_for_void: false
+
+  # Strict switch rule - require all switch statements to have a default and all cases include a break/return
+  strict_switch:
+    level: Error
+
+  # Global variable rule - require naming and safety conventions
+  global_variable:
+    level: Error
+    must_be_static: true
+    must_be_const: false
+    forbid_static_in_header: true
+    mutable_require_prefix: false
+    mutable_prefix: g_
+    mutable_must_be_caps: false
+    const_require_prefix: false
+    const_prefix: G_
+    const_must_be_caps: false
+    mutable_local_static_require_prefix: false
+    mutable_local_static_prefix: s_
+    mutable_local_static_must_be_caps: false
+    const_local_static_require_prefix: false
+    const_local_static_prefix: S_
+    const_local_static_must_be_caps: false
+
+  # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
+  reference_pointer:
+    level: Error
+    disable_null_check_rule_for_reference_pointers: true
+
+  # Function discard rule - forbids discarding return values of functions that return a value
+  function_discard:
+    level: Error
+
+  # Array struct rule - only allows arrays to be declared in structs
+  array_struct:
+    level: Warning
+    only_allow_array_passing_to_library_functions: false
+    enforce_size_suffix_for_array_structs: true
+    size_suffix_with_underscore: true
+    flexible_size_name: flexible
+    enforce_suffix_for_array_structs: true
+    array_struct_suffix: _array
+    struct_name_as_prefix: false
+    use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
+
+  # Span struct rule - standardize spans (pointer + length) for arrays and buffers
+  span_struct:
+    level: Error
+    span_struct_suffix: _span
+    const_span_struct_suffix: _const_span
+    only_allow_array_passing_to_library_functions_and_spans: true
+    only_allow_span_data_passing_in_one_line_static_functions: false
+    allow_spans_to_be_given_fewer_elements_than_their_size: true
+    require_span_immediately_after_array: true
+    allow_pod_span_to_be_initialized_manually_if_static: true
+
+  # Const field rule - forbids struct fields that are const (but not pointer to const)
+  const_field:
+    level: Error
+
+  # No goto rule - forbids the use of goto statements
+  no_goto:
+    level: Error

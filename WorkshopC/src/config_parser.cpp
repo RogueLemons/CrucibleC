@@ -941,11 +941,11 @@ bool ConfigParser::validateConfig(
     requireString(errors, "span_struct", span.level, "const_span_struct_suffix", span.constSpanStructSuffix);
 
     // Settings that name different things may not have the same value
-
-    std::vector<NamedSetting> accessors;
-    addSetting(accessors, "private", priv.level, "getter_contains", priv.getterContains);
-    addSetting(accessors, "private", priv.level, "setter_contains", priv.setterContains);
-    requireDistinct(errors, accessors);
+    
+    // std::vector<NamedSetting> accessors;
+    // addSetting(accessors, "private", priv.level, "getter_contains", priv.getterContains);
+    // addSetting(accessors, "private", priv.level, "setter_contains", priv.setterContains);
+    // requireDistinct(errors, accessors);
 
     if (prefix.level != RuleLevel::Off) {
         if (prefix.stopAtCount < 0) {

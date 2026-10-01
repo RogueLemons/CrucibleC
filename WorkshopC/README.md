@@ -385,8 +385,8 @@ This rule makes a struct field private by its name: every field named `private_f
 private:
     level: Error
     private_field: _private
-    setter_contains: pset
-    getter_contains: pget
+    setter_contains: private_set
+    getter_contains: private_get
 ```
 
 For this config, the following triggers an error.
@@ -411,23 +411,23 @@ void access_color_members(Color* color)
 Instead the private field must be accessed through getter and setter functions. An accessor must meet all three requirements:
 - it is `static`,
 - it is defined in a `.c` file (a static function in a header is copied into every file that includes it, so it is reported there),
-- its name contains `getter_contains` or `setter_contains`, anywhere in the name, e.g. `pget_red` or `color_pset_red`.
+- its name contains `getter_contains` or `setter_contains`, anywhere in the name, e.g. `private_get_red` or `color_private_set_red`.
 
 ```c
 // color.c
-static int pget_red(const Color* const color)
+static int private_get_red(const Color* const color)
 {
   return color->_private.r;       // OK
 }
 
-static void pset_red(Color* const color, int new_value)
+static void private_set_red(Color* const color, int new_value)
 {
   color->_private.r = new_value;  // OK
 }
 
 int color_red(const Color* const color)
 {
-  return pget_red(color);         // OK, the public function goes through the accessor
+  return private_get_red(color);         // OK, the public function goes through the accessor
 }
 ```
 
@@ -447,19 +447,19 @@ struct Color
 };
 typedef struct Color Color;
 
-static const ColorPrivate* pget(const Color* const color)
+static const ColorPrivate* private_get(const Color* const color)
 {
   return &color->_private;
 }
 
-static ColorPrivate* pset(Color* const color)
+static ColorPrivate* private_set(Color* const color)
 {
   return &color->_private;
 }
 
 void color_set_red(Color* const color, int red)
 {
-  pset(color)->r = red;           // OK, r is a field of ColorPrivate, which is not private itself
+  private_set(color)->r = red;           // OK, r is a field of ColorPrivate, which is not private itself
 }
 ```
 
@@ -2206,3 +2206,4 @@ After V1
 - Optional suppression lines logging
 - Add ability to let raii return be exempt from reverse order destroy
 - Add ability to let moved raii be able to be destroyed out of order (possibly allowing return function to be used in arguments/initializers or adding a move_destroy function or treating move as a destroy)
+- Validate that _private field is accessed with correct getter/setter based on access via const pointer or mut pointer

@@ -26,10 +26,10 @@ rules:
 
   # Private rule - forbids access of a private struct field
   private:
-    level: Error
+    level: Warning
     private_field: _private
-    setter_contains: private_
-    getter_contains: private_
+    setter_contains: pset
+    getter_contains: pget
 
   # Private alternative rule - limits access of tagged struct fields
   private_alternative:
@@ -37,11 +37,11 @@ rules:
 
   # Function pointer rule - requires typedef for all function pointers
   function_pointer:
-    level: Warning
+    level: Error
 
   # Typedef struct rule - requires typedef for all structs
   typedef_struct:
-    level: Warning
+    level: Error
 
   # Assignment rule - require primitives to be assigned at declaration
   assignment:
@@ -57,8 +57,8 @@ rules:
     level: Error
     top_dir: src
     work_from_top: true
-    stop_at_count: 10
-    use_separator: true
+    stop_at_count: 3
+    use_separator: false
     separator: _
     apply_to_functions: true
     apply_to_structs: true
@@ -90,19 +90,19 @@ rules:
     raii_may_only_move_value_ref: true
     raii_struct_return_suffix: _return
     raii_struct_valid_suffix: _valid
-    raii_use_after_destroy: false
+    raii_use_after_destroy: true
     allow_raii_struct_arrays: true
     raii_struct_array_destroyer_suffix: _destroy_array
-    raii_destroy_in_reverse_order: true
-    raii_standardized_destroy_definitions: true
-    free_struct_creator_suffix: _init
+    raii_destroy_in_reverse_order: false
+    raii_standardized_destroy_definitions: false
+    free_struct_creator_suffix: _initialize_manually
 
   # Interfaces rule - standardizes how interfaces and vtables are used
   interfaces:
     level: Error
     vtable_suffix: _vtable
-    interface_suffix: _interface
-    const_interface_suffix: _const_interface
+    interface_suffix: _port
+    const_interface_suffix: _cport
     interface_must_have_fields_that_are_private_alternative: true
 
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
@@ -110,7 +110,6 @@ rules:
     level: Error
     list_of_allowed_malloc_functions:
       - memory_alloc
-      - memory_alloc_array
       - memory_free
 
   # Single return rule - requires functions to have a single return statement
@@ -157,7 +156,7 @@ rules:
     only_allow_array_passing_to_library_functions: false
     enforce_size_suffix_for_array_structs: true
     size_suffix_with_underscore: true
-    flexible_size_name: flexible
+    flexible_size_name: flex
     enforce_suffix_for_array_structs: true
     array_struct_suffix: _array
     struct_name_as_prefix: false
@@ -167,17 +166,17 @@ rules:
   span_struct:
     level: Error
     span_struct_suffix: _span
-    const_span_struct_suffix: _const_span
+    const_span_struct_suffix: _cspan
     only_allow_array_passing_to_library_functions_and_spans: true
     only_allow_span_data_passing_in_one_line_static_functions: false
     allow_spans_to_be_given_fewer_elements_than_their_size: true
-    require_span_immediately_after_array: true
+    require_span_immediately_after_array: false
     allow_pod_span_to_be_initialized_manually_if_static: true
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
   const_field:
-    level: Warning
+    level: Error
 
   # No goto rule - forbids the use of goto statements
   no_goto:
-    level: Warning
+    level: Error

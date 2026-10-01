@@ -41,7 +41,7 @@ rules:
 
   # Typedef struct rule - requires typedef for all structs
   typedef_struct:
-    level: Warning
+    level: Off
 
   # Assignment rule - require primitives to be assigned at declaration
   assignment:
@@ -54,15 +54,15 @@ rules:
 
   # Prefix namespace rule - require header declarations to include folder structure in name
   prefix_namespace:
-    level: Error
+    level: Warning
     top_dir: src
     work_from_top: true
     stop_at_count: 10
     use_separator: true
     separator: _
-    apply_to_functions: true
-    apply_to_structs: true
-    apply_to_typedefs: true
+    apply_to_functions: false
+    apply_to_structs: false
+    apply_to_typedefs: false
     require_ifndef_for_filepath: true
     case_insensitive: true
 
@@ -73,14 +73,14 @@ rules:
 
   # Argument pointer movement rule - require use of movement notation for non-const pointers
   argument_pointer_movement:
-    level: Error
+    level: Off
     require_operator_for_move_callsite: true
     require_operator_for_out_callsite: true
     require_operator_for_modify_callsite: false
 
   # Struct resource management rule - require use of RAII with structs that manage resources
   struct_resource_management:
-    level: Error
+    level: Off
     pod_struct_creator_suffix: _pod
     raii_struct_creator_suffix: _make
     raii_struct_destroyer_suffix: _destroy
@@ -107,7 +107,7 @@ rules:
 
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
   restricted_malloc:
-    level: Error
+    level: Off
     list_of_allowed_malloc_functions:
       - memory_alloc
       - memory_alloc_array
@@ -129,17 +129,17 @@ rules:
     must_be_static: true
     must_be_const: false
     forbid_static_in_header: true
-    mutable_require_prefix: true
+    mutable_require_prefix: false
     mutable_prefix: g_
     mutable_must_be_caps: false
     const_require_prefix: false
     const_prefix: G_
-    const_must_be_caps: true
-    mutable_local_static_require_prefix: true
+    const_must_be_caps: false
+    mutable_local_static_require_prefix: false
     mutable_local_static_prefix: s_
     mutable_local_static_must_be_caps: false
-    const_local_static_require_prefix: true
-    const_local_static_prefix: s_
+    const_local_static_require_prefix: false
+    const_local_static_prefix: S_
     const_local_static_must_be_caps: false
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
@@ -153,8 +153,8 @@ rules:
 
   # Array struct rule - only allows arrays to be declared in structs
   array_struct:
-    level: Warning
-    only_allow_array_passing_to_library_functions: false
+    level: Off
+    only_allow_array_passing_to_library_functions: true
     enforce_size_suffix_for_array_structs: true
     size_suffix_with_underscore: true
     flexible_size_name: flexible
@@ -165,7 +165,7 @@ rules:
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
   span_struct:
-    level: Error
+    level: Warning
     span_struct_suffix: _span
     const_span_struct_suffix: _const_span
     only_allow_array_passing_to_library_functions_and_spans: true
@@ -176,7 +176,7 @@ rules:
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
   const_field:
-    level: Warning
+    level: Error
 
   # No goto rule - forbids the use of goto statements
   no_goto:
