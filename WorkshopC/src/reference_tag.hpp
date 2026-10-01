@@ -8,6 +8,23 @@
 // Annotation written by the REF macro (see default/ref_tag.h)
 inline constexpr const char *kReferencePointerTag = "workshopc_reference_pointer";
 
+inline bool hasDirectReferenceTag(const clang::ParmVarDecl *param) {
+    if (!param)
+        return false;
+
+    for (const auto *attr : param->attrs()) {
+        if (const auto *annotate = llvm::dyn_cast<clang::AnnotateAttr>(attr)) {
+            if (annotate->getAnnotation() == kReferencePointerTag &&
+                !annotate->isInherited())
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 /*
  * True if the parameter carries the reference tag, either itself or on
  * the matching parameter of another declaration of its function.
@@ -16,18 +33,7 @@ inline bool hasReferenceTag(const clang::ParmVarDecl *param) {
     if (!param)
         return false;
 
-    auto hasTag = [](const clang::ParmVarDecl *p) {
-        for (const auto *attr : p->attrs()) {
-            if (const auto *annotate = llvm::dyn_cast<clang::AnnotateAttr>(attr)) {
-                if (annotate->getAnnotation() == kReferencePointerTag)
-                    return true;
-            }
-        }
-
-        return false;
-    };
-
-    if (hasTag(param))
+    if (hasDirectReferenceTag(param))
         return true;
 
     // A parameter of a function pointer type has no other declarations.
@@ -43,7 +49,7 @@ inline bool hasReferenceTag(const clang::ParmVarDecl *param) {
 
     for (const clang::FunctionDecl *redecl : owner->redecls()) {
         if (index < redecl->getNumParams() &&
-            hasTag(redecl->getParamDecl(index)))
+            hasDirectReferenceTag(redecl->getParamDecl(index)))
             return true;
     }
 

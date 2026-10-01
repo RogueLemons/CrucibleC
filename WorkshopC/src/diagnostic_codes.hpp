@@ -246,6 +246,8 @@
       "A reference tag is used on something other than a parameter of a function or function pointer type") \
     X(FunctionPointerReferenceTagMismatch, "CCW2005", "function-pointer-reference-tag-mismatch", \
       "A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional") \
+    X(ReferenceDeclarationTagMismatch, "CCW2006", "reference-declaration-tag-mismatch", \
+      "A reference tag differs between declarations of the same function") \
     /* 21 function_discard */ \
     X(FunctionReturnDiscarded, "CCW2101", "function-return-discarded", \
       "A non-void function return value is discarded") \

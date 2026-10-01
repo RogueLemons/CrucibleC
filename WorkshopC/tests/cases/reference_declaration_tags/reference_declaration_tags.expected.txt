@@ -1,0 +1,5 @@
+warning: reference tag for parameter 'value' of function 'header_definition_mismatch' differs between declarations [CCW2006]
+warning: reference tag for parameter 'value' of function 'header_redeclaration_mismatch' differs between declarations [CCW2006]
+warning: reference tag for parameter 'value' of function 'source_definition_mismatch' differs between declarations [CCW2006]
+warning: reference tag for parameter 'second' of function 'mismatched_multiple_references' differs between declarations [CCW2006]
+warning: reference tag for parameter 'third' of function 'mismatched_multiple_references' differs between declarations [CCW2006]

@@ -234,6 +234,47 @@ void ReferencePointerRule::checkFunction(
     }
 }
 
+void ReferencePointerRule::checkRedeclarationTags(
+    const FunctionDecl *function,
+    const SourceManager &sm)
+{
+    if (!function || function != function->getCanonicalDecl())
+        return;
+
+    const FunctionDecl *canonical = function->getCanonicalDecl();
+
+    for (const FunctionDecl *redecl : function->redecls()) {
+        if (redecl == canonical ||
+            redecl->getNumParams() != canonical->getNumParams())
+        {
+            continue;
+        }
+
+        for (unsigned index = 0; index < canonical->getNumParams(); ++index) {
+            const ParmVarDecl *canonicalParam = canonical->getParamDecl(index);
+            const ParmVarDecl *redeclParam = redecl->getParamDecl(index);
+
+            if (hasDirectReferenceTag(canonicalParam) ==
+                hasDirectReferenceTag(redeclParam))
+            {
+                continue;
+            }
+
+            const std::string parameterName = redeclParam->getName().empty()
+                ? "parameter " + std::to_string(index + 1)
+                : "parameter '" + redeclParam->getNameAsString() + "'";
+
+            report(
+                DiagCode::ReferenceDeclarationTagMismatch,
+                sm,
+                redeclParam->getLocation(),
+                "reference tag for " + parameterName + " of function '" +
+                function->getNameAsString() + "' differs between declarations"
+            );
+        }
+    }
+}
+
 void ReferencePointerRule::checkTagPlacement(
     const Decl *decl,
     const SourceManager &sm)
@@ -354,6 +395,8 @@ void ReferencePointerRule::run(const MatchFinder::MatchResult &result) {
         return;
     }
 
-    if (const auto *function = result.Nodes.getNodeAs<FunctionDecl>("function"))
+    if (const auto *function = result.Nodes.getNodeAs<FunctionDecl>("function")) {
+        checkRedeclarationTags(function, sm);
         checkFunction(function, sm);
+    }
 }

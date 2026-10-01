@@ -251,6 +251,7 @@ The codes are `CCWrrcc`: `CCW` for CrucibleC WorkshopC, `rr` the rule (numbered 
 | `CCW2003` | `reference-tag-on-non-pointer` | A reference tag is used on a parameter that is not a pointer |
 | `CCW2004` | `reference-tag-not-on-parameter` | A reference tag is used on something other than a parameter of a function or function pointer type |
 | `CCW2005` | `function-pointer-reference-tag-mismatch` | A function or function pointer with other reference tags is assigned or passed to a function pointer, or called with it through a conditional |
+| `CCW2006` | `reference-declaration-tag-mismatch` | A reference tag differs between declarations of the same function |
 | | **21 — [Function discard](#function-discard-rule)** | |
 | `CCW2101` | `function-return-discarded` | A non-void function return value is discarded |
 | | **22 — [Array struct](#array-struct-rule)** | |
@@ -1555,6 +1556,8 @@ With `disable_null_check_rule_for_reference_pointers: true`, the [null check rul
 
 The reference tag may only be written on parameters, of function declarations and definitions and of function pointer types, not on variables, struct fields, functions or typedefs.
 
+Every declaration of the same function must use `REF` on the same parameter positions. This is checked across headers and source files, and between declarations and definitions in one source file. When a function has multiple reference parameters, each position is checked independently; a mismatch is reported as `CCW2006`.
+
 A function pointer type follows the same rules as for the [movement tags](#function-pointers): a function assigned or passed to a function pointer must have the reference tag on the same parameters as the function pointer type, and the arguments of a call through a function pointer must be valid for its reference parameters.
 
 ```c
@@ -2195,7 +2198,6 @@ Beta
 - Add LSP support
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
 - Override third party includes with arg? Override top dir?
-- Verify ref tag handles mismatch between function declaration and definition
 
 After V1
 - Allow ref variables and fields

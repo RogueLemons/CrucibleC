@@ -199,7 +199,7 @@ struct GlobalVariableRuleConfig {
 struct ReferencePointerRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
-    bool disableNullCheckRuleForReferencePointers = true;
+    bool disableNullCheckRuleForReferencePointers = false;
 };
 
 struct FunctionDiscardRuleConfig {

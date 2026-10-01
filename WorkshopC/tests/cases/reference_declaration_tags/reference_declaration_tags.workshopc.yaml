@@ -1,0 +1,10 @@
+# WorkshopC Configuration File
+
+third_party_includes:
+  - external/
+
+rules:
+  reference_pointer:
+    level: Warning
+  null_check:
+    level: Off

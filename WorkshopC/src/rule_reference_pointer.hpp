@@ -81,6 +81,10 @@ private:
 
     void checkFunction(const FunctionDecl *function, const SourceManager &sm);
 
+    void checkRedeclarationTags(
+        const FunctionDecl *function,
+        const SourceManager &sm);
+
     /*
      * The reference tag may only be written on function parameters,
      * not on variables, fields, functions or types.
