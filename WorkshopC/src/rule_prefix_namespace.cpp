@@ -355,15 +355,22 @@ void PrefixNamespaceRule::checkIncludeGuard(SourceManager &sm,
                 actual.substr(0, end + 1);
 
         if (actual != expected) {
-
-            diagnostics.report(
-                config.prefixNamespaceRule.level,
-                DiagCode::MissingIncludeGuard,
-                sm,
-                loc,
-                "missing include guard '" +
-                expected + "'"
+            const SourceLocation guardLoc = sm.translateLineCol(
+                sm.getFileID(loc),
+                static_cast<unsigned>(lineNo),
+                1
             );
+
+            if (!suppressions.isSuppressed(sm, guardLoc)) {
+                diagnostics.report(
+                    config.prefixNamespaceRule.level,
+                    DiagCode::MissingIncludeGuard,
+                    sm,
+                    loc,
+                    "missing include guard '" +
+                    expected + "'"
+                );
+            }
         }
 
         return;

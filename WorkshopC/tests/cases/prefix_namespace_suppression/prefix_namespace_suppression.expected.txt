@@ -1,0 +1,1 @@
+warning: struct 'bad_name' must use namespace prefix 'tests__headers__a__b__c__' [CCW0701]

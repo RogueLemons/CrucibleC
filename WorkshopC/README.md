@@ -2196,8 +2196,6 @@ Beta
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
 - Override third party includes with arg? Override top dir?
 - Verify ref tag handles mismatch between function declaration and definition
-- Verify suppression works for ifndef namespace requirement at start of file
-- Add ability to make const globals all caps but mutable globals lowercase
 
 After V1
 - Allow ref variables and fields
