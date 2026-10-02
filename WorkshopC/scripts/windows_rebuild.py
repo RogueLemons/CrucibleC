@@ -5,7 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+# The WorkshopC folder, one up from scripts/
+BASE_DIR = Path(__file__).resolve().parent.parent
 BUILD_DIR = BASE_DIR / "build"
 
 EXE_NAME = "workshopc.exe"

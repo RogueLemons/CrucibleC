@@ -1979,7 +1979,7 @@ python --version
 From PowerShell or CMD:
 
 ```bash
-python windows_rebuild.py
+python scripts/windows_rebuild.py
 ```
 
 The script will:
@@ -2108,7 +2108,7 @@ Clang's builtin headers (`stddef.h`, `mm_malloc.h`, ...) are looked up next to t
 #### Running the tests
 
 ```bash
-python run_tests.py
+python scripts/run_tests.py
 ```
 
 Every test case is a folder in `tests/cases/` holding three files with the folder's name, e.g. `tests/cases/struct_usage/`:
@@ -2118,7 +2118,7 @@ Every test case is a folder in `tests/cases/` holding three files with the folde
 
 Headers shared by the tests are in `tests/headers/`, and `tests/external/` stands in for third party code (every test config lists `external/` in `third_party_includes`). The tests include them as `"headers/..."` and `"external/..."`, which works from every test case folder since `tests/` is on the include path.
 
-The test files are a standalone project described by `tests/CMakeLists.txt`. They are never built: `run_tests.py` only **configures** that project into `build-tests/` (with clang and Ninja), which writes a `compile_commands.json` for the test files, and then passes that directory to the tool for every test. New test case folders are picked up automatically, since the project is configured again on every run.
+The test files are a standalone project described by `tests/CMakeLists.txt`. They are never built: `scripts/run_tests.py` only **configures** that project into `build-tests/` (with clang and Ninja), which writes a `compile_commands.json` for the test files, and then passes that directory to the tool for every test. New test case folders are picked up automatically, since the project is configured again on every run.
 
 The expected files list every diagnostic with its code. One more test writes the diagnostics of `tests/cases/suppression_balance/suppression_balance.c` to a text, a JSON and a SARIF file in a single `--quiet` run, into `tests/output/` (ignored by git), and checks that nothing was printed and that all three files hold exactly the expected diagnostics. Another runs the same file with `--warnings-as-errors`, and checks that every warning is reported as an error on the terminal and in a JSON file, with no warnings left in the counts and an exit code of `1`.
 
@@ -2214,11 +2214,11 @@ This ensures:
 To enter Beta
 - Verify build for Linux
 - Reorganize README and documentation
+- Remove superflous comments in default configs
 - Use githubs release system to make linux and windows releases
 - Add LSP support
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
 - Trigger function discard for function pointers as well
-- Move all scripts into scripts folder
 
 After V1
 - Allow ref variables and fields

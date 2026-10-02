@@ -57,7 +57,7 @@ Thumbs.db
 # =========================
 # WorkshopC output
 # =========================
-# The built tool, copied here by windows_rebuild.py
+# The built tool, copied here by scripts/windows_rebuild.py
 release/
 # Files generated during the build process
 generated/

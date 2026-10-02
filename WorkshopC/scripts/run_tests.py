@@ -5,7 +5,8 @@ from pathlib import Path
 import subprocess
 from collections import Counter
 
-ROOT = Path(__file__).resolve().parent
+# The WorkshopC folder, one up from scripts/
+ROOT = Path(__file__).resolve().parent.parent
 
 RELEASE = ROOT / "release"
 TESTS = ROOT / "tests"
