@@ -11,12 +11,10 @@ WorkshopC is in **alpha**: rules, options and presets may still change between v
 
 ## Toward beta
 
+- [x] Verify the build on Windows
 - [ ] Verify the build on Linux
-- [x] Reorganize the README and documentation
-- [x] Remove superfluous comments from the default configs
 - [ ] Publish Linux and Windows builds with GitHub Releases
 - [ ] Add Language Server Protocol (LSP) support, for diagnostics directly in editors
-- [ ] Add a Python script that installs the dependencies on Windows, Linux and macOS
 
 ## After version 1
 
@@ -28,6 +26,8 @@ WorkshopC is in **alpha**: rules, options and presets may still change between v
 - [ ] Let a moved raii struct be destroyed out of order, e.g. by allowing the return function in arguments and initializers, by adding a `move_destroy` function, or by treating a move as a destroy
 - [ ] Check that a `_private` field is accessed with the right getter or setter, depending on whether it is reached through a const or a mutable pointer
 - [ ] Warn about const globals that hold mutable pointers, and possibly about such locals too
+- [ ] Add a Python script that installs the dependencies on Windows, Linux and macOS
+- [ ] Disallow configs from including settings not part of the project, instead of silently passing them
 
 ---
 
