@@ -1,1 +1,1 @@
-error: function pointer 'callback' must be declared using a typedef [CCW0401]
+warning: function pointer 'callback' must be declared using a typedef [CCW0401]

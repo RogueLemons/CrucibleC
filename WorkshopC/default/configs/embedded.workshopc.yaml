@@ -177,7 +177,7 @@ rules:
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
   reference_pointer:
-    level: Warning
+    level: Error
     disable_null_check_rule_for_reference_pointers: true
 
   # Function discard rule - forbids discarding return values of functions that return a value

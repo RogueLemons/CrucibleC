@@ -29,7 +29,7 @@ rules:
   # Suppression reason rule - requires a reason for each suppression
   # Make intentional rule exceptions explainable during review.
   suppression_reason_rule:
-    level: Error 
+    level: Error
 
   # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
   # Keep enum values explicit and prevent accidental integer conversions.

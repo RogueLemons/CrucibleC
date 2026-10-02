@@ -171,7 +171,7 @@ rules:
   # Function discard rule - forbids discarding return values of functions that return a value
   # Ensure status and error results are not silently ignored.
   function_discard:
-    level: Error
+    level: Warning
 
   # Array struct rule - only allows arrays to be declared in structs
   array_struct:
@@ -199,7 +199,7 @@ rules:
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
   const_field:
-    level: Error
+    level: Warning
 
   # No goto rule - forbids the use of goto statements
   no_goto:

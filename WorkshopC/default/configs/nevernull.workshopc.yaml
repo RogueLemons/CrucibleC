@@ -1,6 +1,7 @@
 # WorkshopC Configuration File
 # For projects that intend never to create or pass null pointers. External
 # libraries may still return null, so validate those boundaries explicitly.
+# Also stricter than default about pointer and global clarity in general.
 
 # Paths configuration
 # third_party_includes are not affected by rules

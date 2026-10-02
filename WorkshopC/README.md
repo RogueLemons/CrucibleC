@@ -309,12 +309,12 @@ The presets are built into WorkshopC and can be selected with `--config <preset>
 |--------|--------------|
 | `adopt` | A gentle entry point for existing projects. Resolve its findings before moving to `adopt-more`. |
 | `adopt-more` | The second migration step, adding stronger API and pointer checks. Move to `adopt-even-more` when clean. |
-| `adopt-even-more` | The final migration step, with explicit resource lifetimes, ownership, and buffer rules. |
+| `adopt-even-more` | The final migration step, with explicit resource lifetimes, ownership, and buffer rules. Existing projects can stay here: `default` is meant for new projects, and moving an existing codebase there is a large refactor. The ambitious can first make this preset clean with `--warnings-as-errors`. |
 | `default` | Recommended balanced settings for new projects and users new to WorkshopC. |
 | `opinionated` | The default approach with the author's preferred rule severities and naming conventions. |
 | `strict` | High adherence to the project's safety principles, ownership model, and struct conventions. |
 | `embedded` | Firmware-oriented settings: no dynamic allocation by default, explicit state handling, and vendor code exclusions. |
-| `nevernull` | For projects that intend not to create or pass null pointers; external library results still need validation. |
+| `nevernull` | For projects that intend not to create or pass null pointers; external library results still need validation. Also stricter than `default` about pointer and global clarity in general. |
 
 Small environment-specific differences can be supplied without copying a preset: repeat `--third-party-include <folder>` to extend its exclusions, add `--no-config-third-party-includes` to replace them instead, or use `--prefix-top-dir <folder>` to adjust the namespace root. `--dump-config` prints the effective config after these overrides.
 
@@ -2228,3 +2228,4 @@ After V1
 - Add ability to let raii return be exempt from reverse order destroy
 - Add ability to let moved raii be able to be destroyed out of order (possibly allowing return function to be used in arguments/initializers or adding a move_destroy function or treating move as a destroy)
 - Validate that _private field is accessed with correct getter/setter based on access via const pointer or mut pointer
+- Warn against const globals with mutable pointers (maybe even warn for locals?)

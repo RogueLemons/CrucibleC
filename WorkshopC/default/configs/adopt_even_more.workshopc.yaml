@@ -1,6 +1,8 @@
 # WorkshopC Configuration File
 # Final adoption step: complete the move to explicit ownership, resource
-# lifetimes and sized buffers after adopt_more is resolved.
+# lifetimes and sized buffers after adopt_more is resolved. Existing projects can
+# stay here: default is meant for new projects, and moving an existing
+# codebase there is a large refactor.
 
 # Paths configuration
 # third_party_includes are not affected by rules
@@ -51,7 +53,7 @@ rules:
   # Function pointer rule - requires typedef for all function pointers
   # Make callback signatures reusable and easier to inspect.
   function_pointer:
-    level: Error
+    level: Warning
 
   # Typedef struct rule - requires typedef for all structs
   typedef_struct:
@@ -126,7 +128,7 @@ rules:
 
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
   restricted_malloc:
-    level: Off
+    level: Warning
     list_of_allowed_malloc_functions:
       - memory_alloc
       - memory_alloc_array
@@ -200,8 +202,8 @@ rules:
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
   const_field:
-    level: Error
+    level: Warning
 
   # No goto rule - forbids the use of goto statements
   no_goto:
-    level: Error
+    level: Warning
