@@ -238,6 +238,33 @@ inline void collectCalleeBranches(
     branches.push_back(callee);
 }
 
+/*
+ * The name a call is made through, for messages: the function for a
+ * direct call, otherwise the variable or field holding the function
+ * pointer, e.g. 'get' for self->vtable->get(self). A conditional callee
+ * gives the names of all branches: first' or 'second
+ */
+inline std::string callNameOf(const clang::CallExpr *call) {
+    if (const clang::FunctionDecl *function = call->getDirectCallee())
+        return function->getNameAsString();
+
+    std::vector<const clang::Expr *> branches;
+    collectCalleeBranches(call->getCallee(), branches);
+
+    std::string names;
+
+    for (const clang::Expr *branch : branches) {
+        std::string name = functionPointerNameOf(branch);
+
+        if (name.empty())
+            name = "<function pointer>";
+
+        names += (names.empty() ? "" : "' or '") + name;
+    }
+
+    return names.empty() ? "<function pointer>" : names;
+}
+
 // True if both function types have the same movement and reference tags
 inline bool haveSameTags(
     clang::FunctionProtoTypeLoc first,

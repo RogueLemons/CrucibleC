@@ -2218,7 +2218,6 @@ To enter Beta
 - Use githubs release system to make linux and windows releases
 - Add LSP support
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
-- Trigger function discard for function pointers as well
 
 After V1
 - Allow ref variables and fields

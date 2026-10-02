@@ -2,6 +2,8 @@
 
 #include <clang/AST/ParentMapContext.h>
 
+#include "function_pointer_tags.hpp"
+
 bool StructRaiiDiscardRule::isThirdParty(const std::string &file) const
 {
     for (const auto &p : config.thirdPartyIncludes) {
@@ -50,14 +52,6 @@ std::string StructRaiiDiscardRule::getReturnedStructName(const CallExpr *call) c
         return "";
 
     return record->getNameAsString();
-}
-
-std::string StructRaiiDiscardRule::getCalleeName(const CallExpr *call) const
-{
-    if (const FunctionDecl *callee = call->getDirectCallee())
-        return callee->getNameAsString();
-
-    return "<function pointer>";
 }
 
 StructRaiiDiscardRule::Use StructRaiiDiscardRule::classifyUse(
@@ -215,7 +209,7 @@ void StructRaiiDiscardRule::finalize()
         if (shouldIgnore(*sourceManager, loc))
             continue;
 
-        const std::string callee = getCalleeName(pending.call);
+        const std::string callee = callNameOf(pending.call);
 
         std::string message;
 

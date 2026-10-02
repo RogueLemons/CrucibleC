@@ -68,8 +68,6 @@ private:
      */
     std::string getReturnedStructName(const CallExpr *call) const;
 
-    std::string getCalleeName(const CallExpr *call) const;
-
     /*
      * Walks up from the call through parentheses, casts and other
      * transparent expressions to find out what happens to its value.

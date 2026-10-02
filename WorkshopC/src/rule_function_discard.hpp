@@ -28,7 +28,6 @@ private:
     bool isThirdParty(const std::string &path) const;
     bool shouldIgnore(const SourceManager &sm, SourceLocation loc) const;
     bool isDiscarded(const CallExpr *call, ASTContext &context) const;
-    std::string getCalleeName(const CallExpr *call) const;
 
 public:
     FunctionDiscardRule(const Config &cfg,

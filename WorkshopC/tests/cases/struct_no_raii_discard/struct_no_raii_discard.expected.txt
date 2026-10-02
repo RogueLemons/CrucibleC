@@ -1,7 +1,7 @@
 error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded, assign it to a variable so that it can be destroyed [CCW1305]
 error: raii struct 'int_vector' returned by 'int_vector_copy' may not be discarded, assign it to a variable so that it can be destroyed [CCW1305]
 error: raii struct 'int_vector' returned by 'produce_vector' may not be discarded, assign it to a variable so that it can be destroyed [CCW1305]
-error: raii struct 'int_vector' returned by '<function pointer>' may not be discarded, assign it to a variable so that it can be destroyed [CCW1305]
+error: raii struct 'int_vector' returned by 'maker' may not be discarded, assign it to a variable so that it can be destroyed [CCW1305]
 error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded (not even with a void cast), assign it to a variable so that it can be destroyed [CCW1305]
 error: raii struct 'int_vector' returned by 'produce_vector' may not be discarded (not even with a void cast), assign it to a variable so that it can be destroyed [CCW1305]
 error: raii struct 'int_vector' returned by 'int_vector_make' may not be discarded, assign it to a variable so that it can be destroyed [CCW1305]

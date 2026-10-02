@@ -2,6 +2,8 @@
 
 #include <clang/AST/ParentMapContext.h>
 
+#include "function_pointer_tags.hpp"
+
 bool FunctionDiscardRule::isThirdParty(const std::string &path) const
 {
     for (const auto &p : config.thirdPartyIncludes) {
@@ -134,14 +136,6 @@ bool FunctionDiscardRule::isDiscarded(
     return false;
 }
 
-std::string FunctionDiscardRule::getCalleeName(const CallExpr *call) const
-{
-    if (const FunctionDecl *callee = call->getDirectCallee())
-        return callee->getNameAsString();
-
-    return "<function pointer>";
-}
-
 FunctionDiscardRule::FunctionDiscardRule(
     const Config &cfg,
     SuppressionManager &sup,
@@ -192,7 +186,7 @@ void FunctionDiscardRule::run(const MatchFinder::MatchResult &result)
         DiagCode::FunctionReturnDiscarded,
         sm,
         loc,
-        "return value of function '" + getCalleeName(call) +
+        "return value of function '" + callNameOf(call) +
             "' must not be discarded; cast it to void to explicitly discard it"
     );
 }
