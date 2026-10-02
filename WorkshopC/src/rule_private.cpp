@@ -66,6 +66,12 @@ void PrivateRule::run(const MatchFinder::MatchResult &result) {
     if (suppressions.isSuppressed(sm, expansionLoc))
         return;
 
+    if (sm.isInSystemHeader(spellingLoc) ||
+        sm.isInSystemHeader(expansionLoc))
+    {
+        return;
+    }
+
     // -------------------------
     // Paths
     // -------------------------

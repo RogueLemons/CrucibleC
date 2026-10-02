@@ -1,4 +1,6 @@
 # WorkshopC Configuration File
+# Second adoption step: after adopt is clean, strengthen APIs and naming while
+# leaving full resource-lifecycle enforcement for adopt_even_more.
 
 # Paths configuration
 # third_party_includes are not affected by rules
@@ -16,10 +18,12 @@ compile_commands_dir: build
 # Rules can be: Off, Warning, Error
 rules:
   # Suppression reason rule - requires a reason for each suppression
+  # Keep exceptions reviewable as more rules become active.
   suppression_reason_rule:
     level: Error 
 
   # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
+  # Prevent implicit mixing of enums and integers.
   enum:
     level: Error
     allow_enum_typedef: true
@@ -36,6 +40,7 @@ rules:
     level: Error
 
   # Function pointer rule - requires typedef for all function pointers
+  # Name callback types once so public signatures stay readable.
   function_pointer:
     level: Warning
 
@@ -44,6 +49,7 @@ rules:
     level: Off
 
   # Assignment rule - require primitives to be assigned at declaration
+  # Require deliberate initialization and discourage mutation through arguments.
   assignment:
     level: Error
     forbid_null_assign: false
@@ -53,6 +59,7 @@ rules:
     forbid_mut_arg_pointer: true
 
   # Prefix namespace rule - require header declarations to include folder structure in name
+  # Warn on module naming so existing APIs can be migrated incrementally.
   prefix_namespace:
     level: Warning
     top_dir: src
@@ -67,6 +74,7 @@ rules:
     case_insensitive: true
 
   # Null check rule - require first use of pointer argument to be checked if null
+  # Make nullable pointer use explicit before dereferencing.
   null_check:
     level: Error
     allow_direct_ptr_in_if_statement: true
@@ -98,6 +106,7 @@ rules:
     free_struct_creator_suffix: _init
 
   # Interfaces rule - standardizes how interfaces and vtables are used
+  # Give dynamic dispatch a consistent object-and-vtable shape.
   interfaces:
     level: Error
     vtable_suffix: _vtable
@@ -120,10 +129,12 @@ rules:
     require_return_for_void: false
 
   # Strict switch rule - require all switch statements to have a default and all cases include a break/return
+  # Reject unhandled states and fallthrough in control flow.
   strict_switch:
     level: Error
 
   # Global variable rule - require naming and safety conventions
+  # Keep global state file-local and progressively standardize its names.
   global_variable:
     level: Error
     must_be_static: true
@@ -143,11 +154,13 @@ rules:
     const_local_static_must_be_caps: false
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
+  # Distinguish guaranteed-object parameters from nullable pointers.
   reference_pointer:
     level: Error
     disable_null_check_rule_for_reference_pointers: true
 
   # Function discard rule - forbids discarding return values of functions that return a value
+  # Ensure status and error results are not silently ignored.
   function_discard:
     level: Error
 
@@ -164,6 +177,7 @@ rules:
     use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
+  # Pair buffer pointers with sizes before enforcing stricter span use later.
   span_struct:
     level: Warning
     span_struct_suffix: _span
@@ -172,7 +186,7 @@ rules:
     only_allow_span_data_passing_in_one_line_static_functions: false
     allow_spans_to_be_given_fewer_elements_than_their_size: true
     require_span_immediately_after_array: true
-    allow_pod_span_to_be_initialized_manually_if_static: true
+    allow_pod_span_to_be_initialized_manually_if_static: false
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
   const_field:

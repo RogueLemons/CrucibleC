@@ -28,6 +28,15 @@
 #include "rule_vtable.hpp"
 #include "rule_interface.hpp"
 
+#include "adopt.config.hpp"
+#include "adopt_even_more.config.hpp"
+#include "adopt_more.config.hpp"
+#include "default.config.hpp"
+#include "embedded.config.hpp"
+#include "nevernull.config.hpp"
+#include "opinionated.config.hpp"
+#include "strict.config.hpp"
+
 #include "struct_database.hpp"
 #include "struct_database_rule.hpp"
 #include "struct_init_rule.hpp"
@@ -51,6 +60,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using namespace clang;
@@ -566,8 +576,13 @@ static const char *kUsage =
     "Analyzes the given C files, and every .c file found in the given folders.\n"
     "\n"
     "Options:\n"
-    "  --config <file>                   The config file. Without it, workshopc.yaml\n"
-    "                                    is searched for in the current folder and its parents.\n"
+    "  --config <file|preset>            The config file or a built-in preset. Without it,\n"
+    "                                    workshopc.yaml is searched for in the current folder\n"
+    "                                    and its parents. \n"
+    "                                    Presets: adopt, adopt-more, adopt-even-more,\n"
+    "                                    default, opinionated, embedded, nevernull, strict\n"
+    "  --third-party-include <folder>    Add a folder excluded from rule analysis; repeatable.\n"
+    "  --prefix-top-dir <folder>         Override prefix_namespace.top_dir.\n"
     "  -p, --build-path <folder>         The folder containing compile_commands.json.\n"
     "                                    Overrides compile_commands_dir from the config.\n"
     "  --text <file>                     Also write the diagnostics as text to a file.\n"
@@ -578,13 +593,39 @@ static const char *kUsage =
     "                                    problems that stop the analysis.\n"
     "  --warnings-as-errors              Report every warning as an error, e.g. to fail\n"
     "                                    a CI run on any finding.\n"
-    "  --dump-config                     Print the config as it was read, with every\n"
-    "                                    setting, and exit. Needs no files or folders.\n"
+    "  --dump-config                     Print the effective config, including CLI overrides,\n"
+    "                                    and exit. Needs no files or folders.\n"
     "  -h, --help                        Show this help.\n";
+
+static std::string_view embeddedPresetConfig(const std::string &name) {
+    std::string normalized = name;
+    std::replace(normalized.begin(), normalized.end(), '-', '_');
+
+    if (normalized == "adopt")
+        return workshopc::configs::config_adopt;
+    if (normalized == "adopt_more")
+        return workshopc::configs::config_adopt_more;
+    if (normalized == "adopt_even_more")
+        return workshopc::configs::config_adopt_even_more;
+    if (normalized == "default")
+        return workshopc::configs::config_default;
+    if (normalized == "embedded")
+        return workshopc::configs::config_embedded;
+    if (normalized == "strict")
+        return workshopc::configs::config_strict;
+    if (normalized == "opinionated")
+        return workshopc::configs::config_opinionated;
+    if (normalized == "nevernull")
+        return workshopc::configs::config_nevernull;
+
+    return {};
+}
 
 struct Options {
     std::string configPath;
     std::string compileCommandsDir;
+    std::string prefixNamespaceTopDir;
+    std::vector<std::string> thirdPartyIncludes;
     std::string textPath;
     std::string jsonPath;
     std::string sarifPath;
@@ -639,6 +680,30 @@ static bool parseArguments(int argc, const char **argv, Options &options) {
 
         if (arg == "--dump-config") {
             options.dumpConfig = true;
+            continue;
+        }
+
+        std::string thirdPartyInclude;
+        if ((matched = valueOf("--third-party-include", thirdPartyInclude))) {
+            if (matched < 0)
+                return false;
+            if (thirdPartyInclude.empty()) {
+                std::cerr << "Empty value for --third-party-include\n";
+                return false;
+            }
+
+            options.thirdPartyIncludes.push_back(thirdPartyInclude);
+            continue;
+        }
+
+        if ((matched = valueOf("--prefix-top-dir", options.prefixNamespaceTopDir))) {
+            if (matched < 0)
+                return false;
+            if (options.prefixNamespaceTopDir.empty()) {
+                std::cerr << "Empty value for --prefix-top-dir\n";
+                return false;
+            }
+
             continue;
         }
 
@@ -860,6 +925,10 @@ int main(int argc, const char **argv) {
     // -------------------------
     // Load config
     // -------------------------
+    const std::string_view presetContents =
+        embeddedPresetConfig(options.configPath);
+    const bool usingEmbeddedPreset = !presetContents.empty();
+
     if (options.configPath.empty()) {
         options.configPath = findConfigFile();
 
@@ -872,10 +941,26 @@ int main(int argc, const char **argv) {
     }
 
     Config config;
-    if (!ConfigParser::loadFromFile(options.configPath, config)) {
+    const bool loadedConfig = usingEmbeddedPreset
+        ? ConfigParser::loadFromString(presetContents, config)
+        : ConfigParser::loadFromFile(options.configPath, config);
+
+    const std::string configLabel = usingEmbeddedPreset
+        ? "built-in preset '" + options.configPath + "'"
+        : options.configPath;
+
+    if (!loadedConfig) {
         std::cerr << "Failed to load config: " << options.configPath << "\n";
         return ExitConfigFailed;
     }
+
+    config.thirdPartyIncludes.insert(
+        config.thirdPartyIncludes.end(),
+        options.thirdPartyIncludes.begin(),
+        options.thirdPartyIncludes.end()
+    );
+    if (!options.prefixNamespaceTopDir.empty())
+        config.prefixNamespaceRule.topDir = options.prefixNamespaceTopDir;
 
     // Before the validation, so that an invalid config can be looked at
     // as it was read
@@ -887,11 +972,13 @@ int main(int argc, const char **argv) {
     // Which files are used, for reading CI logs. On stderr, like the
     // diagnostics, so stdout only carries an output file written to '-'
     if (!options.quiet)
-        std::cerr << "Config: " << realPathOf(options.configPath) << "\n";
+        std::cerr << "Config: "
+                  << (usingEmbeddedPreset ? configLabel : realPathOf(options.configPath))
+                  << "\n";
 
     std::vector<std::string> configErrors;
     if (!ConfigParser::validateConfig(config, configErrors)) {
-        std::cerr << "Invalid config: " << options.configPath << "\n";
+        std::cerr << "Invalid config: " << configLabel << "\n";
 
         for (const std::string &error : configErrors)
             std::cerr << "  " << error << "\n";
@@ -910,7 +997,9 @@ int main(int argc, const char **argv) {
 
         if (llvm::sys::path::is_relative(dir)) {
             llvm::SmallString<256> base(
-                llvm::sys::path::parent_path(realPathOf(options.configPath)));
+                usingEmbeddedPreset
+                    ? llvm::StringRef(realPathOf("."))
+                    : llvm::sys::path::parent_path(realPathOf(options.configPath)));
             llvm::sys::path::append(base, dir);
             dir = base;
         }

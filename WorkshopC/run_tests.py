@@ -27,6 +27,7 @@ BAD_CONFIG = TESTS / "bad_config"
 
 # The test whose diagnostics are written to every output format at once
 OUTPUT_FILES_TEST = CASES / "suppression_balance" / "suppression_balance.c"
+DEFAULT_CONFIG_TESTS = TESTS / "default_configs"
 
 CODE_PATTERN = re.compile(r" \[(CCW\d{4})\]$")
 
@@ -535,6 +536,125 @@ def run_dump_config_test(exe):
     return True
 
 
+def run_config_override_test(exe):
+    """Checks config overrides and their --dump-config output."""
+    print("\n==============================")
+    print("Running: config overrides")
+    print("==============================")
+
+    problems = []
+    config_file = ROOT / "default" / "configs" / "default.workshopc.yaml"
+    config_sources = [
+        ("config file", str(config_file)),
+        ("built-in preset", "default"),
+    ]
+    expected_lines = {
+        "  - external/",
+        "  - cli_vendor_one/",
+        "  - cli_vendor_two/",
+        "    top_dir: cli_source_root",
+    }
+
+    for source_kind, config_source in config_sources:
+        result = subprocess.run(
+            [
+                str(exe),
+                "--config", config_source,
+                "--third-party-include", "cli_vendor_one/",
+                "--third-party-include=cli_vendor_two/",
+                "--prefix-top-dir", "cli_source_root",
+                "--dump-config",
+            ],
+            text=True,
+            capture_output=True
+        )
+
+        check(result.returncode == 0,
+              f"{source_kind}: --dump-config exit code {result.returncode}, expected 0",
+              problems)
+
+        dumped_lines = set(result.stdout.splitlines())
+        for expected in expected_lines:
+            check(expected in dumped_lines,
+                  f"{source_kind}: --dump-config is missing override {expected!r}",
+                  problems)
+
+        check(not result.stderr.strip(),
+              f"{source_kind}: unexpected stderr:\n{result.stderr}",
+              problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    print("--PASSED--")
+    return True
+
+
+def run_default_configs_test(exe):
+    """Checks representative behavior for every built-in config preset."""
+    print("\n==============================")
+    print("Running: built-in config presets")
+    print("==============================")
+
+    problems = []
+    cases = sorted(DEFAULT_CONFIG_TESTS.glob("*.c"))
+    check(cases, "no C files found in tests/default_configs", problems)
+
+    for source in cases:
+        preset = source.stem
+        expected_file = source.with_suffix(".expected.txt")
+        check(expected_file.is_file(), f"{preset}: missing expected file", problems)
+
+        if not expected_file.is_file():
+            continue
+
+        result = subprocess.run(
+            [
+                str(exe),
+                "--config", preset,
+                "-p", str(TESTS_COMPDB),
+                str(source),
+            ],
+            text=True,
+            capture_output=True
+        )
+
+        combined_output = result.stdout + "\n" + result.stderr
+
+        if combined_output.strip():
+            print(combined_output)
+
+        expected = Counter(
+            normalize(line)
+            for line in expected_file.read_text().splitlines()
+            if normalize(line) is not None
+        )
+        actual = Counter(collect_messages(combined_output))
+
+        if expected != actual:
+            for message, count in (expected - actual).items():
+                problems.append(
+                    f"{preset}: missing expected diagnostic: {message}"
+                    + (f" (missing {count})" if count > 1 else "")
+                )
+            for message, count in (actual - expected).items():
+                problems.append(
+                    f"{preset}: unexpected diagnostic: {message}"
+                    + (f" (extra {count})" if count > 1 else "")
+                )
+
+        expected_exit = expected_exit_code(expected)
+        check(result.returncode == expected_exit,
+              f"{preset}: exit code {result.returncode}, expected {expected_exit}",
+              problems)
+
+    if problems:
+        return report_output_problems(problems)
+
+    print("--PASSED--")
+    return True
+
+
 def report_output_problems(problems):
     print("--FAILED--")
 
@@ -648,7 +768,9 @@ def main():
         run_warnings_as_errors_test,
         run_folder_input_test,
         run_bad_config_test,
-        run_dump_config_test
+        run_dump_config_test,
+        run_config_override_test,
+        run_default_configs_test,
     ]
 
     for special_test in special_tests:

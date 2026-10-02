@@ -71,7 +71,7 @@ rules:
     level: Warning
     top_dir: src
     work_from_top: true
-    stop_at_count: 3
+    stop_at_count: 10
     use_separator: true
     separator: _
     apply_to_functions: true

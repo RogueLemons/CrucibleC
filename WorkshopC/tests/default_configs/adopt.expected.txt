@@ -1,0 +1,1 @@
+# No diagnostics expected: this preset leaves function-pointer typedef checks off.

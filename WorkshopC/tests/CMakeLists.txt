@@ -15,6 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Every test case is a folder cases/<name>/ holding <name>.c
 file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/cases/*/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/default_configs/*.c
 )
 
 # The folder passed whole to the parser by the folder input test

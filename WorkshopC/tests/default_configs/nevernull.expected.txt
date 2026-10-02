@@ -1,0 +1,1 @@
+error: pointer 'null_decl' cannot be initialized with NULL [CCW0608]

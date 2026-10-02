@@ -1,4 +1,6 @@
 # WorkshopC Configuration File
+# High-adherence preset: make safety rules errors and require explicit
+# ownership, lifetimes, naming and buffer boundaries throughout the project.
 
 # Paths configuration
 # third_party_includes are not affected by rules
@@ -16,15 +18,18 @@ compile_commands_dir: build
 # Rules can be: Off, Warning, Error
 rules:
   # Suppression reason rule - requires a reason for each suppression
+  # Require every exception to be justified for audit and review.
   suppression_reason_rule:
     level: Error 
 
   # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
+  # Allow enums only with explicit, type-safe conversions.
   enum:
     level: Error
     allow_enum_typedef: true
 
   # Private rule - forbids access of a private struct field
+  # Isolate mutable state behind accessor boundaries.
   private:
     level: Error
     private_field: _private
@@ -44,6 +49,7 @@ rules:
     level: Error
 
   # Assignment rule - require primitives to be assigned at declaration
+  # Reduce uninitialized state and implicit argument mutation.
   assignment:
     level: Error
     forbid_null_assign: false
@@ -53,6 +59,7 @@ rules:
     forbid_mut_arg_pointer: true
 
   # Prefix namespace rule - require header declarations to include folder structure in name
+  # Enforce namespaced public APIs and path-derived include guards.
   prefix_namespace:
     level: Error
     top_dir: src
@@ -67,11 +74,13 @@ rules:
     case_insensitive: false
 
   # Null check rule - require first use of pointer argument to be checked if null
+  # Require an explicit comparison before dereferencing nullable pointers.
   null_check:
     level: Error
     allow_direct_ptr_in_if_statement: false
 
   # Argument pointer movement rule - require use of movement notation for non-const pointers
+  # Mark move, output and modify semantics at declarations and call sites.
   argument_pointer_movement:
     level: Error
     require_operator_for_move_callsite: true
@@ -79,6 +88,7 @@ rules:
     require_operator_for_modify_callsite: true
 
   # Struct resource management rule - require use of RAII with structs that manage resources
+  # Enforce complete resource lifetimes, reverse destruction and standardized cleanup.
   struct_resource_management:
     level: Error
     pod_struct_creator_suffix: _pod
@@ -98,6 +108,7 @@ rules:
     free_struct_creator_suffix: _initialize_manually
 
   # Interfaces rule - standardizes how interfaces and vtables are used
+  # Keep dispatch tables immutable and interface layouts uniform.
   interfaces:
     level: Error
     vtable_suffix: _vtable
@@ -106,6 +117,7 @@ rules:
     interface_must_have_fields_that_are_private_alternative: true
 
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
+  # Limit allocation to a small set of approved memory wrappers.
   restricted_malloc:
     level: Error
     list_of_allowed_malloc_functions:
@@ -113,16 +125,19 @@ rules:
       - memory_free
 
   # Single return rule - requires functions to have a single return statement
+  # Keep cleanup and exit paths predictable with one final return.
   single_return:
     level: Error
     allow_early_return: true
     require_return_for_void: true
 
   # Strict switch rule - require all switch statements to have a default and all cases include a break/return
+  # Reject incomplete state handling and fallthrough.
   strict_switch:
     level: Error
 
   # Global variable rule - require naming and safety conventions
+  # Require file-local globals and distinctly named mutable state and constants.
   global_variable:
     level: Error
     must_be_static: true
@@ -142,15 +157,18 @@ rules:
     const_local_static_must_be_caps: true
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
+  # Make non-null contracts explicit and check every corresponding call.
   reference_pointer:
     level: Error
     disable_null_check_rule_for_reference_pointers: true
 
   # Function discard rule - forbids discarding return values of functions that return a value
+  # Require callers to handle every returned status or error.
   function_discard:
     level: Error
 
   # Array struct rule - only allows arrays to be declared in structs
+  # Carry array sizes in types and enforce consistent buffer naming.
   array_struct:
     level: Error
     only_allow_array_passing_to_library_functions: true
@@ -163,6 +181,7 @@ rules:
     use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: false
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
+  # Keep array bounds attached and prevent raw data from escaping reviewed wrappers.
   span_struct:
     level: Error
     span_struct_suffix: _span
@@ -174,9 +193,11 @@ rules:
     allow_pod_span_to_be_initialized_manually_if_static: true
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
+  # Keep whole-object initialization and assignment possible.
   const_field:
     level: Error
 
   # No goto rule - forbids the use of goto statements
+  # Require structured control flow for easier auditing.
   no_goto:
     level: Error

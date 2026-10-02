@@ -1,5 +1,7 @@
 #include <stddef.h>
 
+#include "external/assignment_argument_reassignment.h"
+
 static int global_unassigned_int; // bad: not initialized
 static int global_assigned_int = 5; // good
 

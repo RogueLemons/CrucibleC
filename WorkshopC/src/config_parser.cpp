@@ -665,6 +665,22 @@ bool ConfigParser::loadFromFile(
         return false;
     }
 
+    return loadFromStream(file, config);
+}
+
+bool ConfigParser::loadFromString(
+    std::string_view contents,
+    Config &config
+) {
+    std::istringstream input{std::string(contents)};
+    return loadFromStream(input, config);
+}
+
+bool ConfigParser::loadFromStream(
+    std::istream &input,
+    Config &config
+) {
+
     std::string line;
 
     std::string currentSection;
@@ -680,7 +696,7 @@ bool ConfigParser::loadFromFile(
 
     bool inThirdPartyIncludes = false;
 
-    while (std::getline(file, line)) {
+    while (std::getline(input, line)) {
         const size_t indent = line.find_first_not_of(" \t");
 
         line = trim(line);

@@ -17,11 +17,21 @@ bool AssignmentRule::shouldSkip(SourceManager &sm, SourceLocation loc) const {
     if (loc.isInvalid())
         return true;
 
-    if (suppressions.isSuppressed(sm, loc))
+    const SourceLocation spellingLoc = sm.getSpellingLoc(loc);
+    const SourceLocation expansionLoc = sm.getExpansionLoc(loc);
+
+    if (suppressions.isSuppressed(sm, expansionLoc))
         return true;
 
-    std::string file = sm.getFilename(loc).str();
-    return (!file.empty() && isThirdParty(file));
+    if (sm.isInSystemHeader(spellingLoc) ||
+        sm.isInSystemHeader(expansionLoc))
+        return true;
+
+    const std::string spellingPath = sm.getFilename(spellingLoc).str();
+    const std::string expansionPath = sm.getFilename(expansionLoc).str();
+
+    return (!spellingPath.empty() && isThirdParty(spellingPath)) ||
+           (!expansionPath.empty() && isThirdParty(expansionPath));
 }
 
 std::string AssignmentRule::nameOf(const Decl *d) const {

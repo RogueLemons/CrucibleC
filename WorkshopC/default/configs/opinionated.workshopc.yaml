@@ -1,4 +1,6 @@
 # WorkshopC Configuration File
+# The default preset with the author's preferred severities and naming style:
+# fail early on core safety rules while retaining warnings for selected style checks.
 
 # Paths configuration
 # third_party_includes are not affected by rules
@@ -16,15 +18,18 @@ compile_commands_dir: build
 # Rules can be: Off, Warning, Error
 rules:
   # Suppression reason rule - requires a reason for each suppression
+  # Keep exceptions documented so they remain deliberate.
   suppression_reason_rule:
     level: Error 
 
   # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
+  # Permit useful enum types while making conversions explicit.
   enum:
     level: Error
     allow_enum_typedef: true
 
   # Private rule - forbids access of a private struct field
+  # Keep private state behind narrowly named accessor functions.
   private:
     level: Warning
     private_field: _private
@@ -44,6 +49,7 @@ rules:
     level: Error
 
   # Assignment rule - require primitives to be assigned at declaration
+  # Enforce initialization and avoid mutation through function arguments.
   assignment:
     level: Error
     forbid_null_assign: false
@@ -53,6 +59,7 @@ rules:
     forbid_mut_arg_pointer: true
 
   # Prefix namespace rule - require header declarations to include folder structure in name
+  # Keep public names tied to their source modules to avoid collisions.
   prefix_namespace:
     level: Error
     top_dir: src
@@ -67,11 +74,13 @@ rules:
     case_insensitive: true
 
   # Null check rule - require first use of pointer argument to be checked if null
+  # Reject unchecked pointer dereferences.
   null_check:
     level: Error
     allow_direct_ptr_in_if_statement: false
 
   # Argument pointer movement rule - require use of movement notation for non-const pointers
+  # Make ownership and output intent explicit at each call site.
   argument_pointer_movement:
     level: Error
     require_operator_for_move_callsite: true
@@ -79,6 +88,7 @@ rules:
     require_operator_for_modify_callsite: false
 
   # Struct resource management rule - require use of RAII with structs that manage resources
+  # Require predictable lifecycle functions and cleanup for owned resources.
   struct_resource_management:
     level: Error
     pod_struct_creator_suffix: _pod
@@ -98,6 +108,7 @@ rules:
     free_struct_creator_suffix: _initialize_manually
 
   # Interfaces rule - standardizes how interfaces and vtables are used
+  # Keep polymorphic dispatch layouts consistent.
   interfaces:
     level: Error
     vtable_suffix: _vtable
@@ -106,6 +117,7 @@ rules:
     interface_must_have_fields_that_are_private_alternative: true
 
   # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
+  # Keep allocation and deallocation in a small, auditable wrapper set.
   restricted_malloc:
     level: Error
     list_of_allowed_malloc_functions:
@@ -119,10 +131,12 @@ rules:
     require_return_for_void: false
 
   # Strict switch rule - require all switch statements to have a default and all cases include a break/return
+  # Avoid missing states and implicit fallthrough.
   strict_switch:
     level: Error
 
   # Global variable rule - require naming and safety conventions
+  # Mark mutable global state while making constants prominent.
   global_variable:
     level: Error
     must_be_static: true
@@ -142,11 +156,13 @@ rules:
     const_local_static_must_be_caps: false
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
+  # Encode non-null parameter contracts and validate their call sites.
   reference_pointer:
     level: Error
     disable_null_check_rule_for_reference_pointers: true
 
   # Function discard rule - forbids discarding return values of functions that return a value
+  # Catch ignored results that may carry errors or status.
   function_discard:
     level: Error
 
@@ -163,6 +179,7 @@ rules:
     use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
+  # Keep bounds next to buffer data without restricting every array declaration.
   span_struct:
     level: Error
     span_struct_suffix: _span

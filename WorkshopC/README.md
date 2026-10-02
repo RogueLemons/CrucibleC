@@ -49,14 +49,16 @@ workshopc src/
 
 **Arguments:**
 - `<files or folders...>` — The C files to analyze. Folders are searched recursively for `.c` files, skipping `third_party_includes` folders and the compilation database folder. Headers are checked through the files that include them, and a problem in a header included by several files is only reported once.
-- `--config <file>` — The config file. Without it, `workshopc.yaml` is searched for in the current folder and then its parents. Other configs are named `<name>.workshopc.yaml` by convention, e.g. `ci.workshopc.yaml`, and given with this option.
+- `--config <file|preset>` — The config file or a built-in preset (`adopt`, `adopt-more`, `adopt-even-more`, `default`, `embedded`, `nevernull`, `opinionated` or `strict`). Without it, `workshopc.yaml` is searched for in the current folder and then its parents. Other configs are named `<name>.workshopc.yaml` by convention, e.g. `ci.workshopc.yaml`.
+- `--third-party-include <folder>` — Add a folder to `third_party_includes`; repeat the option to add multiple folders. This supplements the config or preset list.
+- `--prefix-top-dir <folder>` — Override `prefix_namespace.top_dir` for this run.
 - `-p, --build-path <folder>` — The folder containing `compile_commands.json`. Overrides `compile_commands_dir` from the config.
 - `--text <file>` — Also write the diagnostics as text to a file, the same lines as printed to the terminal.
 - `--json <file>` — Also write the diagnostics as JSON to a file: the warning and error counts and a list of diagnostics, each with its file, line, column, level, code, name and message.
 - `--sarif <file>` — Also write the diagnostics as SARIF 2.1.0 to a file, the standard format read by e.g. GitHub code scanning and many IDEs.
 - `-q, --quiet` — Print nothing to the terminal: no diagnostics and no warning and error summary. Clang's compile errors and problems that stop the analysis (e.g. a missing config) are still printed, and the exit code is unaffected.
 - `--warnings-as-errors` — Report every warning as an error: on the terminal, in the `--text`, `--json` and `--sarif` files, in the counts, and in the exit code. The config still decides which rules run and how serious they normally are, and the flag decides how strict one run is. One config can then serve both a relaxed local run and a strict CI run.
-- `--dump-config` — Print the config as it was read, with every setting, and exit without analyzing anything, so no files or folders are needed. The output is a valid config, e.g. `workshopc --dump-config > full.workshopc.yaml` gives a config with every setting written out. It is printed even when the config is invalid, to see how it was read. Empty string settings are left out, since they are empty when not given.
+- `--dump-config` — Print the effective config, including command-line overrides, with every setting, and exit without analyzing anything, so no files or folders are needed. The output is a valid config, e.g. `workshopc --config default --third-party-include vendor/ --dump-config > full.workshopc.yaml`. It is printed even when the config is invalid. Empty string settings are left out, since they are empty when not given.
 - `-h, --help` — Show the help.
 
 The diagnostics are always printed to the terminal (stderr) unless `--quiet` is given, and `--text`, `--json` and `--sarif` can be combined freely to write any set of files in a single run. Give `-` as the file to write that format to stdout instead (only one format can use stdout). Compile errors from clang are always printed as text and never appear in the files, the exit code tells when they happened.
@@ -70,6 +72,8 @@ Examples:
 workshopc src/                                  # everything under src/, config found automatically
 workshopc src/main.c src/parser.c               # only these files
 workshopc --config ci.workshopc.yaml -p out/ src/  # another config and build folder
+workshopc --config default --third-party-include vendor/ --third-party-include CMSIS/ src/ # extend preset exclusions
+workshopc --config embedded --prefix-top-dir firmware src/ # adjust preset namespace root
 workshopc -q --sarif results.sarif src/         # only a SARIF file, e.g. for CI
 workshopc --text out.txt --json out.json src/   # terminal output plus a text and a JSON file
 workshopc -q --json - src/ | jq .errors         # JSON to stdout, for piping
@@ -98,7 +102,7 @@ Codes of `64` and above always mean the tool itself could not complete the analy
 
 The tool runs the file through clang, but only WorkshopC's own rules produce warnings. Clang's warnings (unused variables, implicit conversions and so on) are disabled with `-w`, even if the compilation database enables `-Wall` or `-Werror`, since they belong to the project's normal build. Genuine compile errors are still printed in clang's normal format, and the exit code is then `67`. The rules still run on whatever clang could recover from the broken file, but the result should be treated as incomplete until the file compiles.
 
-[Here is a premade config ready for use as is and provide a base to easily edit](./default/default.workshopc.yaml). Copy it to the root of your project as `workshopc.yaml` to have it found automatically.
+[Here is a premade config ready for use as is and provide a base to easily edit](./default/configs/default.workshopc.yaml). Copy it to the root of your project as `workshopc.yaml` to have it found automatically.
 
 ### Tag headers
 Some rules use tags, macros written in the code, e.g. to mark who owns a pointer. Premade headers for them come in two naming styles, with the same file names in both folders, so the style is chosen by the include path alone (e.g. `-I workshopc/tags/lower`):
@@ -295,6 +299,22 @@ rules:
 - A rule that is left out of the config is `Off`. An option that is left out gets its default, which is `false` for the on/off options unless its description below says otherwise. Starting from [the default config](./default/configs/default.workshopc.yaml) is the easiest way to see every option.
 - A file is third party when its path contains one of the `third_party_includes` entries, e.g. `external/` matches `project/external/json/json.h`. Code in third party files and system headers is never reported, but the project's own code that uses it still is.
 - `Warning` and `Error` only differ in how the result is reported (the level in the output and the [exit code](#how-to-use)), the checks are the same.
+
+### Built-in config presets
+The presets are built into WorkshopC and can be selected with `--config <preset>`. They provide starting points for different project stages and constraints; use a config file when you need broader project-specific changes.
+
+| Preset | Intended use |
+|--------|--------------|
+| `adopt` | A gentle entry point for existing projects. Resolve its findings before moving to `adopt-more`. |
+| `adopt-more` | The second migration step, adding stronger API and pointer checks. Move to `adopt-even-more` when clean. |
+| `adopt-even-more` | The final migration step, with explicit resource lifetimes, ownership, and buffer rules. |
+| `default` | Recommended balanced settings for new projects and users new to WorkshopC. |
+| `opinionated` | The default approach with the author's preferred rule severities and naming conventions. |
+| `strict` | High adherence to the project's safety principles, ownership model, and struct conventions. |
+| `embedded` | Firmware-oriented settings: no dynamic allocation by default, explicit state handling, and vendor code exclusions. |
+| `nevernull` | For projects that intend not to create or pass null pointers; external library results still need validation. |
+
+Small environment-specific differences can be supplied without copying a preset: repeat `--third-party-include <folder>` to extend its exclusions, or use `--prefix-top-dir <folder>` to adjust the namespace root. `--dump-config` prints the effective config after these overrides.
 
 ### Enum rule
 An `enum` argument can take any kind of integer which easily creates bugs and mistakes. This rule either forbids enums completely or, with `allow_enum_typedef: true`, allows them under strict rules.
@@ -2193,10 +2213,11 @@ Beta
 - Verify build for Linux
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
-- Embed config presets
 - Add LSP support
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
-- Override third party includes with arg? Override top dir?
+- Trigger function discard for function pointers as well
+- Move all scripts into scripts folder
+- Adjust third-party-includes for all default configs
 
 After V1
 - Allow ref variables and fields

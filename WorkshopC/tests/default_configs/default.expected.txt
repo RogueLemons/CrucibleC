@@ -1,0 +1,1 @@
+error: pointer parameter 'value' is dereferenced before null check [CCW0801]

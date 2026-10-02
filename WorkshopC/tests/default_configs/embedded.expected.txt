@@ -1,0 +1,1 @@
+error: 'malloc' may not be used, no functions are allowed to use it (list_of_allowed_malloc_functions is empty) [CCW1601]

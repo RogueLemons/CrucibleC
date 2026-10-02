@@ -1,4 +1,6 @@
 # WorkshopC Configuration File
+# Existing-project starting point: adopt core checks first, then move to
+# adopt_more as these warnings are resolved.
 
 # Paths configuration
 # third_party_includes are not affected by rules
@@ -16,15 +18,18 @@ compile_commands_dir: build
 # Rules can be: Off, Warning, Error
 rules:
   # Suppression reason rule - requires a reason for each suppression
+  # A short reason makes temporary exceptions visible in reviews.
   suppression_reason_rule:
     level: Error 
 
   # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
+  # Catch accidental integer/enum mixing while allowing existing enum types.
   enum:
     level: Warning
     allow_enum_typedef: true
 
   # Private rule - forbids access of a private struct field
+  # Keep representation details behind a small set of accessors.
   private:
     level: Warning
     private_field: _private
@@ -32,6 +37,7 @@ rules:
     getter_contains: private_
 
   # Private alternative rule - limits access of tagged struct fields
+  # Tags make sensitive fields private without relying on a field name.
   private_alternative:
     level: Error
 
@@ -44,6 +50,7 @@ rules:
     level: Off
 
   # Assignment rule - require primitives to be assigned at declaration
+  # Make initialization and argument intent clearer without yet banning common null patterns.
   assignment:
     level: Warning
     forbid_null_assign: false
@@ -67,6 +74,7 @@ rules:
     case_insensitive: true
 
   # Null check rule - require first use of pointer argument to be checked if null
+  # Find unsafe dereferences while allowing concise direct pointer checks.
   null_check:
     level: Warning
     allow_direct_ptr_in_if_statement: true
@@ -98,6 +106,7 @@ rules:
     free_struct_creator_suffix: _init
 
   # Interfaces rule - standardizes how interfaces and vtables are used
+  # Keep object dispatch consistent while the heavier ownership rules remain off.
   interfaces:
     level: Warning
     vtable_suffix: _vtable
@@ -120,10 +129,12 @@ rules:
     require_return_for_void: false
 
   # Strict switch rule - require all switch statements to have a default and all cases include a break/return
+  # Catch missing states and accidental fallthrough with a warning during adoption.
   strict_switch:
     level: Warning
 
   # Global variable rule - require naming and safety conventions
+  # Give globals internal linkage without requiring a large rename in the first step.
   global_variable:
     level: Warning
     must_be_static: true
@@ -143,11 +154,13 @@ rules:
     const_local_static_must_be_caps: false
 
   # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
+  # Mark parameters that promise a real object, making call-site contracts explicit.
   reference_pointer:
     level: Error
     disable_null_check_rule_for_reference_pointers: true
 
   # Function discard rule - forbids discarding return values of functions that return a value
+  # Warnings help identify ignored failure or status results.
   function_discard:
     level: Warning
 
@@ -164,6 +177,7 @@ rules:
     use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
 
   # Span struct rule - standardize spans (pointer + length) for arrays and buffers
+  # Introduce sized views before tightening raw-array restrictions in later presets.
   span_struct:
     level: Warning
     span_struct_suffix: _span
@@ -172,7 +186,7 @@ rules:
     only_allow_span_data_passing_in_one_line_static_functions: false
     allow_spans_to_be_given_fewer_elements_than_their_size: true
     require_span_immediately_after_array: false
-    allow_pod_span_to_be_initialized_manually_if_static: true
+    allow_pod_span_to_be_initialized_manually_if_static: false
 
   # Const field rule - forbids struct fields that are const (but not pointer to const)
   const_field:

@@ -90,6 +90,51 @@ set(SOURCES
 
 add_executable(workshopc ${SOURCES})
 
+# Generate C++ headers containing the built-in YAML configs. Track each
+# generated header so config or script edits rerun the converter during builds.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+file(GLOB_RECURSE WORKSHOPC_CONFIG_FILES CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/default/configs/*.workshopc.yaml"
+)
+
+set(WORKSHOPC_GENERATED_CONFIG_HEADERS)
+foreach(CONFIG_FILE IN LISTS WORKSHOPC_CONFIG_FILES)
+    file(RELATIVE_PATH CONFIG_RELATIVE_PATH
+        "${CMAKE_SOURCE_DIR}/default/configs"
+        "${CONFIG_FILE}"
+    )
+    string(REGEX REPLACE "\\.workshopc\\.yaml$" ".config.hpp"
+        CONFIG_HEADER_RELATIVE_PATH
+        "${CONFIG_RELATIVE_PATH}"
+    )
+    list(APPEND WORKSHOPC_GENERATED_CONFIG_HEADERS
+        "${CMAKE_SOURCE_DIR}/generated/${CONFIG_HEADER_RELATIVE_PATH}"
+    )
+endforeach()
+
+add_custom_command(
+    OUTPUT ${WORKSHOPC_GENERATED_CONFIG_HEADERS}
+    COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_SOURCE_DIR}/scripts/config_to_string.py"
+        "${CMAKE_SOURCE_DIR}/default/configs"
+        "${CMAKE_SOURCE_DIR}/generated"
+    DEPENDS
+        ${WORKSHOPC_CONFIG_FILES}
+        "${CMAKE_SOURCE_DIR}/scripts/config_to_string.py"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Generating embedded config headers"
+    VERBATIM
+)
+
+add_custom_target(generate_workshopc_configs
+    DEPENDS ${WORKSHOPC_GENERATED_CONFIG_HEADERS}
+)
+add_dependencies(workshopc generate_workshopc_configs)
+target_include_directories(workshopc PRIVATE
+    "${CMAKE_SOURCE_DIR}/generated"
+)
+
 # Clang's own builtin headers (stddef.h, mm_malloc.h, ...) live in its
 # resource directory. The parser looks for it next to its executable by
 # default, which fails when it is not installed next to clang, so the

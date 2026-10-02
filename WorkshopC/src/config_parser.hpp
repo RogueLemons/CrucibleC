@@ -1,7 +1,9 @@
 #pragma once
 
+#include <istream>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "config.hpp"
@@ -241,9 +243,16 @@ private:
     // A path without './' in front or '/' behind, for comparing folders
     static std::string normalizeFolder(const std::string &path);
 
+    static bool loadFromStream(std::istream &input, Config &config);
+
 public:
     static bool loadFromFile(
         const std::string &filepath,
+        Config &config
+    );
+
+    static bool loadFromString(
+        std::string_view contents,
         Config &config
     );
 

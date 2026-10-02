@@ -140,6 +140,12 @@ void PrivateAlternativeRule::run(const MatchFinder::MatchResult &result) {
     if (suppressions.isSuppressed(sm, expansionLoc))
         return;
 
+    if (sm.isInSystemHeader(spellingLoc) ||
+        sm.isInSystemHeader(expansionLoc))
+    {
+        return;
+    }
+
     std::string spellingPath = sm.getFilename(spellingLoc).str();
     std::string expansionPath = sm.getFilename(expansionLoc).str();
 
