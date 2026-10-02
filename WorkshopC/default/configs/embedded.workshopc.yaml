@@ -7,16 +7,28 @@
 # Paths configuration
 # third_party_includes are not affected by rules
 # Drivers/, CMSIS/ and Middlewares/ are where vendor HALs and RTOS code
-# usually live (e.g. STM32Cube projects)
+# usually live (e.g. STM32Cube projects), managed_components/ holds
+# ESP-IDF components and .pio/libdeps/ PlatformIO libraries
+# An entry matches any path containing it, and case matters
 third_party_includes:
   - external/
+  - extern/
   - third_party/
+  - third-party/
+  - thirdparty/
+  - ThirdParty/
+  - 3rdparty/
+  - 3rdParty/
   - vendor/
-  - libs/
+  - deps/
   - dependencies/
+  - subprojects/
+  - vcpkg_installed/
   - Drivers/
   - CMSIS/
   - Middlewares/
+  - managed_components/
+  - .pio/libdeps/
 
 # Folder containing compile_commands.json, relative to this file (-p overrides it)
 compile_commands_dir: build

@@ -582,6 +582,8 @@ static const char *kUsage =
     "                                    Presets: adopt, adopt-more, adopt-even-more,\n"
     "                                    default, opinionated, embedded, nevernull, strict\n"
     "  --third-party-include <folder>    Add a folder excluded from rule analysis; repeatable.\n"
+    "  --no-config-third-party-includes  Drop the config's third_party_includes, keeping\n"
+    "                                    only the --third-party-include folders.\n"
     "  --prefix-top-dir <folder>         Override prefix_namespace.top_dir.\n"
     "  -p, --build-path <folder>         The folder containing compile_commands.json.\n"
     "                                    Overrides compile_commands_dir from the config.\n"
@@ -632,6 +634,7 @@ struct Options {
     std::vector<std::string> inputs;
     bool quiet = false;
     bool warningsAsErrors = false;
+    bool noConfigThirdPartyIncludes = false;
     bool dumpConfig = false;
     bool help = false;
 };
@@ -675,6 +678,11 @@ static bool parseArguments(int argc, const char **argv, Options &options) {
 
         if (arg == "--warnings-as-errors") {
             options.warningsAsErrors = true;
+            continue;
+        }
+
+        if (arg == "--no-config-third-party-includes") {
+            options.noConfigThirdPartyIncludes = true;
             continue;
         }
 
@@ -953,6 +961,9 @@ int main(int argc, const char **argv) {
         std::cerr << "Failed to load config: " << options.configPath << "\n";
         return ExitConfigFailed;
     }
+
+    if (options.noConfigThirdPartyIncludes)
+        config.thirdPartyIncludes.clear();
 
     config.thirdPartyIncludes.insert(
         config.thirdPartyIncludes.end(),

@@ -583,6 +583,51 @@ def run_config_override_test(exe):
               f"{source_kind}: unexpected stderr:\n{result.stderr}",
               problems)
 
+        # Dropping the config's list keeps only the command-line folders
+        replaced = subprocess.run(
+            [
+                str(exe),
+                "--config", config_source,
+                "--no-config-third-party-includes",
+                "--third-party-include", "cli_vendor_one/",
+                "--dump-config",
+            ],
+            text=True,
+            capture_output=True
+        )
+
+        check(replaced.returncode == 0,
+              f"{source_kind}: --no-config-third-party-includes exit code "
+              f"{replaced.returncode}, expected 0",
+              problems)
+
+        replaced_lines = set(replaced.stdout.splitlines())
+        check("  - cli_vendor_one/" in replaced_lines,
+              f"{source_kind}: --no-config-third-party-includes dropped the "
+              "--third-party-include folder",
+              problems)
+        check("  - external/" not in replaced_lines,
+              f"{source_kind}: --no-config-third-party-includes kept the "
+              "config's folders",
+              problems)
+
+        # Without folders of its own, the list is empty
+        emptied = subprocess.run(
+            [
+                str(exe),
+                "--config", config_source,
+                "--no-config-third-party-includes",
+                "--dump-config",
+            ],
+            text=True,
+            capture_output=True
+        )
+
+        check("third_party_includes: []" in emptied.stdout.splitlines(),
+              f"{source_kind}: --no-config-third-party-includes alone did not "
+              "empty the list",
+              problems)
+
     if problems:
         return report_output_problems(problems)
 

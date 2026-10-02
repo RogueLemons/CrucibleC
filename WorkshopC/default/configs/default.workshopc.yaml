@@ -4,12 +4,21 @@
 
 # Paths configuration
 # third_party_includes are not affected by rules
+# An entry matches any path containing it, and case matters
 third_party_includes:
   - external/
+  - extern/
   - third_party/
+  - third-party/
+  - thirdparty/
+  - ThirdParty/
+  - 3rdparty/
+  - 3rdParty/
   - vendor/
-  - libs/
+  - deps/
   - dependencies/
+  - subprojects/
+  - vcpkg_installed/
 
 # Folder containing compile_commands.json, relative to this file (-p overrides it)
 compile_commands_dir: build

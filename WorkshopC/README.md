@@ -51,6 +51,7 @@ workshopc src/
 - `<files or folders...>` — The C files to analyze. Folders are searched recursively for `.c` files, skipping `third_party_includes` folders and the compilation database folder. Headers are checked through the files that include them, and a problem in a header included by several files is only reported once.
 - `--config <file|preset>` — The config file or a built-in preset (`adopt`, `adopt-more`, `adopt-even-more`, `default`, `embedded`, `nevernull`, `opinionated` or `strict`). Without it, `workshopc.yaml` is searched for in the current folder and then its parents. Other configs are named `<name>.workshopc.yaml` by convention, e.g. `ci.workshopc.yaml`.
 - `--third-party-include <folder>` — Add a folder to `third_party_includes`; repeat the option to add multiple folders. This supplements the config or preset list.
+- `--no-config-third-party-includes` — Drop the `third_party_includes` of the config or preset, so only the folders given with `--third-party-include` are third party. Together they replace the list without editing the config, e.g. when a default folder holds the project's own code.
 - `--prefix-top-dir <folder>` — Override `prefix_namespace.top_dir` for this run.
 - `-p, --build-path <folder>` — The folder containing `compile_commands.json`. Overrides `compile_commands_dir` from the config.
 - `--text <file>` — Also write the diagnostics as text to a file, the same lines as printed to the terminal.
@@ -73,6 +74,7 @@ workshopc src/                                  # everything under src/, config 
 workshopc src/main.c src/parser.c               # only these files
 workshopc --config ci.workshopc.yaml -p out/ src/  # another config and build folder
 workshopc --config default --third-party-include vendor/ --third-party-include CMSIS/ src/ # extend preset exclusions
+workshopc --config default --no-config-third-party-includes --third-party-include sdk/ src/ # replace preset exclusions
 workshopc --config embedded --prefix-top-dir firmware src/ # adjust preset namespace root
 workshopc -q --sarif results.sarif src/         # only a SARIF file, e.g. for CI
 workshopc --text out.txt --json out.json src/   # terminal output plus a text and a JSON file
@@ -314,7 +316,7 @@ The presets are built into WorkshopC and can be selected with `--config <preset>
 | `embedded` | Firmware-oriented settings: no dynamic allocation by default, explicit state handling, and vendor code exclusions. |
 | `nevernull` | For projects that intend not to create or pass null pointers; external library results still need validation. |
 
-Small environment-specific differences can be supplied without copying a preset: repeat `--third-party-include <folder>` to extend its exclusions, or use `--prefix-top-dir <folder>` to adjust the namespace root. `--dump-config` prints the effective config after these overrides.
+Small environment-specific differences can be supplied without copying a preset: repeat `--third-party-include <folder>` to extend its exclusions, add `--no-config-third-party-includes` to replace them instead, or use `--prefix-top-dir <folder>` to adjust the namespace root. `--dump-config` prints the effective config after these overrides.
 
 ### Enum rule
 An `enum` argument can take any kind of integer which easily creates bugs and mistakes. This rule either forbids enums completely or, with `allow_enum_typedef: true`, allows them under strict rules.
@@ -2217,7 +2219,6 @@ To enter Beta
 - Add a python script for installing dependencies, that shall work on windows/linux/iOS
 - Trigger function discard for function pointers as well
 - Move all scripts into scripts folder
-- Adjust third-party-includes for all default configs
 
 After V1
 - Allow ref variables and fields
