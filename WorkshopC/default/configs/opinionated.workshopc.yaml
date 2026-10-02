@@ -182,6 +182,7 @@ rules:
     span_struct_suffix: _span
     const_span_struct_suffix: _cspan
     only_allow_array_passing_to_library_functions_and_spans: true
+    allow_string_literals_as_const_char_arguments: true
     only_allow_span_data_passing_in_one_line_static_functions: false
     allow_spans_to_be_given_fewer_elements_than_their_size: true
     require_span_immediately_after_array: false

@@ -125,7 +125,7 @@ The reasoning:
 | [Reference pointer](rules.md#reference-pointer-rule) | Error | Exempt from null checks | Parameters that always hold an object are separated from nullable pointers. |
 | [Function discard](rules.md#function-discard-rule) | Error | | Status and error results are never silently ignored. |
 | [Array struct](rules.md#array-struct-rule) | Warning | Naming only, arrays allowed anywhere | Spans already guard array sizes, so array structs only get consistent names. |
-| [Span struct](rules.md#span-struct-rule) | Error | A span after every array, raw data only to library functions | Buffer lengths stay coupled to their data, which makes bounds easy to verify. |
+| [Span struct](rules.md#span-struct-rule) | Error | A span after every array, raw data only to library functions, string literals allowed for `const char*` | Buffer lengths stay coupled to their data, which makes bounds easy to verify. A string literal carries its own terminator and can not be written through `const char*`, so it needs no span. |
 | [Const field](rules.md#const-field-rule) | Warning | | Keeps whole-object initialization and assignment possible, a matter of convenience rather than safety. |
 | [No goto](rules.md#no-goto-rule) | Warning | | Structured control flow is easier to follow, but a `goto` is not a defect in itself. |
 
@@ -148,7 +148,7 @@ Changes from `default`:
 - **Every movement is marked.** Call sites mark modify arguments too, with `lend()` or `MUT()`, so move, output and modify semantics are visible at declarations and call sites alike.
 - **Null checks are written out** as explicit comparisons.
 - **Precise names.** Namespace prefixes are case sensitive, use `__` as separator and up to 20 folders. Constants need the `G_` prefix, and constant static locals `S_` and capital letters, so that mutable state and constants are distinct at a glance.
-- **Arrays live in structs.** Arrays may only be declared inside structs, which are named after their element struct and carry their sizes in their names. Array fields are only passed to library functions, spans always hold their whole array, and span data is only passed on in one-statement wrappers, so raw data can not escape reviewed code.
+- **Arrays live in structs.** Arrays may only be declared inside structs, which are named after their element struct and carry their sizes in their names. Array fields are only passed to library functions, spans always hold their whole array, and span data is only passed on in one-statement wrappers, so raw data can not escape reviewed code. String literals get no exception either: they too reach project functions through spans.
 - **Tighter resource handling.** Arrays of raii structs are not allowed outside of structs, restricted malloc allows only `memory_alloc` and `memory_free`, and free structs are created with `_initialize_manually`, a name that makes the choice to opt out of the rules deliberate.
 
 Every exception must be justified for audit and review, and the remaining rules follow the same idea: complete resource lifetimes with reverse destruction and standardized cleanup, one final return so that cleanup and exit paths are predictable, structured control flow, and immutable dispatch tables with uniform interface layouts.
@@ -273,6 +273,7 @@ The options that differ between presets. A dash means that the rule is off in th
 | **[Span struct](rules.md#span-struct-rule)** | | | | | | | | |
 | `const_span_struct_suffix` | `_const_span` | `_const_span` | `_const_span` | `_const_span` | `_cspan` | `_const_span` | `_const_span` | `_const_span` |
 | `only_allow_array_passing_to_library_functions_and_spans` | no | yes | yes | yes | yes | yes | yes | yes |
+| `allow_string_literals_as_const_char_arguments` | yes | yes | yes | yes | yes | no | yes | yes |
 | `only_allow_span_data_passing_in_one_line_static_functions` | no | no | no | no | no | yes | yes | yes |
 | `allow_spans_to_be_given_fewer_elements_than_their_size` | yes | yes | yes | yes | yes | no | yes | yes |
 | `require_span_immediately_after_array` | no | yes | yes | yes | no | yes | yes | yes |

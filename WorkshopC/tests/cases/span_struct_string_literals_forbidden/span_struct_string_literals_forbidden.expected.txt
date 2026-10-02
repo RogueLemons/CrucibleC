@@ -1,0 +1,8 @@
+warning: string literal may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: string literal may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: string literal may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: string literal may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: string literal may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: string literal may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: string literal may only be passed to a standard-library, third-party, span, or pod function [CCW2304]
+warning: array 'copy' may only be passed to a standard-library, third-party, span, or pod function [CCW2304]

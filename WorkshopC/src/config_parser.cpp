@@ -396,6 +396,9 @@ void ConfigParser::applySetting(
     else if (key == "only_allow_array_passing_to_library_functions_and_spans") {
         cfg.onlyAllowArrayPassingToLibraryFunctionsAndSpans = parseBool(value);
     }
+    else if (key == "allow_string_literals_as_const_char_arguments") {
+        cfg.allowStringLiteralsAsConstCharArguments = parseBool(value);
+    }
     else if (key == "span_struct_suffix") {
         cfg.spanStructSuffix = value;
     }
@@ -1236,6 +1239,7 @@ void ConfigParser::writeConfig(
     text("span_struct_suffix", span.spanStructSuffix);
     text("const_span_struct_suffix", span.constSpanStructSuffix);
     boolean("only_allow_array_passing_to_library_functions_and_spans", span.onlyAllowArrayPassingToLibraryFunctionsAndSpans);
+    boolean("allow_string_literals_as_const_char_arguments", span.allowStringLiteralsAsConstCharArguments);
     boolean("only_allow_span_data_passing_in_one_line_static_functions", span.onlyAllowSpanDataPassingInOneLineStaticFunctions);
     boolean("allow_spans_to_be_given_fewer_elements_than_their_size", span.allowSpansToBeGivenFewerElementsThanTheirSize);
     boolean("require_span_immediately_after_array", span.requireSpanImmediatelyAfterArray);

@@ -1644,6 +1644,7 @@ rules:
   span_struct:
     level: Warning
     only_allow_array_passing_to_library_functions_and_spans: true
+    allow_string_literals_as_const_char_arguments: true
     span_struct_suffix: _span
     const_span_struct_suffix: _const_span
     allow_spans_to_be_given_fewer_elements_than_their_size: false
@@ -1657,6 +1658,7 @@ rules:
 | `span_struct_suffix` | Required | Structs whose names end with this suffix are spans, e.g. `_span`. |
 | `const_span_struct_suffix` | Required | Structs whose names end with this suffix are const spans, e.g. `_const_span`. It is checked first, so it may end with `span_struct_suffix`. |
 | `only_allow_array_passing_to_library_functions_and_spans` | `false` | Arrays, and the data of spans, may only be passed to standard library and third-party functions, span pod creators and struct initializers. See [passing arrays and span data](#passing-arrays-and-span-data). |
+| `allow_string_literals_as_const_char_arguments` | `false` | With `only_allow_array_passing_to_library_functions_and_spans`, a string literal may also be passed to a pointer to const characters, e.g. a `const char*` parameter. See [string literals](#string-literals). |
 | `allow_spans_to_be_given_fewer_elements_than_their_size` | `false` | A span may cover only the start of an array. |
 | `require_span_immediately_after_array` | `false` | Every array outside of a struct is followed right away by a span holding it, which is then the only way to reach the array. |
 | `only_allow_span_data_passing_in_one_line_static_functions` | `false` | The data of a span may only be passed on inside one-statement static wrapper functions. |
@@ -1778,6 +1780,25 @@ int_span_t rest = int_span_pod(span.data + 1, 2);       // Reported: the size ca
 ```
 
 Making a smaller span from a span belongs in the span's own functions, where the data can be combined with a checked size, e.g. with an initializer. Together with the [private alternative rule](#private-alternative-rule) and private `data` and `size` fields, only those functions can reach them at all.
+
+#### String literals
+
+A string literal is an array too, so with `only_allow_array_passing_to_library_functions_and_spans: true` it may only be passed to the same functions as other arrays. A literal is a special case, though: it always ends with its terminator, and it may never be written to. A function that can only read it, through a pointer to const characters such as `const char*`, can therefore not run past its end. With `allow_string_literals_as_const_char_arguments: true`, a string literal may be passed to such a parameter, also through a function pointer.
+
+```c
+void log_message(const char* message);
+void overwrite_message(char* message);
+void log_count(int count, ...);
+
+log_message("hello");             // OK with the option: read-only parameter
+overwrite_message("hello");       // Reported: the literal could be written to
+log_count(1, "hello");            // Reported: a variadic argument has no parameter type to check
+
+char copy[] = "hello";
+log_message(copy);                // Reported: an array, not a literal, so its size could be lost
+```
+
+Without the option, a literal is handled like any other array, e.g. by copying it into an array with a span: `char greeting[] = "hello";` followed by a `char_const_span` holding it.
 
 ### One-statement wrappers
 

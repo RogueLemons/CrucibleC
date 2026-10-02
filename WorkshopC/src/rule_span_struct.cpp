@@ -4,6 +4,40 @@
 
 #include <algorithm>
 
+// The parameter that argument 'index' of a call is given to, also when
+// called through a function pointer. Null for a variadic argument.
+static QualType getParameterType(const CallExpr *call, size_t index)
+{
+    QualType type = call->getCallee()->IgnoreParenImpCasts()->getType();
+
+    if (const auto *pointer = type->getAs<PointerType>())
+        type = pointer->getPointeeType();
+
+    if (const auto *prototype = type->getAs<FunctionProtoType>()) {
+        if (index < prototype->getNumParams())
+            return prototype->getParamType(index);
+    }
+
+    return QualType();
+}
+
+// A pointer to const characters, e.g. 'const char*', which can not be
+// used to write to a string literal
+static bool isPointerToConstCharacters(QualType type)
+{
+    if (type.isNull())
+        return false;
+
+    const auto *pointer = type.getCanonicalType()->getAs<PointerType>();
+
+    if (!pointer)
+        return false;
+
+    const QualType pointee = pointer->getPointeeType();
+
+    return pointee.isConstQualified() && pointee->isAnyCharacterType();
+}
+
 bool SpanStructRule::isThirdParty(const std::string &path) const
 {
     for (const auto &include : config.thirdPartyIncludes) {
@@ -1175,6 +1209,29 @@ void SpanStructRule::run(const MatchFinder::MatchResult &result)
 
         if (isPodCall)
             continue;
+
+        // A string literal carries its own terminator, so a parameter that
+        // can only read it can not run past its end
+        if (isa<StringLiteral>(argument->IgnoreParenImpCasts())) {
+            const bool toConstCharacters =
+                isPointerToConstCharacters(getParameterType(call, i));
+
+            if (config.spanStructRule.allowStringLiteralsAsConstCharArguments &&
+                toConstCharacters)
+            {
+                continue;
+            }
+
+            report(
+                DiagCode::SpanArrayPassedToNonLibraryFunction,
+                argument->getExprLoc(),
+                config.spanStructRule.allowStringLiteralsAsConstCharArguments
+                    ? "string literal may only be passed to a pointer to const characters, "
+                      "or to a standard-library, third-party, span, or pod function"
+                    : "string literal may only be passed to a standard-library, third-party, span, or pod function",
+                sm);
+            continue;
+        }
 
         report(
             DiagCode::SpanArrayPassedToNonLibraryFunction,

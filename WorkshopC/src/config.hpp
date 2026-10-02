@@ -239,6 +239,12 @@ struct SpanStructRuleConfig {
     RuleLevel level = RuleLevel::Off;
 
     bool onlyAllowArrayPassingToLibraryFunctionsAndSpans = false;
+
+    // A string literal may be passed to a pointer to const characters,
+    // e.g. 'const char*', since it carries its own terminator and can not
+    // be written through such a parameter
+    bool allowStringLiteralsAsConstCharArguments = false;
+
     std::string spanStructSuffix;
 
     // A span of const data, e.g. 'const int* data'. Checked before
