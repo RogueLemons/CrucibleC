@@ -2209,7 +2209,7 @@ This ensures:
 
 ## TODO
 
-Beta
+To enter Beta
 - Verify build for Linux
 - Reorganize README and documentation
 - Use githubs release system to make linux and windows releases
