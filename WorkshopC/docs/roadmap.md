@@ -1,0 +1,34 @@
+[← Previous: Building and testing](building.md)
+
+# Roadmap
+
+WorkshopC is in **alpha**: rules, options and presets may still change between versions. This page lists what is planned.
+
+## Contents
+
+- [Toward beta](#toward-beta)
+- [After version 1](#after-version-1)
+
+## Toward beta
+
+- [ ] Verify the build on Linux
+- [x] Reorganize the README and documentation
+- [x] Remove superfluous comments from the default configs
+- [ ] Publish Linux and Windows builds with GitHub Releases
+- [ ] Add Language Server Protocol (LSP) support, for diagnostics directly in editors
+- [ ] Add a Python script that installs the dependencies on Windows, Linux and macOS
+
+## After version 1
+
+- [ ] Allow references for variables and struct fields, not only for parameters
+- [ ] A rule that forbids `int`, `long`, `long long` and `short`
+- [ ] Allow `#pragma once` instead of `#ifndef` include guards (under consideration)
+- [ ] Optional logging of suppressed lines
+- [ ] Let a raii return function be exempt from reverse-order destruction
+- [ ] Let a moved raii struct be destroyed out of order, e.g. by allowing the return function in arguments and initializers, by adding a `move_destroy` function, or by treating a move as a destroy
+- [ ] Check that a `_private` field is accessed with the right getter or setter, depending on whether it is reached through a const or a mutable pointer
+- [ ] Warn about const globals that hold mutable pointers, and possibly about such locals too
+
+---
+
+[Back to README](../README.md)

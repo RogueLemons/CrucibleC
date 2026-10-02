@@ -1,6 +1,9 @@
-# WorkshopC Configuration File
-# High-adherence preset: make safety rules errors and require explicit
-# ownership, lifetimes, naming and buffer boundaries throughout the project.
+# WorkshopC configuration - strict preset
+# High-adherence preset: safety rules are errors, and ownership, lifetimes,
+# naming and buffer boundaries are explicit throughout the project.
+#
+# Rules and their options: https://github.com/RogueLemons/CrucibleC/blob/master/WorkshopC/docs/rules.md
+# Why the presets differ:  https://github.com/RogueLemons/CrucibleC/blob/master/WorkshopC/docs/preset-rationale.md
 
 # Paths configuration
 # third_party_includes are not affected by rules
@@ -27,38 +30,34 @@ compile_commands_dir: build
 # Rules can be: Off, Warning, Error
 rules:
   # Suppression reason rule - requires a reason for each suppression
-  # Require every exception to be justified for audit and review.
   suppression_reason_rule:
-    level: Error 
+    level: Error
 
-  # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
-  # Allow enums only with explicit, type-safe conversions.
+  # Enum rule - forbids enums completely, or requires a typedef and explicit casts from integers
   enum:
     level: Error
     allow_enum_typedef: true
 
-  # Private rule - forbids access of a private struct field
-  # Isolate mutable state behind accessor boundaries.
+  # Private rule - fields with the private name may only be accessed by static getters and setters
   private:
     level: Error
     private_field: _private
     setter_contains: private_
     getter_contains: private_
 
-  # Private alternative rule - limits access of tagged struct fields
+  # Private alternative rule - tagged fields may only be accessed by their own struct's functions
   private_alternative:
     level: Error
 
-  # Function pointer rule - requires typedef for all function pointers
+  # Function pointer rule - requires a typedef for every function pointer
   function_pointer:
     level: Error
 
-  # Typedef struct rule - requires typedef for all structs
+  # Typedef struct rule - requires a typedef for every struct
   typedef_struct:
     level: Error
 
-  # Assignment rule - require primitives to be assigned at declaration
-  # Reduce uninitialized state and implicit argument mutation.
+  # Assignment rule - variables are initialized at declaration, with optional null and argument checks
   assignment:
     level: Error
     forbid_null_assign: false
@@ -67,8 +66,7 @@ rules:
     forbid_arg_reassign: true
     forbid_mut_arg_pointer: true
 
-  # Prefix namespace rule - require header declarations to include folder structure in name
-  # Enforce namespaced public APIs and path-derived include guards.
+  # Prefix namespace rule - names declared in headers start with a prefix built from their folder path
   prefix_namespace:
     level: Error
     top_dir: src
@@ -82,22 +80,19 @@ rules:
     require_ifndef_for_filepath: true
     case_insensitive: false
 
-  # Null check rule - require first use of pointer argument to be checked if null
-  # Require an explicit comparison before dereferencing nullable pointers.
+  # Null check rule - pointer parameters are checked for null before they are dereferenced
   null_check:
     level: Error
     allow_direct_ptr_in_if_statement: false
 
-  # Argument pointer movement rule - require use of movement notation for non-const pointers
-  # Mark move, output and modify semantics at declarations and call sites.
+  # Argument pointer movement rule - non-const pointer parameters are tagged as move, out or modify
   argument_pointer_movement:
     level: Error
     require_operator_for_move_callsite: true
     require_operator_for_out_callsite: true
     require_operator_for_modify_callsite: true
 
-  # Struct resource management rule - require use of RAII with structs that manage resources
-  # Enforce complete resource lifetimes, reverse destruction and standardized cleanup.
+  # Struct resource management rule - pod, raii and free structs with checked creation and cleanup
   struct_resource_management:
     level: Error
     pod_struct_creator_suffix: _pod
@@ -116,8 +111,7 @@ rules:
     raii_standardized_destroy_definitions: true
     free_struct_creator_suffix: _initialize_manually
 
-  # Interfaces rule - standardizes how interfaces and vtables are used
-  # Keep dispatch tables immutable and interface layouts uniform.
+  # Interfaces rule - standardizes the layout of interfaces and their vtables
   interfaces:
     level: Error
     vtable_suffix: _vtable
@@ -125,28 +119,24 @@ rules:
     const_interface_suffix: _const_interface
     interface_must_have_fields_that_are_private_alternative: true
 
-  # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
-  # Limit allocation to a small set of approved memory wrappers.
+  # Restricted malloc rule - malloc, free and the other memory functions are only used in the listed functions
   restricted_malloc:
     level: Error
     list_of_allowed_malloc_functions:
       - memory_alloc
       - memory_free
 
-  # Single return rule - requires functions to have a single return statement
-  # Keep cleanup and exit paths predictable with one final return.
+  # Single return rule - functions have a single, final return statement
   single_return:
     level: Error
     allow_early_return: true
     require_return_for_void: true
 
-  # Strict switch rule - require all switch statements to have a default and all cases include a break/return
-  # Reject incomplete state handling and fallthrough.
+  # Strict switch rule - every switch has a default, and every case ends with a break or return
   strict_switch:
     level: Error
 
-  # Global variable rule - require naming and safety conventions
-  # Require file-local globals and distinctly named mutable state and constants.
+  # Global variable rule - linkage, const and naming conventions for globals and static locals
   global_variable:
     level: Error
     must_be_static: true
@@ -165,19 +155,16 @@ rules:
     const_local_static_prefix: S_
     const_local_static_must_be_caps: true
 
-  # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
-  # Make non-null contracts explicit and check every corresponding call.
+  # Reference pointer rule - tagged pointer parameters always point to a real object, never null
   reference_pointer:
     level: Error
     disable_null_check_rule_for_reference_pointers: true
 
-  # Function discard rule - forbids discarding return values of functions that return a value
-  # Require callers to handle every returned status or error.
+  # Function discard rule - a returned value must be used, or discarded explicitly with (void)
   function_discard:
     level: Error
 
-  # Array struct rule - only allows arrays to be declared in structs
-  # Carry array sizes in types and enforce consistent buffer naming.
+  # Array struct rule - arrays are declared inside structs, and single-array structs follow naming conventions
   array_struct:
     level: Error
     only_allow_array_passing_to_library_functions: true
@@ -189,8 +176,7 @@ rules:
     struct_name_as_prefix: true
     use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: false
 
-  # Span struct rule - standardize spans (pointer + length) for arrays and buffers
-  # Keep array bounds attached and prevent raw data from escaping reviewed wrappers.
+  # Span struct rule - standardizes spans (pointer + size) and how arrays and buffers are passed
   span_struct:
     level: Error
     span_struct_suffix: _span
@@ -201,12 +187,10 @@ rules:
     require_span_immediately_after_array: true
     allow_pod_span_to_be_initialized_manually_if_static: true
 
-  # Const field rule - forbids struct fields that are const (but not pointer to const)
-  # Keep whole-object initialization and assignment possible.
+  # Const field rule - forbids struct fields that are const themselves (pointers to const are fine)
   const_field:
     level: Error
 
-  # No goto rule - forbids the use of goto statements
-  # Require structured control flow for easier auditing.
+  # No goto rule - forbids goto statements
   no_goto:
     level: Error

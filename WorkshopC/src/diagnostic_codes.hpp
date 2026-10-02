@@ -22,7 +22,7 @@
  *
  * Codes are never renumbered or reused: a removed check keeps its code
  * unused, and a new check gets the next free number of its rule. The
- * table in README.md (Diagnostic codes) lists them all, keep it in sync.
+ * table in docs/diagnostic-codes.md lists them all, keep it in sync.
  *
  * X(enumerator, code, name, description)
  */

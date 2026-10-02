@@ -1,6 +1,9 @@
-# WorkshopC Configuration File
-# Existing-project starting point: adopt core checks first, then move to
-# adopt_more as these warnings are resolved.
+# WorkshopC configuration - adopt preset
+# Existing-project starting point: adopt the core checks first, then move
+# to adopt-more once these findings are resolved.
+#
+# Rules and their options: https://github.com/RogueLemons/CrucibleC/blob/master/WorkshopC/docs/rules.md
+# Why the presets differ:  https://github.com/RogueLemons/CrucibleC/blob/master/WorkshopC/docs/preset-rationale.md
 
 # Paths configuration
 # third_party_includes are not affected by rules
@@ -27,39 +30,34 @@ compile_commands_dir: build
 # Rules can be: Off, Warning, Error
 rules:
   # Suppression reason rule - requires a reason for each suppression
-  # A short reason makes temporary exceptions visible in reviews.
   suppression_reason_rule:
-    level: Error 
+    level: Error
 
-  # Enum rule - enforces typedef and explicit enum casting, or forbids enums completely
-  # Catch accidental integer/enum mixing while allowing existing enum types.
+  # Enum rule - forbids enums completely, or requires a typedef and explicit casts from integers
   enum:
     level: Warning
     allow_enum_typedef: true
 
-  # Private rule - forbids access of a private struct field
-  # Keep representation details behind a small set of accessors.
+  # Private rule - fields with the private name may only be accessed by static getters and setters
   private:
     level: Warning
     private_field: _private
     setter_contains: private_
     getter_contains: private_
 
-  # Private alternative rule - limits access of tagged struct fields
-  # Tags make sensitive fields private without relying on a field name.
+  # Private alternative rule - tagged fields may only be accessed by their own struct's functions
   private_alternative:
     level: Error
 
-  # Function pointer rule - requires typedef for all function pointers
+  # Function pointer rule - requires a typedef for every function pointer
   function_pointer:
     level: Off
 
-  # Typedef struct rule - requires typedef for all structs
+  # Typedef struct rule - requires a typedef for every struct
   typedef_struct:
     level: Off
 
-  # Assignment rule - require primitives to be assigned at declaration
-  # Make initialization and argument intent clearer without yet banning common null patterns.
+  # Assignment rule - variables are initialized at declaration, with optional null and argument checks
   assignment:
     level: Warning
     forbid_null_assign: false
@@ -68,7 +66,7 @@ rules:
     forbid_arg_reassign: true
     forbid_mut_arg_pointer: true
 
-  # Prefix namespace rule - require header declarations to include folder structure in name
+  # Prefix namespace rule - names declared in headers start with a prefix built from their folder path
   prefix_namespace:
     level: Off
     top_dir: src
@@ -82,20 +80,19 @@ rules:
     require_ifndef_for_filepath: true
     case_insensitive: true
 
-  # Null check rule - require first use of pointer argument to be checked if null
-  # Find unsafe dereferences while allowing concise direct pointer checks.
+  # Null check rule - pointer parameters are checked for null before they are dereferenced
   null_check:
     level: Warning
     allow_direct_ptr_in_if_statement: true
 
-  # Argument pointer movement rule - require use of movement notation for non-const pointers
+  # Argument pointer movement rule - non-const pointer parameters are tagged as move, out or modify
   argument_pointer_movement:
     level: Off
     require_operator_for_move_callsite: true
     require_operator_for_out_callsite: true
     require_operator_for_modify_callsite: false
 
-  # Struct resource management rule - require use of RAII with structs that manage resources
+  # Struct resource management rule - pod, raii and free structs with checked creation and cleanup
   struct_resource_management:
     level: Off
     pod_struct_creator_suffix: _pod
@@ -114,8 +111,7 @@ rules:
     raii_standardized_destroy_definitions: true
     free_struct_creator_suffix: _init
 
-  # Interfaces rule - standardizes how interfaces and vtables are used
-  # Keep object dispatch consistent while the heavier ownership rules remain off.
+  # Interfaces rule - standardizes the layout of interfaces and their vtables
   interfaces:
     level: Warning
     vtable_suffix: _vtable
@@ -123,7 +119,7 @@ rules:
     const_interface_suffix: _const_interface
     interface_must_have_fields_that_are_private_alternative: true
 
-  # Restricted malloc rule - restricts the use of malloc/calloc/realloc/free/strdup/strndup/asprintf/getline/realpath to only the allowed functions
+  # Restricted malloc rule - malloc, free and the other memory functions are only used in the listed functions
   restricted_malloc:
     level: Off
     list_of_allowed_malloc_functions:
@@ -131,19 +127,17 @@ rules:
       - memory_alloc_array
       - memory_free
 
-  # Single return rule - requires functions to have a single return statement
+  # Single return rule - functions have a single, final return statement
   single_return:
     level: Off
     allow_early_return: true
     require_return_for_void: false
 
-  # Strict switch rule - require all switch statements to have a default and all cases include a break/return
-  # Catch missing states and accidental fallthrough with a warning during adoption.
+  # Strict switch rule - every switch has a default, and every case ends with a break or return
   strict_switch:
     level: Warning
 
-  # Global variable rule - require naming and safety conventions
-  # Give globals internal linkage without requiring a large rename in the first step.
+  # Global variable rule - linkage, const and naming conventions for globals and static locals
   global_variable:
     level: Warning
     must_be_static: true
@@ -162,18 +156,16 @@ rules:
     const_local_static_prefix: S_
     const_local_static_must_be_caps: false
 
-  # Reference pointer rule - tag system for pointers to ensure pointer of real object (not nullable)
-  # Mark parameters that promise a real object, making call-site contracts explicit.
+  # Reference pointer rule - tagged pointer parameters always point to a real object, never null
   reference_pointer:
     level: Error
     disable_null_check_rule_for_reference_pointers: true
 
-  # Function discard rule - forbids discarding return values of functions that return a value
-  # Warnings help identify ignored failure or status results.
+  # Function discard rule - a returned value must be used, or discarded explicitly with (void)
   function_discard:
     level: Off
 
-  # Array struct rule - only allows arrays to be declared in structs
+  # Array struct rule - arrays are declared inside structs, and single-array structs follow naming conventions
   array_struct:
     level: Off
     only_allow_array_passing_to_library_functions: true
@@ -185,8 +177,7 @@ rules:
     struct_name_as_prefix: false
     use_naming_rules_on_one_array_field_structs_without_forbidding_public_arrays: true
 
-  # Span struct rule - standardize spans (pointer + length) for arrays and buffers
-  # Introduce sized views before tightening raw-array restrictions in later presets.
+  # Span struct rule - standardizes spans (pointer + size) and how arrays and buffers are passed
   span_struct:
     level: Warning
     span_struct_suffix: _span
@@ -197,10 +188,10 @@ rules:
     require_span_immediately_after_array: false
     allow_pod_span_to_be_initialized_manually_if_static: false
 
-  # Const field rule - forbids struct fields that are const (but not pointer to const)
+  # Const field rule - forbids struct fields that are const themselves (pointers to const are fine)
   const_field:
     level: Warning
 
-  # No goto rule - forbids the use of goto statements
+  # No goto rule - forbids goto statements
   no_goto:
     level: Warning
