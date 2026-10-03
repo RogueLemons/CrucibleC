@@ -15,6 +15,11 @@ WorkshopC is in **alpha**: rules, options and presets may still change between v
 - [ ] Verify the build on Linux
 - [ ] Publish Linux and Windows builds with GitHub Releases
 - [ ] Add Language Server Protocol (LSP) support, for diagnostics directly in editors
+- [ ] Add contact information to README
+
+## Toward version 1.0.0
+
+- [ ] Test and improve beta based on public feedback
 
 ## After version 1
 
