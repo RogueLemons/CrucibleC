@@ -34,6 +34,7 @@ WorkshopC is in **alpha**: rules, options and presets may still change between v
 - [ ] Add a Python script that installs the dependencies on Windows, Linux and macOS
 - [ ] Disallow configs from including settings not part of the project, instead of silently passing them
 - [ ] Enforce reassignment of moved struct field pointers
+- [ ] Investigate ability/benefits for nevernull config to enforce all arrays end with a sentinel
 
 ---
 

@@ -4,7 +4,7 @@
 >
 > — Ted Nelson
 
-The Crucible C Project is a C ecosystem designed to make systems programming easier to read, write, and reason about through structured safety layers and clearer abstractions that promote clean, predictable, and safer code.
+The Crucible C Project is a collection of tools and experiments exploring safer, clearer ways to write and reason about C.
 
 Includes:
 - [AlloyCTranspiler (Prototype)](AlloyCTranspiler_Prototype): adds extra keywords to C for safety and readability

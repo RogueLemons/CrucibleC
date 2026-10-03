@@ -50,7 +50,7 @@ WorkshopC is a configurable Clang-based analyzer that enforces a safer style of 
 
 Most C linters look for bugs in whatever style the code is already written in. WorkshopC instead enforces a style in which whole classes of bugs are hard to write in the first place. Ownership is part of every function signature. Every resource has exactly one owner and a checked lifetime. Pointers that may be null are checked, and pointers that can never be null say so. Buffers never travel without their size. The tags that make this possible are ordinary macros that disappear in a normal build, so the code stays standard C.
 
-WorkshopC is part of [the Crucible C Project](../README.md), a C ecosystem for clean, predictable and safer code.
+WorkshopC is part of [The Crucible C Project](../README.md), a C project for clean, predictable and safer code.
 
 ## Highlights
 
