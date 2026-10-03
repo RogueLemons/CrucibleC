@@ -196,6 +196,9 @@ void example(void)
 
 The count given to a span is checked against the array, so `int_span_pod(values, 10)` is reported, and so is an array without a span. Raw pointers to the data are only handed to the standard library and third-party functions, which keeps every unchecked pointer-and-size pair at the edge of the project.
 
+> [!TIP]
+> Tag `data` and `size` as `confined` so that only the span's own functions can reach them. That makes out-of-bounds access even harder, see [Private fields](#5-private-fields).
+
 → [Span struct rule](rules.md#span-struct-rule) · [Array struct rule](rules.md#array-struct-rule)
 
 ## 5. Private fields

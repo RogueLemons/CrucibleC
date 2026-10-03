@@ -1,6 +1,6 @@
 # WorkshopC
 
-**Ownership and lifetimes for C, without leaving C.**
+*Ownership and lifetimes for C, without leaving C, enforced by static analysis.*
 
 ```c
 #include <stddef.h>
@@ -10,8 +10,8 @@ typedef struct inbox inbox;
 typedef struct message message;
 
 void message_create(initializes message** result);           // writes a new message to *result
-void inbox_push(borrows inbox* box, receives message* item);  // takes ownership of item
-void message_print(const message* item);                      // only reads item
+void inbox_push(borrows inbox* box, receives message* item); // takes ownership of item
+void message_print(const message* item);                     // only reads item
 
 void deliver(borrows inbox* box)
 {
@@ -25,6 +25,8 @@ void deliver(borrows inbox* box)
 ```text
 deliver.c:16:19:	error: pointer 'hello' may have been moved to 'inbox_push' and can not be used until it is reassigned [CCW0908]
 ```
+
+Prefer capital-letter macros? Here is the [same example with uppercase tags](docs/examples/intro-example-uppercase.md).
 
 ## Contents
 
@@ -40,7 +42,7 @@ deliver.c:16:19:	error: pointer 'hello' may have been moved to 'inbox_push' and 
 
 - **Starting a new project?** Use the `default` preset: every rule is on, and the rules that protect correctness are errors. → [Built-in presets](docs/configuration.md#built-in-presets)
 - **Bringing in existing code?** Follow the adoption path, which raises the bar one step at a time: `adopt` → `adopt-more` → `adopt-even-more`. → [The adoption path](docs/configuration.md#the-adoption-path)
-- **Want to see the style first?** → [Take the tour](docs/tour.md)
+- **Want to see the style first?** → [Take the 10 min tour](docs/tour.md)
 
 ## What is WorkshopC?
 
@@ -55,7 +57,7 @@ WorkshopC is part of [the Crucible C Project](../README.md), a C ecosystem for c
 - **Ownership on both sides of a call.** `void consume(receives item* value)` is called as `consume(give(value))`. Declarations and call sites read like sentences, and a pointer can not be used after it was given away.
 - **RAII in plain C.** A struct's creator function decides its category. Raii structs get checked lifetimes: one owner per value, no leaks on early returns, no use after destroy, destruction in reverse order, and destroy functions that clean up every field.
 - **Null safety from both directions.** Pointer parameters are null-checked along every path through a function, unless they are tagged as references, which can never be null and move the responsibility to the call site.
-- **A graduated adoption path.** Three presets bring an existing codebase to the full standard in steps, instead of burying it in findings on day one.
+- **A graduated adoption path.** Three presets improve an existing codebase in realistic steps, instead of burying it in findings on day one.
 - **Buffers that know their size.** Spans pair pointers with their sizes, and arrays reach the rest of the code only through them.
 - **Encapsulation.** Private fields that only their struct's own functions can use, and one standard layout for interfaces and vtables.
 - **Accountable exceptions.** Every suppression needs a written reason, and must be closed again in the same file.

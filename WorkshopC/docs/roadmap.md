@@ -28,6 +28,7 @@ WorkshopC is in **alpha**: rules, options and presets may still change between v
 - [ ] Warn about const globals that hold mutable pointers, and possibly about such locals too
 - [ ] Add a Python script that installs the dependencies on Windows, Linux and macOS
 - [ ] Disallow configs from including settings not part of the project, instead of silently passing them
+- [ ] Enforce reassignment of moved struct field pointers
 
 ---
 
